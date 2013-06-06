@@ -4,7 +4,7 @@ bl-heritrix-modules
 Modules for Heritrix 3.
 
 * AnnotationMatchesListRegexDecideRule: DecideRule for checking against annotations.
-* AsynchronousMQExtractor: publishes messages to an external queue for processing.
+* AsynchronousMQExtractor: publishes messages to an external queue for processing (see 'WebTools'; https://github.com/openplanets/wap.git)
 * ClamdScanner: for processing in an external ClamAv daemon.
 * CompressibilityDecideRule: DecideRule based on a URI's compressibility (*untested).
 * DbSeedModule: module for pulling seeds from an external DB (*no longer used).
