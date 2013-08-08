@@ -52,6 +52,12 @@
            <artifactId>heritrix-commons</artifactId>
            <version>3.1.1</version>
            <scope>provided</scope>
+           <exclusions>
+           	<exclusion>
+           		<artifactId>guava</artifactId>
+           		<groupId>com.google.guava</groupId>
+           	</exclusion>
+           </exclusions>
         </dependency>
         <dependency>
            <groupId>org.archive.heritrix</groupId>
@@ -69,6 +75,17 @@
            <groupId>com.rabbitmq</groupId>
            <artifactId>amqp-client</artifactId>
            <version>3.0.4</version>
+        </dependency>
+        <dependency>
+           <groupId>com.maxmind.geoip2</groupId>
+           <artifactId>geoip2</artifactId>
+           <version>0.4.0</version>
+           <exclusions>
+           	<exclusion>
+           		<artifactId>guava</artifactId>
+           		<groupId>com.google.guava</groupId>
+           	</exclusion>
+           </exclusions>
         </dependency>
      </dependencies>
 </project>
