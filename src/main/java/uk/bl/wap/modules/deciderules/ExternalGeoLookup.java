@@ -36,20 +36,21 @@ public class ExternalGeoLookup implements ExternalGeoLookupInterface {
 	private static final Logger LOGGER = Logger.getLogger( ExternalGeoLookup.class.getName() );
 
 	protected String database;
+	protected DatabaseReader reader;
 
 	public String getDatabase() {
 		return this.database;
 	}
 
-	public void setDatabase( String path ) {
-		LOGGER.info( "Database: " + path );
-		this.database = path;
+	public void setDatabase( String path ) throws IOException {
+		database = path;
+		LOGGER.info( "Database: " + database );
+		reader = new DatabaseReader( new File( database ) );
 	}
 
 	@Override
 	public String lookup( InetAddress ip ) {
 		try {
-			DatabaseReader reader = new DatabaseReader( new File( this.database ) );
 			City city = reader.city( InetAddress.getByName( ip.toString().split( "/" )[ 1 ] ) );
 			LOGGER.info( "CountryCode: " + city.getCountry().getIsoCode() );
 			return city.getCountry().getIsoCode();

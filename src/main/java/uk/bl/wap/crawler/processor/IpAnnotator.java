@@ -16,7 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 
 public class IpAnnotator extends Processor {
-	private static final long serialVersionUID = 1L;
 	private final static Logger LOGGER = Logger.getLogger( IpAnnotator.class.getName() );
 
 	protected ServerCache serverCache;

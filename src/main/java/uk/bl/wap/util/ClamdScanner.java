@@ -15,7 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ClamdScanner {
-	public static final int DEFAULT_CHUNK_SIZE = 4096; 
+	public static final int DEFAULT_CHUNK_SIZE = 64 * 1024; 
 	public static final byte[] INSTREAM = "zINSTREAM\0".getBytes();
 	public static final byte[] VERSION = "zVERSION\0".getBytes();
 	public static final byte[] SESSION = "zIDSESSION\0".getBytes();
@@ -24,6 +24,7 @@ public class ClamdScanner {
 
 	private InetSocketAddress inetSocket;
 	private int timeout;
+	private int streamMaxLength = -1;
 
 	public ClamdScanner() {
 		this.inetSocket = new InetSocketAddress( "localhost", 3310 );
@@ -34,6 +35,12 @@ public class ClamdScanner {
 		this.inetSocket = new InetSocketAddress( host, port );
 		this.timeout = timeout;
 	}
+
+	public ClamdScanner( String host, int port, int timeout, int streamMaxLength ) {
+		this.inetSocket = new InetSocketAddress( host, port );
+		this.timeout = timeout;
+		this.streamMaxLength = streamMaxLength;
+	}	
 
 	protected void setTimeout( int timeout ) {
 		this.timeout = timeout;
@@ -64,6 +71,7 @@ public class ClamdScanner {
 			// indicate that the command
 			// will be delimited by a NULL character...
 			output.write( INSTREAM );
+			int total = 0;
 			try {
 				while( ( read = input.read( buffer ) ) != -1 ) {
 					try {
@@ -71,6 +79,9 @@ public class ClamdScanner {
 						output.writeInt( read );
 						output.write( buffer, 0, read );
 						output.flush();
+						if( streamMaxLength != -1 && total >= streamMaxLength ) {
+							break;
+						}
 					} catch( IOException e ) {
 						LOGGER.log( Level.WARNING, "Error writing to DataOutputStream: " + e.toString() );
 						break;

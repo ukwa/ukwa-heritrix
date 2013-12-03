@@ -3,6 +3,9 @@ package uk.bl.wap.crawler.processor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.pool.BasePoolableObjectFactory;
+import org.apache.commons.pool.impl.GenericObjectPool;
+import org.apache.commons.pool.ObjectPool;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,12 +17,20 @@ import uk.bl.wap.util.ClamdScanner;
  * @author rcoram
  */
 
+@SuppressWarnings( "unused" )
 public class ViralContentProcessor extends Processor {
 	private final static Logger LOGGER = Logger.getLogger( ViralContentProcessor.class.getName() );
 	private static final long serialVersionUID = -321505737175991914L;
+	private static final int MAX_SCANNERS = 10;
+	private static final long MAX_WAIT = 1000L;
 	private int virusCount = 0;
+	private ClamdScannerPoolFactory clamdScannerPoolFactory = new ClamdScannerPoolFactory();
+	private ObjectPool<ClamdScanner> clamdScannerPool = null;
 
-	public ViralContentProcessor() {}
+	@SuppressWarnings( "unchecked" )
+	public ViralContentProcessor() {
+		clamdScannerPool = new GenericObjectPool<ClamdScanner>( clamdScannerPoolFactory, MAX_SCANNERS, GenericObjectPool.WHEN_EXHAUSTED_GROW, MAX_WAIT );
+	}
 
 	/**
 	 * The host machine on which clamd is running.
@@ -27,6 +38,7 @@ public class ViralContentProcessor extends Processor {
 	@Autowired
 	public void setClamdHost( String clamdHost ) {
 		kp.put( "clamdHost", clamdHost );
+		clamdScannerPoolFactory.setClamdHost( clamdHost );
 	}
 
 	private String getClamdHost() {
@@ -43,6 +55,7 @@ public class ViralContentProcessor extends Processor {
 	@Autowired
 	public void setClamdPort( int port ) {
 		kp.put( "clamdPort", port );
+		clamdScannerPoolFactory.setClamdPort( port );
 	}
 
 	/**
@@ -51,20 +64,27 @@ public class ViralContentProcessor extends Processor {
 	@Autowired
 	public void setClamdTimeout( int clamdTimeout ) {
 		kp.put( "clamdTimeout", clamdTimeout );
+		clamdScannerPoolFactory.setClamdTimeout( clamdTimeout );
 	}
 
 	private int getClamdTimeout() {
 		return ( Integer ) kp.get( "clamdTimeout" );
 	}
 
-	private ClamdScanner createScanner() {
-		return new ClamdScanner( this.getClamdHost(), this.getClamdPort(), this.getClamdTimeout() );
+	@Autowired
+	public void setStreamMaxLength( int streamMaxLength ) {
+		kp.put( "streamMaxLength", streamMaxLength );
+		clamdScannerPoolFactory.setStreamMaxLength( streamMaxLength );
+	}
+
+	private int getStreamMaxLength() {
+		return ( Integer ) kp.get( "streamMaxLength" );
 	}
 
 	@Override
 	protected void innerProcess( CrawlURI curi ) throws InterruptedException {
 		try {
-			ClamdScanner scanner = createScanner();
+			ClamdScanner scanner = clamdScannerPool.borrowObject();
 			String result = scanner.clamdScan( curi.getRecorder().getReplayInputStream() );
 			if( result.matches( "^([1-2]:\\s+)?stream:.+$" ) ) {
 				if( !result.matches( "^([1-2]:\\s+)?stream: OK.*$" ) ) {
@@ -92,5 +112,50 @@ public class ViralContentProcessor extends Processor {
 		report.append( "  Viruses found:   " + this.virusCount + "\n" );
 
 		return report.toString();
+	}
+
+	@SuppressWarnings( "rawtypes" )
+	public class ClamdScannerPoolFactory extends BasePoolableObjectFactory {
+		String clamdHost;
+		Integer clamdPort;
+		Integer clamdTimeout;
+		Integer streamMaxLength;
+
+		@Override
+		public Object makeObject() throws Exception {
+			return new ClamdScanner( this.getClamdHost(), this.getClamdPort(), this.getClamdTimeout(), this.getStreamMaxLength() );
+		}
+
+		public void setClamdHost( String clamdHost ) {
+			this.clamdHost = clamdHost;
+		}
+
+		private String getClamdHost() {
+			return this.clamdHost;
+		}
+
+		public int getClamdPort() {
+			return this.clamdPort;
+		}
+
+		public void setClamdPort( int clamdPort ) {
+			this.clamdPort = clamdPort;
+		}
+
+		public void setClamdTimeout( int clamdTimeout ) {
+			this.clamdTimeout = clamdTimeout;
+		}
+
+		private int getClamdTimeout() {
+			return this.clamdTimeout;
+		}
+
+		public void setStreamMaxLength( int streamMaxLength ) {
+			this.streamMaxLength = streamMaxLength;
+		}
+
+		private int getStreamMaxLength() {
+			return streamMaxLength;
+		}
 	}
 }
