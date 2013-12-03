@@ -1,6 +1,10 @@
 bl-heritrix-modules
 ===================
 
+To build:
+
+    mvn clean compile assembly:single
+
 Modules for Heritrix 3.
 
 * AnnotationMatchesListRegexDecideRule: DecideRule for checking against annotations.
