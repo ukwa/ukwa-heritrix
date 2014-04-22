@@ -1,7 +1,6 @@
 package uk.bl.wap.modules.writer;
 
 import static org.archive.modules.CoreAttributeConstants.A_WARC_RESPONSE_HEADERS;
-import static uk.bl.wap.io.warc.WARCConstants.VIRAL_CONTENT_MIMETYPE;
 
 import java.io.IOException;
 import java.net.URI;
@@ -27,6 +26,7 @@ import uk.bl.wap.io.XorInputStream;
 
 public class WARCViralWriterProcessor extends WARCWriterProcessor {
     private static final long serialVersionUID = 5818334757714399335L;
+    
 
     @Override
     protected URI writeResponse(final WARCWriter w, final String timestamp,
@@ -45,7 +45,6 @@ public class WARCViralWriterProcessor extends WARCWriterProcessor {
 	recordInfo.setType(WARCRecordType.conversion);
 	recordInfo.setUrl(curi.toString());
 	recordInfo.setCreate14DigitDate(timestamp);
-	recordInfo.setMimetype(VIRAL_CONTENT_MIMETYPE);
 	recordInfo.setRecordId(baseid);
 	recordInfo.setExtraHeaders(namedFields);
 	recordInfo.setContentLength(curi.getRecorder().getRecordedInput()
@@ -54,7 +53,9 @@ public class WARCViralWriterProcessor extends WARCWriterProcessor {
 
 	ReplayInputStream ris = curi.getRecorder().getRecordedInput()
 		.getReplayInputStream();
-	recordInfo.setContentStream(new XorInputStream(ris));
+	XorInputStream xor = new XorInputStream(ris);
+	recordInfo.setContentStream(xor);
+	recordInfo.setMimetype(xor.getMime());
 
 	try {
 	    w.writeRecord(recordInfo);
