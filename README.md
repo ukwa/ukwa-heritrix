@@ -17,4 +17,4 @@ Modules for Heritrix 3.
 * IpAnnotator: annotates each URI with the IP.
 * LinkLogger: posts entries to an external SOAP webservice (*no longer used).
 * ViralContentProcessor: passes incoming URIs to ClamAv.
-* WARCConstants, WARCViralWriter, WARCViralWriterPool, WARCViralWriterProcessor, XorInputStream: workarounds for force-writing of 'conversion' records based on XOR'd version of the original data.
+* WARCConstants, WARCViralWriterProcessor, XorInputStream: workarounds for force-writing of 'conversion' records based on XOR'd version of the original data.
