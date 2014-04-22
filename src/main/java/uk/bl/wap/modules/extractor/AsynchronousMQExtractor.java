@@ -8,6 +8,7 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.extractor.ContentExtractor;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.rabbitmq.client.AlreadyClosedException;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -79,14 +80,29 @@ public class AsynchronousMQExtractor extends ContentExtractor {
 		kp.put( "outputPath", output );
 	}
 
+	{
+		setDurable( "true" );
+	}
+	public String getDurable() {
+		return ( String ) kp.get( "durable" );
+	}
+	@Autowired
+	public void setDurable( String durable ) {
+		kp.put( "durable", durable );
+	}
+
 	public AsynchronousMQExtractor() {
 		this.pattern = Pattern.compile( SLASH_PAGE );
+		this.setupChannel();
+	}
+
+	private void setupChannel() {
 		try {
 			this.factory = new ConnectionFactory();
 			this.factory.setHost( this.getHost() );
 			this.conn = factory.newConnection();
 			this.channel = conn.createChannel();
-			this.channel.queueDeclare( this.getQueue(), false, false, false, null );
+			this.channel.queueDeclare( this.getQueue(), Boolean.parseBoolean( this.getDurable() ), false, false, null );
 		} catch( Exception e ) {
 			logger.warning( e.getMessage() );
 		}
@@ -97,8 +113,11 @@ public class AsynchronousMQExtractor extends ContentExtractor {
 		String message = curi.getURI() + "|" + this.getOutputPath();
 		try {
 			logger.info( "Sending " + message + " to " + this.getQueue() );
-			channel.basicPublish( "", this.getRoutingKey(), true, false, MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes() );
+			channel.basicPublish( "", this.getRoutingKey(), MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes() );
 			curi.getAnnotations().add( ANNOTATION );
+		} catch( AlreadyClosedException a ) {
+			logger.warning( a.getMessage() );
+			this.setupChannel();
 		} catch( Exception e ) {
 			logger.warning( e.getMessage() );
 		}
