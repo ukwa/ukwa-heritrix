@@ -16,27 +16,29 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 
 public class IpAnnotator extends Processor {
-	private final static Logger LOGGER = Logger.getLogger( IpAnnotator.class.getName() );
+    private final static Logger LOGGER = Logger.getLogger(IpAnnotator.class
+	    .getName());
 
-	protected ServerCache serverCache;
+    protected ServerCache serverCache;
 
-	@Autowired
-	public void setServerCache( ServerCache serverCache ) {
-		this.serverCache = serverCache;
+    @Autowired
+    public void setServerCache(ServerCache serverCache) {
+	this.serverCache = serverCache;
+    }
+
+    @Override
+    protected boolean shouldProcess(CrawlURI curi) {
+	return true;
+    }
+
+    @Override
+    protected void innerProcess(CrawlURI curi) {
+	try {
+	    CrawlHost host = serverCache.getHostFor(curi.getUURI());
+	    curi.getAnnotations().add(
+		    "ip:" + host.getIP().toString().split("/")[1]);
+	} catch (Exception e) {
+	    LOGGER.log(Level.INFO, e.getMessage());
 	}
-
-	@Override
-	protected boolean shouldProcess( CrawlURI curi ) {
-		return true;
-	}
-
-	@Override
-	protected void innerProcess( CrawlURI curi ) {
-		try {
-			CrawlHost host = serverCache.getHostFor( curi.getUURI() );
-			curi.getAnnotations().add( host.getIP().toString().split( "/" )[ 1 ] );
-		} catch( Exception e ) {
-			LOGGER.log( Level.INFO, e.getMessage() );
-		}
-	}
+    }
 }

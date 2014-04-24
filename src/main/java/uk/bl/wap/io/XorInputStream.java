@@ -13,7 +13,6 @@ import java.util.logging.Logger;
  */
 
 public class XorInputStream extends InputStream {
-    private String mime = "application/http; encoding=bytewise_xor_with_118";
     private final static Logger LOGGER = Logger.getLogger(XorInputStream.class
 	    .getName());
     private byte key = 'v';
@@ -22,16 +21,14 @@ public class XorInputStream extends InputStream {
     public XorInputStream(InputStream in, byte key) {
 	this.in = in;
 	this.key = key;
-	this.mime = "application/http; encoding=bytewise_xor_with_"
-		+ key;
     }
 
     public XorInputStream(InputStream in) {
 	this.in = in;
     }
 
-    public String getMime() {
-	return this.mime;
+    public byte getKey() {
+	return this.key;
     }
 
     @Override
