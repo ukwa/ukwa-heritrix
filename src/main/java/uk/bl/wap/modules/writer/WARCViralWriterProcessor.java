@@ -26,7 +26,6 @@ import uk.bl.wap.io.XorInputStream;
 
 public class WARCViralWriterProcessor extends WARCWriterProcessor {
     private static final long serialVersionUID = 5818334757714399335L;
-    
 
     @Override
     protected URI writeResponse(final WARCWriter w, final String timestamp,
@@ -55,7 +54,8 @@ public class WARCViralWriterProcessor extends WARCWriterProcessor {
 		.getReplayInputStream();
 	XorInputStream xor = new XorInputStream(ris);
 	recordInfo.setContentStream(xor);
-	recordInfo.setMimetype(xor.getMime());
+	recordInfo.setMimetype("application/http; encoding=bytewise_xor_with_"
+		+ xor.getKey());
 
 	try {
 	    w.writeRecord(recordInfo);

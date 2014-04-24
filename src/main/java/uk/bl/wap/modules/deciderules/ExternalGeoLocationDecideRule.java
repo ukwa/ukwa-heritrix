@@ -13,56 +13,58 @@ import org.archive.modules.deciderules.ExternalGeoLookupInterface;
 import org.archive.modules.net.CrawlHost;
 import org.xbill.DNS.Address;
 
-public class ExternalGeoLocationDecideRule extends org.archive.modules.deciderules.ExternalGeoLocationDecideRule {
-	private static final long serialVersionUID = 8790007524831875385L;
+public class ExternalGeoLocationDecideRule extends
+	org.archive.modules.deciderules.ExternalGeoLocationDecideRule {
+    private static final long serialVersionUID = 8790007524831875385L;
 
-	private static final Logger LOGGER = Logger.getLogger( ExternalGeoLocationDecideRule.class.getName() );
+    private static final Logger LOGGER = Logger
+	    .getLogger(ExternalGeoLocationDecideRule.class.getName());
     protected List<String> countryCodes = new ArrayList<String>();
-	protected ExternalGeoLookupInterface lookup = null;
+    protected ExternalGeoLookupInterface lookup = null;
 
-	@Override
-	public void setCountryCodes(List<String> codes) {
-        this.countryCodes = codes;
-		LOGGER.fine( "countryCodes set to " + this.countryCodes );
+    @Override
+    public void setCountryCodes(List<String> codes) {
+	this.countryCodes = codes;
+	LOGGER.fine("countryCodes set to " + this.countryCodes);
     }
 
-	@Override
-	protected boolean evaluate( CrawlURI uri ) {
-		ExternalGeoLookupInterface impl = getLookup();
-		if( impl == null ) {
-			return false;
-		}
-		CrawlHost crawlHost = null;
-		String host;
-		InetAddress address;
-		try {
-			host = uri.getUURI().getHost();
-			crawlHost = serverCache.getHostFor( host );
-			if( crawlHost == null ) {
-				return false;
-			}
-			if( crawlHost.getCountryCode() != null ) {
-				return countryCodes.contains( crawlHost.getCountryCode() );
-			}
-			address = crawlHost.getIP();
-			if( address == null ) {
-				address = Address.getByName( host );
-			}
-			crawlHost.setCountryCode( ( String ) impl.lookup( address ) );
-			uri.getAnnotations().add( "countryCode:" + crawlHost.getCountryCode() );
-			if( countryCodes.contains( crawlHost.getCountryCode() ) ) {
-				LOGGER.fine( "Country Code Lookup: " + " " + host + crawlHost.getCountryCode() );
-				return true;
-			}
-		} catch( UnknownHostException e ) {
-			LOGGER.log( Level.FINE, "Failed dns lookup " + uri, e );
-			if( crawlHost != null ) {
-				crawlHost.setCountryCode( "--" );
-			}
-		} catch( URIException e ) {
-			LOGGER.log( Level.FINE, "Failed to parse hostname " + uri, e );
-		}
-
-		return false;
+    @Override
+    protected boolean evaluate(CrawlURI uri) {
+	ExternalGeoLookupInterface impl = getLookup();
+	if (impl == null) {
+	    return false;
 	}
+	CrawlHost crawlHost = null;
+	String host;
+	InetAddress address;
+	try {
+	    host = uri.getUURI().getHost();
+	    crawlHost = serverCache.getHostFor(host);
+	    if (crawlHost == null) {
+		return false;
+	    }
+	    if (crawlHost.getCountryCode() != null) {
+		return countryCodes.contains(crawlHost.getCountryCode());
+	    }
+	    address = crawlHost.getIP();
+	    if (address == null) {
+		address = Address.getByName(host);
+	    }
+	    crawlHost.setCountryCode((String) impl.lookup(address));
+	    if (countryCodes.contains(crawlHost.getCountryCode())) {
+		LOGGER.fine("Country Code Lookup: " + host + " "
+			+ crawlHost.getCountryCode());
+		return true;
+	    }
+	} catch (UnknownHostException e) {
+	    LOGGER.log(Level.FINE, "Failed dns lookup " + uri, e);
+	    if (crawlHost != null) {
+		crawlHost.setCountryCode("--");
+	    }
+	} catch (URIException e) {
+	    LOGGER.log(Level.FINE, "Failed to parse hostname " + uri, e);
+	}
+
+	return false;
+    }
 }
