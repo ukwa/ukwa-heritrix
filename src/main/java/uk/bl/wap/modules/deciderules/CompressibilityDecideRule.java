@@ -7,6 +7,7 @@ import org.archive.modules.deciderules.PredicatedDecideRule;
 
 public class CompressibilityDecideRule extends PredicatedDecideRule {
     private static final long serialVersionUID = 5661525469638017661L;
+    private final Deflater compresser = new Deflater(Deflater.BEST_SPEED);
 
     {
 	setMin(0.4D);
@@ -35,13 +36,15 @@ public class CompressibilityDecideRule extends PredicatedDecideRule {
     @Override
     protected boolean evaluate(CrawlURI curi) {
 	try {
-	    Deflater compresser = new Deflater(Deflater.BEST_SPEED);
 	    byte[] input = curi.getURI().getBytes("UTF-8");
 	    byte[] output = new byte[input.length + 100];
-	    compresser.setInput(input);
-	    compresser.finish();
-	    int compressedDataLength = compresser.deflate(output);
-	    compresser.reset();
+	    int compressedDataLength;
+	    synchronized (compresser) {
+		compresser.setInput(input);
+		compresser.finish();
+		compressedDataLength = compresser.deflate(output);
+		compresser.reset();
+	    }
 	    double compressability = ((double) compressedDataLength)
 		    / ((double) input.length);
 	    return ((compressability > this.getMin()) && (compressability < this

@@ -74,6 +74,7 @@ public class ClamdScanner {
 			int total = 0;
 			try {
 				while( ( read = input.read( buffer ) ) != -1 ) {
+				    	total += read;
 					try {
 						// The format of the chunk is: '<length><data>'...
 						output.writeInt( read );
