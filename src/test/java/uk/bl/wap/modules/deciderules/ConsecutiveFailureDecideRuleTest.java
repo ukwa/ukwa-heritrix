@@ -2,6 +2,7 @@ package uk.bl.wap.modules.deciderules;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -17,7 +18,7 @@ public class ConsecutiveFailureDecideRuleTest {
 	CrawlURI referrer = createTestUri("http://www.bl.uk/", 200);
 	uri.setFullVia(referrer);
 
-	Assert.assertFalse(dr.evaluate(uri));
+	Assert.assertEquals(DecideResult.NONE, dr.decisionFor(uri));
     }
 
     @Test
@@ -27,7 +28,7 @@ public class ConsecutiveFailureDecideRuleTest {
 	CrawlURI referrer = createTestUri("http://www.bl.uk/", 200);
 	uri.setFullVia(referrer);
 
-	Assert.assertFalse(dr.evaluate(uri));
+	Assert.assertEquals(DecideResult.NONE, dr.decisionFor(uri));
     }
 
     @Test
@@ -37,7 +38,7 @@ public class ConsecutiveFailureDecideRuleTest {
 	CrawlURI referrer = createTestUri("http://www.bl.uk/", 404);
 	uri.setFullVia(referrer);
 
-	Assert.assertTrue(dr.evaluate(uri));
+	Assert.assertEquals(DecideResult.REJECT, dr.decisionFor(uri));
     }
 
     @Test
@@ -47,7 +48,7 @@ public class ConsecutiveFailureDecideRuleTest {
 	CrawlURI referrer = createTestUri("http://www.bl.uk/", 404);
 	uri.setFullVia(referrer);
 
-	Assert.assertFalse(dr.evaluate(uri));
+	Assert.assertEquals(DecideResult.NONE, dr.decisionFor(uri));
     }
 
     private CrawlURI createTestUri(String urlStr, int statusCode) throws URIException {

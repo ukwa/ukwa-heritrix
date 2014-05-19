@@ -1,6 +1,5 @@
 package uk.bl.wap.modules.deciderules;
 
-import java.util.logging.Logger;
 import java.util.zip.Deflater;
 
 import org.archive.modules.CrawlURI;
@@ -19,9 +18,6 @@ import org.archive.modules.deciderules.PredicatedDecideRule;
 public class CompressibilityDecideRule extends PredicatedDecideRule {
     private static final long serialVersionUID = 5661525469638017661L;
     private final Deflater compresser = new Deflater(Deflater.BEST_SPEED);
-    private static final Logger LOGGER = Logger
-	    .getLogger(CompressibilityDecideRule.class.getName());
-
     {
 	setDecision(DecideResult.REJECT);
     }
@@ -66,10 +62,6 @@ public class CompressibilityDecideRule extends PredicatedDecideRule {
 		    / ((double) input.length);
 	    boolean result = ((compressibility < this.getMin()) || (compressibility > this
 		    .getMax()));
-	    if (result) {
-		LOGGER.info("CompressibilityDecideRule: " + curi.getURI()
-			+ " [" + compressibility + "]");
-	    }
 	    return result;
 	} catch (Exception e) {
 	    e.printStackTrace();
