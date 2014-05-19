@@ -1,9 +1,9 @@
 bl-heritrix-modules
 ===================
 
-To build:
+To test and build:
 
-    mvn clean compile assembly:single
+    mvn clean install assembly:single
 
 Modules for Heritrix 3.
 

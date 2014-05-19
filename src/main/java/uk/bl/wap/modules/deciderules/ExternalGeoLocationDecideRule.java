@@ -50,11 +50,14 @@ public class ExternalGeoLocationDecideRule extends
 	    if (address == null) {
 		address = Address.getByName(host);
 	    }
-	    crawlHost.setCountryCode((String) impl.lookup(address));
-	    if (countryCodes.contains(crawlHost.getCountryCode())) {
-		LOGGER.fine("Country Code Lookup: " + host + " "
-			+ crawlHost.getCountryCode());
-		return true;
+	    String cc = (String) impl.lookup(address);
+	    if (cc != null) {
+		crawlHost.setCountryCode(cc);
+		if (countryCodes.contains(crawlHost.getCountryCode())) {
+		    LOGGER.fine("Country Code Lookup: " + host + " "
+			    + crawlHost.getCountryCode());
+		    return true;
+		}
 	    }
 	} catch (UnknownHostException e) {
 	    LOGGER.log(Level.FINE, "Failed dns lookup " + uri, e);
@@ -64,7 +67,6 @@ public class ExternalGeoLocationDecideRule extends
 	} catch (URIException e) {
 	    LOGGER.log(Level.FINE, "Failed to parse hostname " + uri, e);
 	}
-
 	return false;
     }
 }

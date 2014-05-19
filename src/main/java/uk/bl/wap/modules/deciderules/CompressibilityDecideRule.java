@@ -1,16 +1,33 @@
 package uk.bl.wap.modules.deciderules;
 
+import java.util.logging.Logger;
 import java.util.zip.Deflater;
 
 import org.archive.modules.CrawlURI;
+import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.PredicatedDecideRule;
+
+/**
+ * DecideRule which rejects URIs which fall below or above a min/max value
+ * respectively, said value being the ratio of the original URI's length versus
+ * its compressed length.
+ * 
+ * @author rcoram
+ * 
+ */
 
 public class CompressibilityDecideRule extends PredicatedDecideRule {
     private static final long serialVersionUID = 5661525469638017661L;
     private final Deflater compresser = new Deflater(Deflater.BEST_SPEED);
+    private static final Logger LOGGER = Logger
+	    .getLogger(CompressibilityDecideRule.class.getName());
 
     {
-	setMin(0.4D);
+	setDecision(DecideResult.REJECT);
+    }
+
+    {
+	setMin(0.28D);
     }
 
     public void setMin(double min) {
@@ -22,7 +39,7 @@ public class CompressibilityDecideRule extends PredicatedDecideRule {
     }
 
     {
-	setMax(0.6D);
+	setMax(1.6D);
     }
 
     public void setMax(double max) {
@@ -45,10 +62,15 @@ public class CompressibilityDecideRule extends PredicatedDecideRule {
 		compressedDataLength = compresser.deflate(output);
 		compresser.reset();
 	    }
-	    double compressability = ((double) compressedDataLength)
+	    double compressibility = ((double) compressedDataLength)
 		    / ((double) input.length);
-	    return ((compressability > this.getMin()) && (compressability < this
+	    boolean result = ((compressibility < this.getMin()) || (compressibility > this
 		    .getMax()));
+	    if (result) {
+		LOGGER.info("CompressibilityDecideRule: " + curi.getURI()
+			+ " [" + compressibility + "]");
+	    }
+	    return result;
 	} catch (Exception e) {
 	    e.printStackTrace();
 	}
