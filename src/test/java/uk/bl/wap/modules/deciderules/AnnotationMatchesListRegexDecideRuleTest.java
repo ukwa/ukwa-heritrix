@@ -65,7 +65,7 @@ public class AnnotationMatchesListRegexDecideRuleTest {
 		DecideResult.ACCEPT, patterns, true);
 	CrawlURI testUri = createTestUri("http://www.bl.uk/");
 	testUri.getAnnotations()
-	.add("melee attack nonplayer character one-handed weapon paralyzed saving throw.");
+		.add("melee attack nonplayer character one-handed weapon paralyzed saving throw.");
 
 	Assert.assertEquals(DecideResult.NONE, a.decisionFor(testUri));
     }

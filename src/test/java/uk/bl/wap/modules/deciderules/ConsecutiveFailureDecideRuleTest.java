@@ -51,7 +51,8 @@ public class ConsecutiveFailureDecideRuleTest {
 	Assert.assertEquals(DecideResult.NONE, dr.decisionFor(uri));
     }
 
-    private CrawlURI createTestUri(String urlStr, int statusCode) throws URIException {
+    private CrawlURI createTestUri(String urlStr, int statusCode)
+	    throws URIException {
 	UURI testUuri = UURIFactory.getInstance(urlStr);
 	CrawlURI testUri = new CrawlURI(testUuri, null, null,
 		LinkContext.NAVLINK_MISC);
