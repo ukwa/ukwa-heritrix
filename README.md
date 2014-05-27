@@ -5,7 +5,7 @@ To test and build:
 
     mvn clean install assembly:single
 
-Modules for Heritrix 3.
+Modules for Heritrix 3.2.0+
 
 * AnnotationMatchesListRegexDecideRule: DecideRule for checking against annotations.
 * AsynchronousMQExtractor: publishes messages to an external queue for processing (see 'WebTools'; https://github.com/openplanets/wap.git)
