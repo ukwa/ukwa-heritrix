@@ -20,6 +20,11 @@ public class ConsecutiveFailureDecideRule extends PredicatedDecideRule {
     }
 
     @Override
+    public DecideResult onlyDecision(CrawlURI uri) {
+	return this.getDecision();
+    }
+
+    @Override
     protected boolean evaluate(CrawlURI curi) {
 	return ((curi.getFetchStatus() >= 400) && (curi.getFullVia()
 		.getFetchStatus() >= 400));

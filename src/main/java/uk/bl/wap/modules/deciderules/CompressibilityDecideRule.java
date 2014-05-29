@@ -47,6 +47,11 @@ public class CompressibilityDecideRule extends PredicatedDecideRule {
     }
 
     @Override
+    public DecideResult onlyDecision(CrawlURI uri) {
+	return this.getDecision();
+    }
+
+    @Override
     protected boolean evaluate(CrawlURI curi) {
 	try {
 	    byte[] input = curi.getURI().getBytes("UTF-8");

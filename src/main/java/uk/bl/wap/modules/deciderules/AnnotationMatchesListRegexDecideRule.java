@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.archive.modules.CrawlURI;
+import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.MatchesListRegexDecideRule;
 
 /**
@@ -17,6 +18,11 @@ import org.archive.modules.deciderules.MatchesListRegexDecideRule;
 public class AnnotationMatchesListRegexDecideRule extends
 	MatchesListRegexDecideRule {
     private static final long serialVersionUID = 5908003685263995848L;
+
+    @Override
+    public DecideResult onlyDecision(CrawlURI uri) {
+	return this.getDecision();
+    }
 
     @Override
     protected boolean evaluate(CrawlURI uri) {

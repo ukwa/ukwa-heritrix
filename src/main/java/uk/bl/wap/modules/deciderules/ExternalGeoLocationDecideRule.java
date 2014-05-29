@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.ExternalGeoLookupInterface;
 import org.archive.modules.net.CrawlHost;
 import org.xbill.DNS.Address;
@@ -26,6 +27,11 @@ public class ExternalGeoLocationDecideRule extends
     public void setCountryCodes(List<String> codes) {
 	this.countryCodes = codes;
 	LOGGER.fine("countryCodes set to " + this.countryCodes);
+    }
+
+    @Override
+    public DecideResult onlyDecision(CrawlURI uri) {
+	return this.getDecision();
     }
 
     @Override
