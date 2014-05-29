@@ -51,7 +51,7 @@
 		<dependency>
 			<groupId>org.archive.heritrix</groupId>
 			<artifactId>heritrix-commons</artifactId>
-			<version>3.2.0</version>
+            <version>3.3.0-SNAPSHOT</version>
 			<scope>provided</scope>
 			<exclusions>
 				<exclusion>
@@ -63,13 +63,13 @@
 		<dependency>
 			<groupId>org.archive.heritrix</groupId>
 			<artifactId>heritrix-modules</artifactId>
-			<version>3.2.0</version>
+			<version>3.3.0-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.archive.heritrix</groupId>
 			<artifactId>heritrix-engine</artifactId>
-			<version>3.2.0</version>
+            <version>3.3.0-SNAPSHOT</version>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -86,6 +86,10 @@
 					<artifactId>guava</artifactId>
 					<groupId>com.google.guava</groupId>
 				</exclusion>
+				<exclusion>
+					<artifactId>httpclient</artifactId>
+					<groupId>org.apache.httpcomponents</groupId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 		<dependency>
@@ -97,7 +101,7 @@
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>14.0.1</version>
-			<scope>test</scope>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
