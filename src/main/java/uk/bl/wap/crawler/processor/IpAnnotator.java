@@ -28,17 +28,20 @@ public class IpAnnotator extends Processor {
 
     @Override
     protected boolean shouldProcess(CrawlURI curi) {
-	return true;
+	return curi.isSuccess();
     }
 
     @Override
     protected void innerProcess(CrawlURI curi) {
 	try {
 	    CrawlHost host = serverCache.getHostFor(curi.getUURI());
-	    curi.getAnnotations().add(
-		    "ip:" + host.getIP().toString().split("/")[1]);
+	    if (host != null && host.getIP() != null) {
+		curi.getAnnotations().add(
+			"ip:" + host.getIP().toString().split("/")[1]);
+	    }
 	} catch (Exception e) {
-	    LOGGER.log(Level.INFO, e.getMessage());
+	    LOGGER.log(Level.WARNING, "Problem adding IP: " + curi.getURI(), e);
+	    curi.getNonFatalFailures().add(e);
 	}
     }
 }
