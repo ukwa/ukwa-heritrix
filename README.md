@@ -12,9 +12,11 @@ Modules for Heritrix 3.2.0+
 * ClamdScanner: for processing in an external ClamAv daemon.
 * CompressibilityDecideRule: REJECTs highly-compressable (and highly incompressibl) URIs.
 * ConsecutiveFailureDecideRule: REJECTs a URI if both it and its referrer's HTTP status codes are >= 400.
+* CountryCodeAnnotator: adds a country-code annotation to each URI.
 * ExternalGeoLookup: implementation of ExternalGeoLookupInterface for use with a ExternalGeoLocationDecideRule; uses MaxMind's GeoLite2 database.
 * ExtractorJson: extracts URIs from JSON-formatted data.
 * ExtractorPattern: extracts URIs based on regular expressions (*written explicitly for one site; not widely used).
+* HashingCrawlMapper: intended as a simpler version of the HashCrawlMapper using the Hashing libraries.
 * IpAnnotator: annotates each URI with the IP.
 * ViralContentProcessor: passes incoming URIs to ClamAv.
 * WARCViralWriterProcessor, XorInputStream: workarounds for force-writing of 'conversion' records based on XOR'd version of the original data.
