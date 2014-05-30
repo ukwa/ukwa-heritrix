@@ -3,19 +3,21 @@ package uk.bl.wap.modules.extractor;
 import static org.archive.modules.extractor.Hop.SPECULATIVE;
 import static org.archive.modules.extractor.LinkContext.SPECULATIVE_MISC;
 
-import java.io.InputStreamReader;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.archive.modules.CrawlURI;
 import org.archive.modules.extractor.ContentExtractor;
 import org.archive.modules.extractor.Link;
 import org.archive.util.UriUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.JSONTokener;
+
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Extracts URIs from JSON resources.
@@ -26,25 +28,24 @@ import org.json.JSONTokener;
 
 public class ExtractorJson extends ContentExtractor {
     public final static String JSON_URI = "^https?://[^/]+/.+\\.json\\b.*$";
+    private static final Logger LOGGER = Logger.getLogger(ExtractorJson.class
+	    .getName());
+    private JsonFactory factory = new JsonFactory();
+    private ObjectMapper mapper = new ObjectMapper(factory);
 
     @Override
     protected boolean innerExtract(CrawlURI curi) {
 	try {
-	    JSONTokener tokener = new JSONTokener(new InputStreamReader(curi
-		    .getRecorder().getContentReplayInputStream()));
-	    JSONObject json = new JSONObject(tokener);
-	    Map<String, String> map = new HashMap<String, String>();
-	    parse(json, map);
-	    String link = null;
-	    for (String key : map.keySet()) {
-		link = map.get(key);
-		if (UriUtils.isVeryLikelyUri(map.get(key))) {
-		    Link.addRelativeToBase(curi, this.getExtractorParameters()
-			    .getMaxOutlinks(), link, SPECULATIVE_MISC,
-			    SPECULATIVE);
-		}
+	    List<String> links = new ArrayList<String>();
+	    JsonNode rootNode = mapper.readTree(curi.getRecorder()
+		    .getContentReplayInputStream());
+	    parse(rootNode, links);
+	    for (String link : links) {
+		Link.addRelativeToBase(curi, this.getExtractorParameters()
+			.getMaxOutlinks(), link, SPECULATIVE_MISC, SPECULATIVE);
 	    }
 	} catch (Exception e) {
+	    LOGGER.log(Level.WARNING, curi.getURI(), e);
 	    curi.getNonFatalFailures().add(e);
 	}
 	return false;
@@ -63,30 +64,23 @@ public class ExtractorJson extends ContentExtractor {
 	return false;
     }
 
-    @SuppressWarnings("unchecked")
-    private static Map<String, String> parse(JSONObject json,
-	    Map<String, String> map) throws JSONException {
-	Iterator<String> keys = json.keys();
-	while (keys.hasNext()) {
-	    String key = keys.next();
-	    String val = null;
-	    try {
-		JSONObject value = json.getJSONObject(key);
-		parse(value, map);
-	    } catch (Exception e) {
-		try {
-		    JSONArray value = json.getJSONArray(key);
-		    for (int i = 0; i < value.length(); i++) {
-			parse(value.getJSONObject(i), map);
-		    }
-		} catch (Exception f) {
-		    val = json.getString(key);
+    protected List<String> parse(JsonNode rootNode, List<String> links) {
+	Iterator<Map.Entry<String, JsonNode>> fieldsIterator = rootNode
+		.fields();
+	while (fieldsIterator.hasNext()) {
+	    Map.Entry<String, JsonNode> field = fieldsIterator.next();
+	    if (field.getValue().textValue() != null
+		    && UriUtils.isVeryLikelyUri(field.getValue().textValue())) {
+		links.add(field.getValue().textValue());
+	    } else if (field.getValue().isObject()) {
+		parse(field.getValue(), links);
+	    } else if (field.getValue().isArray()) {
+		Iterator<JsonNode> i = field.getValue().elements();
+		while (i.hasNext()) {
+		    parse(i.next(), links);
 		}
 	    }
-	    if (val != null) {
-		map.put(key, val);
-	    }
 	}
-	return map;
+	return links;
     }
 }
