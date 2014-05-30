@@ -1,5 +1,6 @@
 package uk.bl.wap.crawler.processor;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.archive.modules.CrawlURI;
@@ -27,14 +28,17 @@ public class CountryCodeAnnotator extends Processor {
     protected void innerProcess(CrawlURI curi) {
 	try {
 	    CrawlHost host = serverCache.getHostFor(curi.getUURI());
-	    String countryCode = host.getCountryCode();
-	    if (countryCode != null && !countryCode.equals("")
-		    && !countryCode.equals("--")) {
-		curi.getAnnotations().add("geo:" + countryCode);
+	    if (host != null) {
+		String countryCode = host.getCountryCode();
+		if (countryCode != null && !countryCode.equals("")
+			&& !countryCode.equals("--")) {
+		    curi.getAnnotations().add("geo:" + countryCode);
+		}
 	    }
 	} catch (Exception e) {
-	    LOGGER.warning(e.getMessage());
-	    e.printStackTrace();
+	    LOGGER.log(Level.WARNING,
+		    "Problem adding CountryCode: " + curi.getURI(), e);
+	    curi.getNonFatalFailures().add(e);
 	}
     }
 

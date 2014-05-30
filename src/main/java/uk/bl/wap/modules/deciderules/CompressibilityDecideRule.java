@@ -1,5 +1,9 @@
 package uk.bl.wap.modules.deciderules;
 
+import java.io.UnsupportedEncodingException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import java.util.zip.Deflater;
 
 import org.archive.modules.CrawlURI;
@@ -17,6 +21,8 @@ import org.archive.modules.deciderules.PredicatedDecideRule;
 
 public class CompressibilityDecideRule extends PredicatedDecideRule {
     private static final long serialVersionUID = 5661525469638017661L;
+    private static final Logger LOGGER = Logger
+	    .getLogger(CompressibilityDecideRule.class.getName());
     private final Deflater compresser = new Deflater(Deflater.BEST_SPEED);
     {
 	setDecision(DecideResult.REJECT);
@@ -68,8 +74,9 @@ public class CompressibilityDecideRule extends PredicatedDecideRule {
 	    boolean result = ((compressibility < this.getMin()) || (compressibility > this
 		    .getMax()));
 	    return result;
-	} catch (Exception e) {
-	    e.printStackTrace();
+	} catch (UnsupportedEncodingException e) {
+	    LOGGER.log(Level.WARNING, curi.getURI(), e);
+	    curi.getNonFatalFailures().add(e);
 	}
 	return false;
     }

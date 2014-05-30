@@ -67,11 +67,13 @@ public class ExternalGeoLocationDecideRule extends
 	    }
 	} catch (UnknownHostException e) {
 	    LOGGER.log(Level.FINE, "Failed dns lookup " + uri, e);
+	    uri.getNonFatalFailures().add(e);
 	    if (crawlHost != null) {
 		crawlHost.setCountryCode("--");
 	    }
 	} catch (URIException e) {
 	    LOGGER.log(Level.FINE, "Failed to parse hostname " + uri, e);
+	    uri.getNonFatalFailures().add(e);
 	}
 	return false;
     }

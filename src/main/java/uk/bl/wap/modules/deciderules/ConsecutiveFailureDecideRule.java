@@ -1,5 +1,8 @@
 package uk.bl.wap.modules.deciderules;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.PredicatedDecideRule;
@@ -14,6 +17,8 @@ import org.archive.modules.deciderules.PredicatedDecideRule;
 
 public class ConsecutiveFailureDecideRule extends PredicatedDecideRule {
     private static final long serialVersionUID = 2029296473953425876L;
+    private static final Logger LOGGER = Logger
+	    .getLogger(ConsecutiveFailureDecideRule.class.getName());
 
     {
 	setDecision(DecideResult.REJECT);
@@ -26,8 +31,15 @@ public class ConsecutiveFailureDecideRule extends PredicatedDecideRule {
 
     @Override
     protected boolean evaluate(CrawlURI curi) {
-	return ((curi.getFetchStatus() >= 400) && (curi.getFullVia()
-		.getFetchStatus() >= 400));
+	boolean result = false;
+	try {
+	    result = ((curi.getFetchStatus() >= 400)
+		    && (curi.getFullVia() != null) && (curi.getFullVia()
+		    .getFetchStatus() >= 400));
+	} catch (Exception e) {
+	    LOGGER.log(Level.WARNING, curi.getURI(), e);
+	    curi.getNonFatalFailures().add(e);
+	}
+	return result;
     }
-
 }
