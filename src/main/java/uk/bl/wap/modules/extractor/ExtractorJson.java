@@ -58,7 +58,7 @@ public class ExtractorJson extends ContentExtractor {
 	    return true;
 	}
 
-	if (curi.toString().matches(JSON_URI)) {
+	if (curi.isSuccess() && curi.toString().matches(JSON_URI)) {
 	    return true;
 	}
 	return false;

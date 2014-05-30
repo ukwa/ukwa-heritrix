@@ -44,6 +44,7 @@ public class ExtractorJsonTest {
     public void testShouldProcessJsonUri() throws Exception {
 	ExtractorJson e = new ExtractorJson();
 	CrawlURI curi = createTestUri("http://www.bl.uk/url.json");
+	curi.setFetchStatus(200);
 
 	Assert.assertTrue(e.shouldExtract(curi));
     }
