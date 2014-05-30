@@ -9,7 +9,7 @@ import org.archive.modules.deciderules.ExternalGeoLookupInterface;
 
 import com.maxmind.geoip2.DatabaseReader;
 import com.maxmind.geoip2.exception.GeoIp2Exception;
-import com.maxmind.geoip2.model.City;
+import com.maxmind.geoip2.model.CityResponse;
 
 /**
  * <pre>
@@ -28,7 +28,9 @@ import com.maxmind.geoip2.model.City;
  *     </property>
  *   </bean>
  * </pre>
+ * 
  * }
+ * 
  * @author rcoram
  */
 
@@ -47,16 +49,16 @@ public class ExternalGeoLookup implements ExternalGeoLookupInterface {
     public void setDatabase(String path) throws IOException {
 	database = path;
 	LOGGER.info("Database: " + database);
-	reader = new DatabaseReader(new File(database));
+	reader = new DatabaseReader.Builder(new File(database)).build();
     }
 
     @Override
     public String lookup(InetAddress ip) {
 	try {
-	    City city = reader.city(InetAddress.getByName(ip.toString().split(
-		    "/")[1]));
-	    LOGGER.finest("CountryCode: " + city.getCountry().getIsoCode());
-	    return city.getCountry().getIsoCode();
+	    CityResponse city = reader.city(ip);
+	    if (city != null) {
+		return city.getCountry().getIsoCode();
+	    }
 	} catch (IOException e) {
 	    LOGGER.warning(e.getMessage());
 	} catch (GeoIp2Exception e) {

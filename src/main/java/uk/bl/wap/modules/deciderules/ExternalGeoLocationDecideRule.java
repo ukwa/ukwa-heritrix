@@ -35,7 +35,7 @@ public class ExternalGeoLocationDecideRule extends
     }
 
     @Override
-    protected boolean evaluate(CrawlURI uri) {
+    protected boolean evaluate(CrawlURI curi) {
 	ExternalGeoLookupInterface impl = getLookup();
 	if (impl == null) {
 	    return false;
@@ -44,7 +44,7 @@ public class ExternalGeoLocationDecideRule extends
 	String host;
 	InetAddress address;
 	try {
-	    host = uri.getUURI().getHost();
+	    host = curi.getUURI().getHost();
 	    crawlHost = serverCache.getHostFor(host);
 	    if (crawlHost == null) {
 		return false;
@@ -66,14 +66,14 @@ public class ExternalGeoLocationDecideRule extends
 		}
 	    }
 	} catch (UnknownHostException e) {
-	    LOGGER.log(Level.FINE, "Failed dns lookup " + uri, e);
-	    uri.getNonFatalFailures().add(e);
+	    LOGGER.log(Level.FINE, "Failed dns lookup " + curi, e);
+	    curi.getNonFatalFailures().add(e);
 	    if (crawlHost != null) {
 		crawlHost.setCountryCode("--");
 	    }
 	} catch (URIException e) {
-	    LOGGER.log(Level.FINE, "Failed to parse hostname " + uri, e);
-	    uri.getNonFatalFailures().add(e);
+	    LOGGER.log(Level.FINE, "Failed to parse hostname " + curi, e);
+	    curi.getNonFatalFailures().add(e);
 	}
 	return false;
     }

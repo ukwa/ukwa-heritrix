@@ -37,7 +37,7 @@ public class IpAnnotator extends Processor {
 	    CrawlHost host = serverCache.getHostFor(curi.getUURI());
 	    if (host != null && host.getIP() != null) {
 		curi.getAnnotations().add(
-			"ip:" + host.getIP().toString().split("/")[1]);
+			"ip:" + host.getIP().getHostAddress());
 	    }
 	} catch (Exception e) {
 	    LOGGER.log(Level.WARNING, "Problem adding IP: " + curi.getURI(), e);
