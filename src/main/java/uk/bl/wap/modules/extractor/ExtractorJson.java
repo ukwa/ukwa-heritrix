@@ -1,8 +1,5 @@
 package uk.bl.wap.modules.extractor;
 
-import static org.archive.modules.extractor.Hop.SPECULATIVE;
-import static org.archive.modules.extractor.LinkContext.SPECULATIVE_MISC;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -12,7 +9,9 @@ import java.util.logging.Logger;
 
 import org.archive.modules.CrawlURI;
 import org.archive.modules.extractor.ContentExtractor;
-import org.archive.modules.extractor.Link;
+import org.archive.modules.extractor.Hop;
+import org.archive.modules.extractor.LinkContext;
+import org.archive.net.UURIFactory;
 import org.archive.util.UriUtils;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -41,8 +40,8 @@ public class ExtractorJson extends ContentExtractor {
 		    .getContentReplayInputStream());
 	    parse(rootNode, links);
 	    for (String link : links) {
-		Link.addRelativeToBase(curi, this.getExtractorParameters()
-			.getMaxOutlinks(), link, SPECULATIVE_MISC, SPECULATIVE);
+		curi.createCrawlURI(UURIFactory.getInstance(link),
+			LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);
 	    }
 	} catch (Exception e) {
 	    LOGGER.log(Level.WARNING, curi.getURI(), e);
