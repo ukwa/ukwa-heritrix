@@ -17,16 +17,6 @@ import com.maxmind.geoip2.model.CityResponse;
  *   <bean id="externalGeoLookup" class="uk.bl.wap.modules.deciderules.ExternalGeoLookup">
  *     <property name="database" value="/usr/local/share/geoip/geoip-city.mmdb" />
  *   </bean>
- *   <bean id="externalGeoLookupRule" class="org.archive.modules.deciderules.ExternalGeoLocationDecideRule">
- *     <property name="lookup">
- *       <ref bean="externalGeoLookup"/>
- *     </property>
- *     <property name="countryCodes">
- *       <list>
- *         <value>GB</value>
- *       </list>
- *     </property>
- *   </bean>
  * </pre>
  * 
  * }

@@ -14,6 +14,31 @@ import org.archive.modules.deciderules.ExternalGeoLookupInterface;
 import org.archive.modules.net.CrawlHost;
 import org.xbill.DNS.Address;
 
+/**
+ * Extension of org.archive.modules.deciderules.ExternalGeoLocationDecideRule;
+ * optionally allows the rule to be skipped where the outcome could not be
+ * changed.
+ * 
+ * <pre>
+ * {@code
+ *   <bean id="externalGeoLookupRule" class="org.archive.modules.deciderules.ExternalGeoLocationDecideRule">
+ *     <property name="lookup">
+ *       <ref bean="externalGeoLookup"/>
+ *     </property>
+ *     <property name="countryCodes">
+ *       <list>
+ *         <value>GB</value>
+ *       </list>
+ *     </property>
+ *     <property name="lookupEveryUri" value="true"/>
+ *   </bean>
+ * </pre>
+ * 
+ * }
+ * 
+ * @author rcoram
+ */
+
 public class ExternalGeoLocationDecideRule extends
 	org.archive.modules.deciderules.ExternalGeoLocationDecideRule {
     private static final long serialVersionUID = 8790007524831875385L;
@@ -29,9 +54,33 @@ public class ExternalGeoLocationDecideRule extends
 	LOGGER.fine("countryCodes set to " + this.countryCodes);
     }
 
+    /**
+     * Used to determine whether this rule can change the current decision and
+     * if not, skip the rule; if 'lookupEveryUri' is true, this rule will never
+     * be skipped.
+     */
     @Override
     public DecideResult onlyDecision(CrawlURI uri) {
-	return this.getDecision();
+	if (getLookupEveryUri()) {
+	    return null;
+	} else {
+	    return this.getDecision();
+	}
+    }
+
+    /**
+     * Whether to perform a lookup on every URI; default is true.
+     */
+    {
+	setLookupEveryUri(true);
+    }
+
+    public void setLookupEveryUri(boolean lookupEveryUri) {
+	kp.put("lookupEveryUri", lookupEveryUri);
+    }
+
+    public boolean getLookupEveryUri() {
+	return (Boolean) kp.get("lookupEveryUri");
     }
 
     @Override
