@@ -17,7 +17,6 @@ import uk.bl.wap.util.ClamdScanner;
  * @author rcoram
  */
 
-@SuppressWarnings("unused")
 public class ViralContentProcessor extends Processor {
     private final static Logger LOGGER = Logger
 	    .getLogger(ViralContentProcessor.class.getName());
@@ -44,7 +43,7 @@ public class ViralContentProcessor extends Processor {
 	clamdScannerPoolFactory.setClamdHost(clamdHost);
     }
 
-    private String getClamdHost() {
+    public String getClamdHost() {
 	return (String) kp.get("clamdHost");
     }
 
@@ -70,7 +69,7 @@ public class ViralContentProcessor extends Processor {
 	clamdScannerPoolFactory.setClamdTimeout(clamdTimeout);
     }
 
-    private int getClamdTimeout() {
+    public int getClamdTimeout() {
 	return (Integer) kp.get("clamdTimeout");
     }
 
@@ -80,7 +79,7 @@ public class ViralContentProcessor extends Processor {
 	clamdScannerPoolFactory.setStreamMaxLength(streamMaxLength);
     }
 
-    private int getStreamMaxLength() {
+    public int getStreamMaxLength() {
 	return (Integer) kp.get("streamMaxLength");
     }
 
