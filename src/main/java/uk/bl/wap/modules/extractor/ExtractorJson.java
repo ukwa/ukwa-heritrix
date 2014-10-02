@@ -40,8 +40,8 @@ public class ExtractorJson extends ContentExtractor {
 		    .getContentReplayInputStream());
 	    parse(rootNode, links);
 	    for (String link : links) {
-		curi.createCrawlURI(UURIFactory.getInstance(link),
-			LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);
+		curi.createCrawlURI(link, LinkContext.SPECULATIVE_MISC,
+			Hop.SPECULATIVE);
 	    }
 	} catch (Exception e) {
 	    LOGGER.log(Level.WARNING, curi.getURI(), e);
