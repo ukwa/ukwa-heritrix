@@ -28,14 +28,16 @@ import com.rabbitmq.client.MessageProperties;
  *     <property name="outputPath" value="/opt/heritrix/jobs/<job_ref>/action/" />
  *   </bean>
  * </pre>
+ * 
  * }
+ * 
  * @author rcoram
  * 
  */
 
 public class AsynchronousMQExtractor extends ContentExtractor {
     private static Logger logger = Logger
-	    .getLogger(AsynchronousMQExtractor.class.getName());
+            .getLogger(AsynchronousMQExtractor.class.getName());
     private final static String SLASH_PAGE = "^https?://?[^/]+/$";
     private final static String ANNOTATION = "AsynchronousMQExtractor";
     private Pattern pattern;
@@ -44,108 +46,102 @@ public class AsynchronousMQExtractor extends ContentExtractor {
     private ConnectionFactory factory;
 
     {
-	setHost("localhost");
+        setHost("localhost");
     }
 
     public String getHost() {
-	return (String) kp.get("host");
+        return (String) kp.get("host");
     }
 
-    @Autowired
     public void setHost(String host) {
-	kp.put("host", host);
+        kp.put("host", host);
     }
 
     {
-	setRoutingKey("phantomjs");
+        setRoutingKey("phantomjs");
     }
 
     public String getRoutingKey() {
-	return (String) kp.get("routingKey");
+        return (String) kp.get("routingKey");
     }
 
-    @Autowired
     public void setRoutingKey(String key) {
-	kp.put("routingKey", key);
+        kp.put("routingKey", key);
     }
 
     {
-	setQueue("phantomjs");
+        setQueue("phantomjs");
     }
 
     public String getQueue() {
-	return (String) kp.get("routingKey");
+        return (String) kp.get("routingKey");
     }
 
-    @Autowired
     public void setQueue(String queue) {
-	kp.put("queue", queue);
+        kp.put("queue", queue);
     }
 
     public String getOutputPath() {
-	return (String) kp.get("outputPath");
+        return (String) kp.get("outputPath");
     }
 
-    @Autowired
     public void setOutputPath(String output) {
-	kp.put("outputPath", output);
+        kp.put("outputPath", output);
     }
 
     {
-	setDurable("true");
+        setDurable("true");
     }
 
     public String getDurable() {
-	return (String) kp.get("durable");
+        return (String) kp.get("durable");
     }
 
-    @Autowired
     public void setDurable(String durable) {
-	kp.put("durable", durable);
+        kp.put("durable", durable);
     }
 
     public AsynchronousMQExtractor() {
-	this.pattern = Pattern.compile(SLASH_PAGE);
-	this.setupChannel();
+        this.pattern = Pattern.compile(SLASH_PAGE);
     }
 
     private void setupChannel() {
-	try {
-	    this.factory = new ConnectionFactory();
-	    this.factory.setHost(this.getHost());
-	    this.conn = factory.newConnection();
-	    this.channel = conn.createChannel();
-	    this.channel
-		    .queueDeclare(this.getQueue(),
-			    Boolean.parseBoolean(this.getDurable()), false,
-			    false, null);
-	} catch (Exception e) {
-	    logger.warning(e.getMessage());
-	}
+        try {
+            this.factory = new ConnectionFactory();
+            this.factory.setHost(this.getHost());
+            this.conn = factory.newConnection();
+            this.channel = conn.createChannel();
+            this.channel
+                    .queueDeclare(this.getQueue(),
+                            Boolean.parseBoolean(this.getDurable()), false,
+                            false, null);
+        } catch (Exception e) {
+            logger.warning(e.getMessage());
+        }
     }
 
     @Override
     protected boolean innerExtract(CrawlURI curi) {
-	String message = curi.getURI() + "|" + this.getOutputPath();
-	try {
-	    logger.info("Sending " + message + " to " + this.getQueue());
-	    channel.basicPublish("", this.getRoutingKey(),
-		    MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
-	    curi.getAnnotations().add(ANNOTATION);
-	} catch (AlreadyClosedException a) {
-	    logger.warning(a.getMessage());
-	    this.setupChannel();
-	} catch (Exception e) {
-	    logger.warning(e.getMessage());
-	}
-	return false;
+        String message = curi.getURI() + "|" + this.getOutputPath();
+        try {
+            logger.info("Sending " + message + " to " + this.getQueue());
+            channel.basicPublish("", this.getRoutingKey(),
+                    MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes());
+            curi.getAnnotations().add(ANNOTATION);
+        } catch (AlreadyClosedException a) {
+            logger.warning(a.getMessage());
+            this.setupChannel();
+        } catch (Exception e) {
+            logger.warning(e.getMessage());
+        }
+        return false;
     }
 
     @Override
     protected boolean shouldExtract(CrawlURI curi) {
-	if (curi.isSeed())
-	    return true;
-	Matcher matcher = this.pattern.matcher(curi.getURI());
-	return matcher.matches();
+        if (curi.isSeed())
+            return true;
+        Matcher matcher = this.pattern.matcher(curi.getURI());
+        return matcher.matches();
     }
 }

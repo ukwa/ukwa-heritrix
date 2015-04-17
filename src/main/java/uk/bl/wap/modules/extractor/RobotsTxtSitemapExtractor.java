@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -57,6 +56,7 @@ public class RobotsTxtSitemapExtractor extends ContentExtractor {
                 curi.createCrawlURI(link, LinkContext.SPECULATIVE_MISC,
                         Hop.SPECULATIVE);
             }
+            return (links.size() > 0);
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, curi.getURI(), e);
             curi.getNonFatalFailures().add(e);
