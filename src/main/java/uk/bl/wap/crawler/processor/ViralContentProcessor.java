@@ -85,8 +85,9 @@ public class ViralContentProcessor extends Processor {
 
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
+        ClamdScanner scanner = null;
         try {
-            ClamdScanner scanner = clamdScannerPool.borrowObject();
+            scanner = clamdScannerPool.borrowObject();
             String result = scanner.clamdScan(curi.getRecorder()
                     .getReplayInputStream());
             if (result.matches("^([1-2]:\\s+)?stream:.+$")) {
@@ -99,6 +100,13 @@ public class ViralContentProcessor extends Processor {
             }
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "innerProcess(): " + e.toString());
+        }
+        if (scanner != null) {
+            try {
+                clamdScannerPool.returnObject(scanner);
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "innerProcess(): " + e.toString());
+            }
         }
     }
 
