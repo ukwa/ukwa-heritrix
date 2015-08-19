@@ -17,31 +17,31 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 public class IpAnnotator extends Processor {
     private final static Logger LOGGER = Logger.getLogger(IpAnnotator.class
-	    .getName());
+            .getName());
 
     protected ServerCache serverCache;
 
     @Autowired
     public void setServerCache(ServerCache serverCache) {
-	this.serverCache = serverCache;
+        this.serverCache = serverCache;
     }
 
     @Override
     protected boolean shouldProcess(CrawlURI curi) {
-	return curi.isSuccess();
+        return curi.isSuccess();
     }
 
     @Override
     protected void innerProcess(CrawlURI curi) {
-	try {
-	    CrawlHost host = serverCache.getHostFor(curi.getUURI());
-	    if (host != null && host.getIP() != null) {
-		curi.getAnnotations().add(
-			"ip:" + host.getIP().getHostAddress());
-	    }
-	} catch (Exception e) {
-	    LOGGER.log(Level.WARNING, "Problem adding IP: " + curi.getURI(), e);
-	    curi.getNonFatalFailures().add(e);
-	}
+        try {
+            CrawlHost host = serverCache.getHostFor(curi.getUURI());
+            if (host != null && host.getIP() != null) {
+                curi.getAnnotations()
+                        .add("ip:" + host.getIP().getHostAddress());
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Problem adding IP: " + curi.getURI(), e);
+            curi.getNonFatalFailures().add(e);
+        }
     }
 }
