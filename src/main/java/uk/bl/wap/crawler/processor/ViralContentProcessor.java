@@ -1,11 +1,13 @@
 package uk.bl.wap.crawler.processor;
 
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.pool.BasePoolableObjectFactory;
-import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.commons.pool.ObjectPool;
+import org.apache.commons.pool.impl.GenericObjectPool;
+import org.archive.io.ReplayInputStream;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,10 +88,12 @@ public class ViralContentProcessor extends Processor {
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
         ClamdScanner scanner = null;
+        ReplayInputStream in = null;
         try {
             scanner = clamdScannerPool.borrowObject();
-            String result = scanner.clamdScan(curi.getRecorder()
-                    .getReplayInputStream());
+            LOGGER.log(Level.INFO, "ClamAV scanning " + curi.getURI());
+            in = curi.getRecorder().getReplayInputStream();
+            String result = scanner.clamdScan(in);
             if (result.matches("^([1-2]:\\s+)?stream:.+$")) {
                 if (!result.matches("^([1-2]:\\s+)?stream: OK.*$")) {
                     curi.getAnnotations().add(result);
@@ -98,8 +102,15 @@ public class ViralContentProcessor extends Processor {
             } else {
                 LOGGER.log(Level.WARNING, "Invalid ClamAV response: " + result);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             LOGGER.log(Level.WARNING, "innerProcess(): " + e.toString());
+        } finally {
+            try {
+                if (in != null)
+                    in.close();
+            } catch (IOException e) {
+                LOGGER.log(Level.WARNING, "Exception when closing ReplayInputStream. ", e);
+            }
         }
         if (scanner != null) {
             try {
