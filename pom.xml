@@ -21,6 +21,14 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
+                <executions>
+                  <execution>
+                    <phase>package</phase>
+                    <goals>
+                      <goal>single</goal>
+                    </goals>
+                  </execution>
+                </executions>
 				<configuration>
 					<descriptorRefs>
 						<descriptorRef>jar-with-dependencies</descriptorRef>
@@ -119,5 +127,10 @@
 			<version>4.10</version>
 			<scope>test</scope>
 		</dependency>
+      <dependency>
+         <groupId>com.flagstone</groupId>
+         <artifactId>transform</artifactId>
+         <version>3.0.2</version>
+      </dependency>
 	</dependencies>
 </project>

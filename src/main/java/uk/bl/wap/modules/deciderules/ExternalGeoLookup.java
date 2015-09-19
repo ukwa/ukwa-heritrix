@@ -47,12 +47,12 @@ public class ExternalGeoLookup implements ExternalGeoLookupInterface {
 	try {
 	    CityResponse city = reader.city(ip);
 	    if (city != null) {
-		return city.getCountry().getIsoCode();
+                return city.getCountry().getIsoCode();
 	    }
 	} catch (IOException e) {
 	    LOGGER.warning(e.getMessage());
 	} catch (GeoIp2Exception e) {
-	    LOGGER.warning(e.getMessage());
+            LOGGER.info(e.getMessage());
 	}
 	return null;
     }
