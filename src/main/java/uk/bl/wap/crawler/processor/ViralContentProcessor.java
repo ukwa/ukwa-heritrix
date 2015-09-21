@@ -91,7 +91,7 @@ public class ViralContentProcessor extends Processor {
         ReplayInputStream in = null;
         try {
             scanner = clamdScannerPool.borrowObject();
-            LOGGER.log(Level.INFO, "ClamAV scanning " + curi.getURI());
+            LOGGER.log(Level.FINE, "ClamAV scanning " + curi.getURI());
             in = curi.getRecorder().getReplayInputStream();
             String result = scanner.clamdScan(in);
             if (result.matches("^([1-2]:\\s+)?stream:.+$")) {
