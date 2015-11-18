@@ -27,7 +27,9 @@ public class RobotsTxtSitemapExtractor extends ContentExtractor {
 
     @Override
     protected boolean shouldExtract(CrawlURI uri) {
-        return ROBOTS_PATTERN.matcher(uri.getURI()).matches();
+        boolean shouldExtract = ROBOTS_PATTERN.matcher(uri.getURI()).matches();
+        LOGGER.severe("Checked " + uri + " GOT " + shouldExtract);
+        return shouldExtract;
     }
 
     public ArrayList<String> parseRobotsTxt(InputStream input) {
@@ -53,9 +55,11 @@ public class RobotsTxtSitemapExtractor extends ContentExtractor {
         try {
             List<String> links = parseRobotsTxt(curi.getRecorder()
                     .getContentReplayInputStream());
+            LOGGER.severe("Checked " + curi + " GOT " + links);
             for (String link : links) {
                 try {
                     int max = getExtractorParameters().getMaxOutlinks();
+                    LOGGER.info("Found " + link);
                     addRelativeToBase(curi, max, link,
                             LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);
                 } catch (URIException e) {
