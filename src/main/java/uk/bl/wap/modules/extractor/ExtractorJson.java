@@ -7,11 +7,11 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.extractor.ContentExtractor;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
-import org.archive.net.UURIFactory;
 import org.archive.util.UriUtils;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -40,9 +40,14 @@ public class ExtractorJson extends ContentExtractor {
 		    .getContentReplayInputStream());
 	    parse(rootNode, links);
 	    for (String link : links) {
-		curi.createCrawlURI(link, LinkContext.SPECULATIVE_MISC,
-			Hop.SPECULATIVE);
-	    }
+                try {
+                    int max = getExtractorParameters().getMaxOutlinks();
+                    addRelativeToBase(curi, max, link,
+                            LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);
+                } catch (URIException e) {
+                    logUriError(e, curi.getUURI(), link);
+                }
+            }
 	} catch (Exception e) {
 	    LOGGER.log(Level.WARNING, curi.getURI(), e);
 	    curi.getNonFatalFailures().add(e);

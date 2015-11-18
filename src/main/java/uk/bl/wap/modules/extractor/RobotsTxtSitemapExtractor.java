@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.extractor.ContentExtractor;
 import org.archive.modules.extractor.Hop;
@@ -53,8 +54,13 @@ public class RobotsTxtSitemapExtractor extends ContentExtractor {
             List<String> links = parseRobotsTxt(curi.getRecorder()
                     .getContentReplayInputStream());
             for (String link : links) {
-                curi.createCrawlURI(link, LinkContext.SPECULATIVE_MISC,
-                        Hop.SPECULATIVE);
+                try {
+                    int max = getExtractorParameters().getMaxOutlinks();
+                    addRelativeToBase(curi, max, link,
+                            LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);
+                } catch (URIException e) {
+                    logUriError(e, curi.getUURI(), link);
+                }
             }
             return (links.size() > 0);
         } catch (IOException e) {
