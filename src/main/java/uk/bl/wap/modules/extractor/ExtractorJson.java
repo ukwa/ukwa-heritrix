@@ -21,25 +21,29 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * Extracts URIs from JSON resources.
  * 
+ * n.b. chokes on JSONP, e.g.
+ * 
+ * breakingNews({"pollPeriod":30000,"isError":false,"html":""})
+ * 
  * @author rcoram
  * 
  */
 
 public class ExtractorJson extends ContentExtractor {
     public final static String JSON_URI = "^https?://[^/]+/.+\\.json\\b.*$";
-    private static final Logger LOGGER = Logger.getLogger(ExtractorJson.class
-	    .getName());
+    private static final Logger LOGGER = Logger
+            .getLogger(ExtractorJson.class.getName());
     private JsonFactory factory = new JsonFactory();
     private ObjectMapper mapper = new ObjectMapper(factory);
 
     @Override
     protected boolean innerExtract(CrawlURI curi) {
-	try {
-	    List<String> links = new ArrayList<String>();
-	    JsonNode rootNode = mapper.readTree(curi.getRecorder()
-		    .getContentReplayInputStream());
-	    parse(rootNode, links);
-	    for (String link : links) {
+        try {
+            List<String> links = new ArrayList<String>();
+            JsonNode rootNode = mapper
+                    .readTree(curi.getRecorder().getContentReplayInputStream());
+            parse(rootNode, links);
+            for (String link : links) {
                 try {
                     int max = getExtractorParameters().getMaxOutlinks();
                     addRelativeToBase(curi, max, link,
@@ -48,43 +52,43 @@ public class ExtractorJson extends ContentExtractor {
                     logUriError(e, curi.getUURI(), link);
                 }
             }
-	} catch (Exception e) {
-	    LOGGER.log(Level.WARNING, curi.getURI(), e);
-	    curi.getNonFatalFailures().add(e);
-	}
-	return false;
+        } catch (Exception e) {
+            // Only record this as INFO, as malformed JSON is fairly common.
+            LOGGER.log(Level.INFO, curi.getURI() + " : " + e.getMessage());
+        }
+        return false;
     }
 
     @Override
     protected boolean shouldExtract(CrawlURI curi) {
-	String contentType = curi.getContentType();
-	if (contentType != null && contentType.indexOf("json") != -1) {
-	    return true;
-	}
+        String contentType = curi.getContentType();
+        if (contentType != null && contentType.indexOf("json") != -1) {
+            return true;
+        }
 
-	if (curi.isSuccess() && curi.toString().matches(JSON_URI)) {
-	    return true;
-	}
-	return false;
+        if (curi.isSuccess() && curi.toString().matches(JSON_URI)) {
+            return true;
+        }
+        return false;
     }
 
     protected List<String> parse(JsonNode rootNode, List<String> links) {
-	Iterator<Map.Entry<String, JsonNode>> fieldsIterator = rootNode
-		.fields();
-	while (fieldsIterator.hasNext()) {
-	    Map.Entry<String, JsonNode> field = fieldsIterator.next();
-	    if (field.getValue().textValue() != null
-		    && UriUtils.isVeryLikelyUri(field.getValue().textValue())) {
-		links.add(field.getValue().textValue());
-	    } else if (field.getValue().isObject()) {
-		parse(field.getValue(), links);
-	    } else if (field.getValue().isArray()) {
-		Iterator<JsonNode> i = field.getValue().elements();
-		while (i.hasNext()) {
-		    parse(i.next(), links);
-		}
-	    }
-	}
-	return links;
+        Iterator<Map.Entry<String, JsonNode>> fieldsIterator = rootNode
+                .fields();
+        while (fieldsIterator.hasNext()) {
+            Map.Entry<String, JsonNode> field = fieldsIterator.next();
+            if (field.getValue().textValue() != null
+                    && UriUtils.isVeryLikelyUri(field.getValue().textValue())) {
+                links.add(field.getValue().textValue());
+            } else if (field.getValue().isObject()) {
+                parse(field.getValue(), links);
+            } else if (field.getValue().isArray()) {
+                Iterator<JsonNode> i = field.getValue().elements();
+                while (i.hasNext()) {
+                    parse(i.next(), links);
+                }
+            }
+        }
+        return links;
     }
 }

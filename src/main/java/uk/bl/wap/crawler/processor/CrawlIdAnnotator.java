@@ -3,6 +3,7 @@ package uk.bl.wap.crawler.processor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.http.HttpHeaders;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 
@@ -26,6 +27,10 @@ public class CrawlIdAnnotator extends Processor {
     protected void innerProcess(CrawlURI curi) {
         try {
             LOGGER.info("Looking for crawlId...");
+            // To spot a redirect...
+            LOGGER.info("Location: "
+                    + curi.getHttpResponseHeader(HttpHeaders.LOCATION));
+            // NOTE that url can be relative (?)
             String crawlId = null;
             for (String k : curi.getData().keySet()) {
                 LOGGER.info("DATA  " + k + " " + curi.getData().get(k));
