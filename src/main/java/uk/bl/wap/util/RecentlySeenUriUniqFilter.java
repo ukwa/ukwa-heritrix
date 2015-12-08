@@ -1,21 +1,16 @@
 package uk.bl.wap.util;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.util.SetBasedUriUniqFilter;
+import org.archive.wayback.UrlCanonicalizer;
+import org.archive.wayback.surt.SURTTokenizer;
+import org.archive.wayback.util.url.AggressiveUrlCanonicalizer;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Required;
-
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Ehcache;
-import net.sf.ehcache.Element;
-import net.sf.ehcache.Status;
-import net.sf.ehcache.config.CacheConfiguration;
-import net.sf.ehcache.config.Configuration;
-import net.sf.ehcache.config.DiskStoreConfiguration;
-import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 
 /**
  * 
@@ -31,7 +26,7 @@ import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
-public class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
+public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
         implements Serializable, InitializingBean {
     private static final long serialVersionUID = 1061526253773091309L;
 
@@ -41,33 +36,10 @@ public class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
     public static final int HOUR = 60 * 60;
     public static final int DAY = HOUR * 24;
     public static final int WEEK = DAY * 7;
-    public static final int DEFAULT_TTL = 4 * WEEK;
+    public int defaultTTL = 4 * WEEK;
 
-    private String cacheStorePath;
-    private CacheManager manager;
-    private Ehcache cache;
-
-    private int maxEntriesLocalHeap = 1000 * 1000;
-
-    public String getCacheStorePath() {
-        return cacheStorePath;
-    }
-
-    @Required
-    public void setCacheStorePath(String cacheStorePath) {
-        this.cacheStorePath = cacheStorePath;
-    }
-
-    public Ehcache getCache() {
-        if (cache == null || !cache.getStatus().equals(Status.STATUS_ALIVE)) {
-            setupCache();
-        }
-        return cache;
-    }
-
-    public void setCache(Ehcache cache) {
-        this.cache = cache;
-    }
+    private UrlCanonicalizer canonicalizer = new AggressiveUrlCanonicalizer();
+    private WatchedFileSurtMap<Integer> ttlMap = new WatchedFileSurtMap<Integer>();
 
     /**
      * Default constructor
@@ -80,98 +52,86 @@ public class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
      * Initializer.
      */
     public void afterPropertiesSet() {
-        this.setupCache();
-    }
-
-    private void setupCache() {
-        LOGGER.info("Setting up cache...");
-        if (manager == null
-                || !manager.getStatus().equals(Status.STATUS_ALIVE)) {
-            Configuration configuration = new Configuration();
-            DiskStoreConfiguration diskStoreConfiguration = new DiskStoreConfiguration();
-            diskStoreConfiguration.setPath(cacheStorePath);
-            // Already created a configuration object ...
-            configuration.addDiskStore(diskStoreConfiguration);
-            manager = CacheManager.create(configuration);
-        }
-        // Get existing cache if there is one:
-        cache = manager.getEhcache("recentlySeenUrls");
-        // Otherwise, make a new one:
-        if (cache == null) {
-            LOGGER.info("Setting up default Ehcache configuration.");
-            cache = new Cache(new CacheConfiguration("recentlySeenUrls",
-                    maxEntriesLocalHeap).memoryStoreEvictionPolicy(
-                                    MemoryStoreEvictionPolicy.LFU)
-                            .eternal(false).timeToLiveSeconds(DEFAULT_TTL)
-                            .diskExpiryThreadIntervalSeconds(0)
-                            .diskPersistent(true).overflowToDisk(true));
-            manager.addCache(cache);
+        try {
+            this.ttlMap.init();
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE,
+                    "Exception when initialising SURT-to-TTL map.", e);
         }
     }
 
     /**
-     * 
+     * @return the canonicalizer
      */
-    protected boolean setAdd(CharSequence uri) {
-        // Build the cache entry:
-        Element element = new Element(uri, uri);
+    public UrlCanonicalizer getCanonicalizer() {
+        return canonicalizer;
+    }
 
-        // Allow entries to expire after a while, defaults, ranges, etc,
-        // surt-prefixed.
-        element.setTimeToLive(60);
+    /**
+     * @param canonicalizer
+     *            the canonicalizer to set
+     */
+    public void setCanonicalizer(UrlCanonicalizer canonicalizer) {
+        this.canonicalizer = canonicalizer;
+    }
 
-        // Add to the cache, if absent:
-        Element added = getCache().putIfAbsent(element);
-        if (added == null) {
-            LOGGER.finest("Cache entry " + uri + " is new.");
-        } else {
-            LOGGER.finest("Cache entry " + uri + " is already in the cache.");
-        }
+    /**
+     * @return the ttlMap
+     */
+    public WatchedFileSurtMap<Integer> getTtlMap() {
+        return ttlMap;
+    }
 
-        return (added == null);
+    /**
+     * @param ttlMap
+     *            the ttlMap to set
+     */
+    public void setTtlMap(WatchedFileSurtMap<Integer> ttlMap) {
+        this.ttlMap = ttlMap;
+    }
+
+    /**
+     * @return the defaultTTL
+     */
+    public int getDefaultTTL() {
+        return defaultTTL;
+    }
+
+    /**
+     * @param defaultTTL
+     *            the defaultTTL to set
+     */
+    public void setDefaultTTL(int defaultTTL) {
+        this.defaultTTL = defaultTTL;
     }
 
     /**
      * 
-     */
-    protected boolean setRemove(CharSequence uri) {
-        return getCache().remove(uri);
-    }
-
-    /**
+     * Use the map to look up the TTL for this Url.
      * 
+     * @param url
+     * @return TTL (in seconds)
      */
-    protected long setCount() {
-        return getCache().getSize();
-    }
-
-    @Override
-    public long requestFlush() {
-        this.getCache().flush();
-        return 0;
-    }
-
-    private void closeEhcache() {
-        LOGGER.info("Shutting down the cache...");
-        if (this.cache != null) {
-            this.cache.flush();
+    protected Integer getTTLForUrl(String url) {
+        try {
+            SURTTokenizer st = new SURTTokenizer(url,
+                    canonicalizer.isSurtForm());
+            while (true) {
+                String nextSearch = st.nextSearch();
+                if (nextSearch == null) {
+                    break;
+                }
+                LOGGER.fine("TTL-MAP:Checking " + nextSearch);
+                if (ttlMap.get().containsKey(nextSearch)) {
+                    Integer ttl = ttlMap.get().get(nextSearch);
+                    LOGGER.info("TTL-MAP: \"" + ttl + "\" (" + url + ")");
+                    return ttl;
+                }
+            }
+        } catch (URIException e) {
+            LOGGER.warning(e.toString());
         }
-        if (this.manager != null
-                && this.manager.getStatus().equals(Status.STATUS_ALIVE)) {
-            this.manager.shutdown();
-        }
-    }
-
-    @Override
-    public void close() {
-        this.closeEhcache();
-        super.close();
-    }
-
-    @Override
-    protected void finalize() throws Throwable {
-        this.closeEhcache();
-        super.finalize();
+        return this.defaultTTL;
     }
 
 }
