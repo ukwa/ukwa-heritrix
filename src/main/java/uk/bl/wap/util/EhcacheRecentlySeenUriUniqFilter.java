@@ -6,6 +6,7 @@ package uk.bl.wap.util;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.context.Lifecycle;
 
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
@@ -22,7 +23,8 @@ import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
  *
  */
 public class EhcacheRecentlySeenUriUniqFilter
-        extends RecentlySeenUriUniqFilter {
+ extends RecentlySeenUriUniqFilter
+        implements Lifecycle {
 
     /** */
     private static final long serialVersionUID = 7156746218148487509L;
@@ -46,7 +48,6 @@ public class EhcacheRecentlySeenUriUniqFilter
     @Override
     public void afterPropertiesSet() {
         super.afterPropertiesSet();
-        this.setupCache();
     }
 
     /**
@@ -89,7 +90,7 @@ public class EhcacheRecentlySeenUriUniqFilter
      * 
      */
     private void setupCache() {
-        LOGGER.info("Setting up cache...");
+        LOGGER.info("Setting up Ehcache...");
         if (manager == null
                 || !manager.getStatus().equals(Status.STATUS_ALIVE)) {
             Configuration configuration = new Configuration();
@@ -158,7 +159,7 @@ public class EhcacheRecentlySeenUriUniqFilter
     }
 
     private void closeEhcache() {
-        LOGGER.info("Shutting down the cache...");
+        LOGGER.info("Shutting down Ehcache...");
         if (this.cache != null) {
             this.cache.flush();
         }
@@ -178,6 +179,24 @@ public class EhcacheRecentlySeenUriUniqFilter
     protected void finalize() throws Throwable {
         this.closeEhcache();
         super.finalize();
+    }
+
+    @Override
+    public void start() {
+        this.setupCache();
+    }
+
+    @Override
+    public void stop() {
+        this.closeEhcache();
+    }
+
+    @Override
+    public boolean isRunning() {
+        if (this.manager != null) {
+            return this.manager.getStatus().equals(Status.STATUS_ALIVE);
+        }
+        return false;
     }
 
 }
