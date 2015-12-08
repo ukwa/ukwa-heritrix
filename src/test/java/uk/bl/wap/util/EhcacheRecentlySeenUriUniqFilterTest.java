@@ -5,9 +5,7 @@ package uk.bl.wap.util;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.io.File;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.datamodel.UriUniqFilter;
@@ -44,11 +42,10 @@ public class EhcacheRecentlySeenUriUniqFilterTest {
      */
     @Before
     public void setUp() throws Exception {
-        Logger rootLogger = Logger.getLogger("");
-        ConsoleHandler ch = new ConsoleHandler();
-        ch.setLevel(Level.FINEST);
-        rootLogger.addHandler(ch);
-        rootLogger.setLevel(Level.ALL);
+        // Logging:
+        System.setProperty("java.util.logging.config.file",
+                new File("src/test/resources/logging.properties")
+                        .getAbsolutePath());
 
         // Set up ttlMap;
         WatchedFileSurtMap<Integer> ttlMap = new WatchedFileSurtMap<Integer>();

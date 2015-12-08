@@ -17,6 +17,17 @@ import org.archive.wayback.util.flatfile.FlatFile;
 import org.archive.wayback.util.url.AggressiveUrlCanonicalizer;
 
 /**
+ * 
+ * Based on OpenWayback StaticMapExclusionFilterFactory.
+ * 
+ * TODO Only supports URLs right now - should copy SurtPrefixSet and use a + to
+ * add surts directly, like in the surts.txt file and SurtPrefixedDecideRule.
+ * 
+ * @see https://github.com/iipc/webarchive-commons/blob/master/src/main/java/org
+ *      /archive/util/SurtPrefixSet.java#L120
+ *      SurtPrefixSet.importFromMixed(Reader r, boolean deduceFromSeeds)
+ * 
+ * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
@@ -25,7 +36,9 @@ public class WatchedFileSurtMap<T> {
             .getLogger(WatchedFileSurtMap.class.getName());
 
     private int checkInterval = 0;
+
     private Map<String, Integer> currentMap = null;
+
     private File file = null;
 
     long lastUpdated = 0;
@@ -128,7 +141,7 @@ public class WatchedFileSurtMap<T> {
                 continue;
             }
 
-            String[] parts = line.split(" ");
+            String[] parts = line.split(" ", 2);
             String key = parts[0];
             try {
                 key = canonicalizer.urlStringToKey(key);
@@ -145,8 +158,9 @@ public class WatchedFileSurtMap<T> {
                 surt = key.startsWith("(") ? key : SURTTokenizer.prefixKey(key);
             }
 
-            LOGGER.fine("EXCLUSION-MAP: adding " + surt + " " + parts[1]);
-            newMap.put(surt, Integer.parseInt(parts[1]));
+            Integer ps = Integer.parseInt(parts[1]);
+            LOGGER.fine("EXCLUSION-MAP: adding " + surt + " " + ps);
+            newMap.put(surt, ps);
         }
         itr.close();
         return newMap;

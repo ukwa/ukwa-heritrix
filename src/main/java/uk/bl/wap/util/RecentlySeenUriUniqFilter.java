@@ -121,10 +121,10 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
                 if (nextSearch == null) {
                     break;
                 }
-                LOGGER.fine("TTL-MAP:Checking " + nextSearch);
+                LOGGER.finest("TTL-MAP:Checking " + nextSearch);
                 if (ttlMap.get().containsKey(nextSearch)) {
                     Integer ttl = ttlMap.get().get(nextSearch);
-                    LOGGER.info("TTL-MAP: \"" + ttl + "\" (" + url + ")");
+                    LOGGER.fine("TTL-MAP: \"" + ttl + "\" (" + url + ")");
                     return ttl;
                 }
             }
