@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
@@ -31,7 +32,8 @@ import org.archive.wayback.util.url.AggressiveUrlCanonicalizer;
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
-public class WatchedFileSurtMap<T> {
+public class WatchedFileSurtMap {
+
     private static final Logger LOGGER = Logger
             .getLogger(WatchedFileSurtMap.class.getName());
 
@@ -39,11 +41,16 @@ public class WatchedFileSurtMap<T> {
 
     private Map<String, Integer> currentMap = null;
 
-    private File file = null;
-
     long lastUpdated = 0;
 
     private UrlCanonicalizer canonicalizer = new AggressiveUrlCanonicalizer();
+
+    private RecentlySeenUriUniqFilter recentlySeenUriUniqFilter;
+
+    public WatchedFileSurtMap(
+            RecentlySeenUriUniqFilter recentlySeenUriUniqFilter) {
+        this.recentlySeenUriUniqFilter = recentlySeenUriUniqFilter;
+    }
 
     public UrlCanonicalizer getCanonicalizer() {
         return canonicalizer;
@@ -69,21 +76,6 @@ public class WatchedFileSurtMap<T> {
     }
 
     /**
-     * @return the path
-     */
-    public String getFile() {
-        return file.getAbsolutePath();
-    }
-
-    /**
-     * @param path
-     *            the file to set
-     */
-    public void setFile(String path) {
-        this.file = new File(path);
-    }
-
-    /**
      * Thread object of update thread -- also is flag indicating if the thread
      * has already been started -- static, and access to it is synchronized.
      */
@@ -95,16 +87,30 @@ public class WatchedFileSurtMap<T> {
      * @throws IOException
      *             if the exclusion file could not be read.
      */
-    public void init() throws IOException {
-        reloadFile();
+    public void init() {
+        if (this.recentlySeenUriUniqFilter.getTextSource() != null) {
+            LOGGER.warning(
+                    "Initialising TTL MAP: " + this.recentlySeenUriUniqFilter
+                .getTextSource().getFile().getAbsolutePath());
+        } else {
+            LOGGER.severe("No TTL Map text source defined!");
+        }
+        try {
+            reloadFile();
+        } catch (IOException e) {
+            LOGGER.log(Level.SEVERE, "Exception when loading file!", e);
+        }
         if (checkInterval > 0) {
             startUpdateThread();
         }
     }
 
     protected void reloadFile() throws IOException {
-        if (file == null)
+        if (this.recentlySeenUriUniqFilter == null
+                || this.recentlySeenUriUniqFilter.getTextSource() == null)
             return;
+
+        File file = this.recentlySeenUriUniqFilter.getTextSource().getFile();
 
         long currentMod = file.lastModified();
         if (currentMod == lastUpdated) {
@@ -113,7 +119,7 @@ public class WatchedFileSurtMap<T> {
             }
             return;
         }
-        LOGGER.info("Reloading file " + file.getAbsolutePath());
+        LOGGER.info("(Re)loading file " + file.getAbsolutePath());
         try {
             currentMap = loadFile(file.getAbsolutePath());
             lastUpdated = currentMod;
@@ -196,7 +202,7 @@ public class WatchedFileSurtMap<T> {
         /**
          * object which merges CDX files with the BDBResourceIndex
          */
-        private WatchedFileSurtMap<T> service = null;
+        private WatchedFileSurtMap service = null;
 
         private int runInterval;
 
@@ -206,7 +212,7 @@ public class WatchedFileSurtMap<T> {
          * @param runInterval
          *            int number of seconds between reloads
          */
-        public CacheUpdaterThread(WatchedFileSurtMap<T> service,
+        public CacheUpdaterThread(WatchedFileSurtMap service,
                 int runInterval) {
             super("CacheUpdaterThread");
             super.setDaemon(true);
@@ -242,4 +248,5 @@ public class WatchedFileSurtMap<T> {
     public void shutdown() {
         stopUpdateThread();
     }
+
 }

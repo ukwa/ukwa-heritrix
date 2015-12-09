@@ -1,16 +1,16 @@
 package uk.bl.wap.util;
 
-import java.io.IOException;
 import java.io.Serializable;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.util.SetBasedUriUniqFilter;
+import org.archive.spring.ConfigFile;
 import org.archive.wayback.UrlCanonicalizer;
 import org.archive.wayback.surt.SURTTokenizer;
 import org.archive.wayback.util.url.AggressiveUrlCanonicalizer;
-import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Required;
+import org.springframework.context.Lifecycle;
 
 /**
  * 
@@ -27,7 +27,7 @@ import org.springframework.beans.factory.InitializingBean;
  *
  */
 public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
-        implements Serializable, InitializingBean {
+        implements Serializable, Lifecycle {
     private static final long serialVersionUID = 1061526253773091309L;
 
     private static Logger LOGGER = Logger
@@ -39,25 +39,16 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
     public int defaultTTL = 4 * WEEK;
 
     private UrlCanonicalizer canonicalizer = new AggressiveUrlCanonicalizer();
-    private WatchedFileSurtMap<Integer> ttlMap = new WatchedFileSurtMap<Integer>();
+
+    private ConfigFile textSource = null;
+
+    protected WatchedFileSurtMap ttlMap = new WatchedFileSurtMap(this);
 
     /**
      * Default constructor
      */
     public RecentlySeenUriUniqFilter() {
         super();
-    }
-
-    /**
-     * Initializer.
-     */
-    public void afterPropertiesSet() {
-        try {
-            this.ttlMap.init();
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE,
-                    "Exception when initialising SURT-to-TTL map.", e);
-        }
     }
 
     /**
@@ -75,19 +66,15 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
         this.canonicalizer = canonicalizer;
     }
 
-    /**
-     * @return the ttlMap
-     */
-    public WatchedFileSurtMap<Integer> getTtlMap() {
-        return ttlMap;
+    public ConfigFile getTextSource() {
+        return textSource;
     }
 
-    /**
-     * @param ttlMap
-     *            the ttlMap to set
-     */
-    public void setTtlMap(WatchedFileSurtMap<Integer> ttlMap) {
-        this.ttlMap = ttlMap;
+    @Required
+    public void setTextSource(ConfigFile textSource) {
+        this.textSource = textSource;
+        this.ttlMap.shutdown();
+        this.ttlMap.init();
     }
 
     /**

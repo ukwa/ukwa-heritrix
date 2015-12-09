@@ -56,14 +56,6 @@ public class RedisRecentlySeenUriUniqFilter
         this.redisEndpoint = redisEndpoint;
     }
 
-    /**
-     * Initializer.
-     */
-    @Override
-    public void afterPropertiesSet() {
-        super.afterPropertiesSet();
-    }
-
     @Override
     public void start() {
         redisClient = RedisClient.create(redisEndpoint);

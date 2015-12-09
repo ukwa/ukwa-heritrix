@@ -6,7 +6,6 @@ package uk.bl.wap.util;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Required;
-import org.springframework.context.Lifecycle;
 
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
@@ -23,8 +22,7 @@ import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
  *
  */
 public class EhcacheRecentlySeenUriUniqFilter
- extends RecentlySeenUriUniqFilter
-        implements Lifecycle {
+        extends RecentlySeenUriUniqFilter {
 
     /** */
     private static final long serialVersionUID = 7156746218148487509L;
@@ -40,14 +38,6 @@ public class EhcacheRecentlySeenUriUniqFilter
 
     public EhcacheRecentlySeenUriUniqFilter() {
         super();
-    }
-
-    /**
-     * Initializer.
-     */
-    @Override
-    public void afterPropertiesSet() {
-        super.afterPropertiesSet();
     }
 
     /**
@@ -183,11 +173,15 @@ public class EhcacheRecentlySeenUriUniqFilter
 
     @Override
     public void start() {
+        LOGGER.info("Called start()");
+        this.ttlMap.init();
         this.setupCache();
     }
 
     @Override
     public void stop() {
+        LOGGER.info("Called stop()");
+        this.ttlMap.shutdown();
         this.closeEhcache();
     }
 

@@ -11,6 +11,7 @@ import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.datamodel.UriUniqFilter;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURIFactory;
+import org.archive.spring.ConfigFile;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,7 +36,7 @@ public class EhcacheRecentlySeenUriUniqFilterTest {
         }
     }
 
-    private RecentlySeenUriUniqFilter uuf;
+    private EhcacheRecentlySeenUriUniqFilter uuf;
 
     /**
      * @throws java.lang.Exception
@@ -47,16 +48,11 @@ public class EhcacheRecentlySeenUriUniqFilterTest {
                 new File("src/test/resources/logging.properties")
                         .getAbsolutePath());
 
-        // Set up ttlMap;
-        WatchedFileSurtMap<Integer> ttlMap = new WatchedFileSurtMap<Integer>();
-        ttlMap.setFile(surtFile);
-
-        // Then set up the filter
+        // Set up the filter
         uuf = new EhcacheRecentlySeenUriUniqFilter();
-        uuf.setTtlMap(ttlMap);
+        uuf.setTextSource(new ConfigFile("", surtFile));
         uuf.setDefaultTTL(10);
-        uuf.afterPropertiesSet();
-
+        uuf.start();
     }
 
     /**
