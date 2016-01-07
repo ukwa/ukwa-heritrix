@@ -174,7 +174,7 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
      */
     protected boolean setAdd(CharSequence uri_cs) {
         String uri = uri_cs.toString();
-        String key = hf.hashString(uri_cs).toString();
+        String key = hf.hashBytes(uri.getBytes()).toString();
         int ttl_s = getTTLForUrl(uri);
         // Allow entries to expire after a while, defaults, ranges, etc,
         // surt-prefixed.
