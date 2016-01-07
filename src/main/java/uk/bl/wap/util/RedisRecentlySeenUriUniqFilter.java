@@ -83,17 +83,11 @@ public class RedisRecentlySeenUriUniqFilter
     /**
      * 
      */
-    protected boolean setAdd(CharSequence uri) {
-        // Allow entries to expire after a while, defaults, ranges, etc,
-        // surt-prefixed.
-        long ttls = getTTLForUrl(uri.toString());
-
+    protected boolean setAddWithTTL(String key, String uri, int ttl_s) {
         // Add to the cache, if absent:
-        String key = uri.toString();
-        String value = uri.toString();
-        SetArgs setArgs = SetArgs.Builder.nx().ex(ttls);
+        SetArgs setArgs = SetArgs.Builder.nx().ex(ttl_s);
         // Talk to redis:
-        String result = syncCommands.set(key, value, setArgs);
+        String result = syncCommands.set(key, uri, setArgs);
         // Check result:
         if (result != null) {
             LOGGER.finest("Cache entry " + uri + " is new.");

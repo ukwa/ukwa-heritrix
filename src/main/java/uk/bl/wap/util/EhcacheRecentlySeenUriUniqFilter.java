@@ -109,20 +109,21 @@ public class EhcacheRecentlySeenUriUniqFilter
     /**
      * 
      */
-    protected boolean setAdd(CharSequence uri) {
+    protected boolean setAddWithTTL(String key, String uri, int ttl_s) {
         // Build the cache entry:
-        Element element = new Element(uri, uri);
+        Element element = new Element(key, uri);
 
         // Allow entries to expire after a while, defaults, ranges, etc,
         // surt-prefixed.
-        element.setTimeToLive(getTTLForUrl(uri.toString()));
+        element.setTimeToLive(ttl_s);
 
         // Add to the cache, if absent:
         Element added = getCache().putIfAbsent(element);
         if (added == null) {
-            LOGGER.finest("Cache entry " + uri + " is new.");
+            LOGGER.finest("Cache entry " + key + " > " + uri + " is new.");
         } else {
-            LOGGER.finest("Cache entry " + uri + " is already in the cache.");
+            LOGGER.finest("Cache entry " + key + " > " + uri
+                    + " is already in the cache.");
         }
 
         return (added == null);
@@ -173,20 +174,21 @@ public class EhcacheRecentlySeenUriUniqFilter
 
     @Override
     public void start() {
+        super.start();
         LOGGER.info("Called start()");
-        this.ttlMap.init();
         this.setupCache();
     }
 
     @Override
     public void stop() {
+        super.stop();
         LOGGER.info("Called stop()");
-        this.ttlMap.shutdown();
         this.closeEhcache();
     }
 
     @Override
     public boolean isRunning() {
+        LOGGER.info("Called isRunning()");
         if (this.manager != null) {
             return this.manager.getStatus().equals(Status.STATUS_ALIVE);
         }

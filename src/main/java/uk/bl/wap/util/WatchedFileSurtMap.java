@@ -165,7 +165,7 @@ public class WatchedFileSurtMap {
             }
 
             Integer ps = Integer.parseInt(parts[1]);
-            LOGGER.fine("EXCLUSION-MAP: adding " + surt + " " + ps);
+            LOGGER.fine("EXCLUSION-MAP: adding " + surt + " " + ps + "s");
             newMap.put(surt, ps);
         }
         itr.close();
@@ -189,6 +189,14 @@ public class WatchedFileSurtMap {
         }
         updateThread = new CacheUpdaterThread(this, checkInterval);
         updateThread.start();
+    }
+
+    public synchronized boolean isRunning() {
+        if (updateThread == null) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     private synchronized void stopUpdateThread() {

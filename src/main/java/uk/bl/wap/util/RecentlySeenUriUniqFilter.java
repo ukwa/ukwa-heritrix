@@ -6,11 +6,16 @@ import java.util.logging.Logger;
 import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.util.SetBasedUriUniqFilter;
 import org.archive.spring.ConfigFile;
+import org.archive.spring.ConfigPathConfigurer;
 import org.archive.wayback.UrlCanonicalizer;
 import org.archive.wayback.surt.SURTTokenizer;
 import org.archive.wayback.util.url.AggressiveUrlCanonicalizer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.Lifecycle;
+
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 
 /**
  * 
@@ -22,6 +27,21 @@ import org.springframework.context.Lifecycle;
  * This can be used to support regular crawling at arbitrary times of day, with
  * SURT prefixes used to map URLs to TTL. Therefore the same crawl can contain
  * URLs that are visited at varying frequencies.
+ * 
+ * It converts the URL to a large hash and uses that as the key, thus supporting
+ * systems that place limits on the size of the key. The 128-bit keys shoudl
+ * look like this:
+ * 
+ * 6c1b07bc7bbc4be347939ac4a93c437a
+ * 
+ * TODO Consider adding 'Opposite of a Bloom filter' behaviour on top of the
+ * caches. This would involve truncating the key fairly heavily, so there cannot
+ * be more than, say 10 billion keys, in order to keep memory usage down. The
+ * trick would then be to log hash collisions and allow the crawl to proceed if
+ * different URLs have the same key.
+ * 
+ * @see http://www.somethingsimilar.com/2012/05/21/the-opposite-of-a-bloom-
+ *      filter/
  * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
@@ -40,15 +60,37 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
 
     private UrlCanonicalizer canonicalizer = new AggressiveUrlCanonicalizer();
 
+    private ConfigPathConfigurer configPathConfigurer = null;
+
     private ConfigFile textSource = null;
 
     protected WatchedFileSurtMap ttlMap = new WatchedFileSurtMap(this);
+
+    // Hash function used for building keys:
+    private HashFunction hf = Hashing.murmur3_128();
 
     /**
      * Default constructor
      */
     public RecentlySeenUriUniqFilter() {
         super();
+    }
+
+    /**
+     * @return the configPathConfigurer
+     */
+    public ConfigPathConfigurer getConfigPathConfigurer() {
+        return configPathConfigurer;
+    }
+
+    /**
+     * @param configPathConfigurer
+     *            the configPathConfigurer to set
+     */
+    @Autowired
+    public void setConfigPathConfigurer(
+            ConfigPathConfigurer configPathConfigurer) {
+        this.configPathConfigurer = configPathConfigurer;
     }
 
     /**
@@ -73,6 +115,12 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
     @Required
     public void setTextSource(ConfigFile textSource) {
         this.textSource = textSource;
+        // Seem to need to plumb this in myself:
+        if (this.getConfigPathConfigurer() != null) {
+            this.textSource.setConfigurer(getConfigPathConfigurer());
+            // And this is needed for it to work:
+            this.textSource.setBase(this.getConfigPathConfigurer().getPath());
+        }
         this.ttlMap.shutdown();
         this.ttlMap.init();
     }
@@ -99,7 +147,7 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
      * @param url
      * @return TTL (in seconds)
      */
-    protected Integer getTTLForUrl(String url) {
+    private Integer getTTLForUrl(String url) {
         try {
             SURTTokenizer st = new SURTTokenizer(url,
                     canonicalizer.isSurtForm());
@@ -111,7 +159,7 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
                 LOGGER.finest("TTL-MAP:Checking " + nextSearch);
                 if (ttlMap.get().containsKey(nextSearch)) {
                     Integer ttl = ttlMap.get().get(nextSearch);
-                    LOGGER.fine("TTL-MAP: \"" + ttl + "\" (" + url + ")");
+                    LOGGER.fine("TTL-MAP: \"" + ttl + "s\" (" + url + ")");
                     return ttl;
                 }
             }
@@ -119,6 +167,46 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
             LOGGER.warning(e.toString());
         }
         return this.defaultTTL;
+    }
+
+    /**
+     * 
+     */
+    protected boolean setAdd(CharSequence uri_cs) {
+        String uri = uri_cs.toString();
+        String key = hf.hashString(uri_cs).toString();
+        int ttl_s = getTTLForUrl(uri);
+        // Allow entries to expire after a while, defaults, ranges, etc,
+        // surt-prefixed.
+        return setAddWithTTL(key, uri, ttl_s);
+    }
+
+    /**
+     * 
+     * @param key
+     * @param uri
+     * @param ttl_s
+     * @return
+     */
+    abstract boolean setAddWithTTL(String key, String uri, int ttl_s);
+
+
+    @Override
+    public void start() {
+        LOGGER.info("Called start()");
+        this.ttlMap.init();
+    }
+
+    @Override
+    public void stop() {
+        LOGGER.info("Called stop()");
+        this.ttlMap.shutdown();
+    }
+
+    @Override
+    public boolean isRunning() {
+        LOGGER.info("Called isRunning()");
+        return this.ttlMap.isRunning();
     }
 
 }
