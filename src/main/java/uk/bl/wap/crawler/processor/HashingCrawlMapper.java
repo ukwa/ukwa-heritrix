@@ -65,7 +65,7 @@ public class HashingCrawlMapper extends CrawlMapper {
     @Override
     protected String map(CrawlURI curi) {
 	String key = frontier.getClassKey(curi);
-	HashCode hc = hf.hashString(key);
+        HashCode hc = hf.hashBytes(key.getBytes());
 	int bucket = hc.asInt() % this.getCrawlerCount();
 	return Integer.toString(bucket >= 0 ? bucket : -bucket);
     }
