@@ -4,6 +4,7 @@
 package uk.bl.wap.util;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -12,6 +13,7 @@ import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.framework.CheckpointSuccessEvent;
 import org.archive.crawler.framework.CrawlController.StopCompleteEvent;
 import org.archive.modules.AMQPProducer;
+import org.json.JSONObject;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
@@ -93,12 +95,26 @@ public class AMQPCheckpointSuccessMessageProducer
         if (event instanceof CheckpointSuccessEvent) {
             Checkpoint cp = ((CheckpointSuccessEvent) event).getCheckpoint();
 
+            // Log this event:
             String eventName = cp.getName();
             LOGGER.log(Level.INFO, "CHECKPOINTED " + eventName);
 
-            String path = cp.getCheckpointDir().getPath();
-            LOGGER.log(Level.INFO, "CHECKPOINTED IN " + path);
-            sendApplicationEventMessage(path.getBytes());
+            // And send it to AMQP
+            sendApplicationEventMessage(getMessage(cp));
+        }
+    }
+
+    protected byte[] getMessage(Checkpoint cp) {
+        JSONObject jo = new JSONObject();
+        jo.put("name", cp.getName());
+        jo.put("shortName", cp.getShortName());
+        jo.put("checkpointDirPath", cp.getCheckpointDir().getPath());
+        jo.put("checkpointDirAbsolutePath",
+                cp.getCheckpointDir().getFile().getAbsolutePath());
+        try {
+            return jo.toString().getBytes("UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
         }
     }
 
