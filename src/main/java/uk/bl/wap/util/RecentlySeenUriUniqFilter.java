@@ -141,6 +141,21 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
     }
 
     /**
+     * @return the sourceCheckInterval
+     */
+    public int getSourceCheckInterval() {
+        return this.ttlMap.getCheckInterval();
+    }
+
+    /**
+     * @param sourceCheckInterval
+     *            the sourceCheckInterval to set
+     */
+    public void setSourceCheckInterval(int sourceCheckInterval) {
+        this.ttlMap.setCheckInterval(sourceCheckInterval);
+    }
+
+    /**
      * 
      * Use the map to look up the TTL for this Url.
      * 
