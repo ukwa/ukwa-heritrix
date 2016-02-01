@@ -56,7 +56,7 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
     public static final int HOUR = 60 * 60;
     public static final int DAY = HOUR * 24;
     public static final int WEEK = DAY * 7;
-    public int defaultTTL = 4 * WEEK;
+    public int defaultTTL = 52 * WEEK;
 
     private UrlCanonicalizer canonicalizer = new AggressiveUrlCanonicalizer();
 
