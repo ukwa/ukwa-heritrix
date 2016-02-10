@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
@@ -32,16 +31,13 @@ import org.archive.wayback.util.url.AggressiveUrlCanonicalizer;
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
-public class WatchedFileSurtMap {
+public class WatchedFileSurtMap extends WatchedFileSource {
 
     private static final Logger LOGGER = Logger
             .getLogger(WatchedFileSurtMap.class.getName());
 
-    private int checkInterval = 0;
-
     private Map<String, Integer> currentMap = null;
 
-    long lastUpdated = 0;
 
     private UrlCanonicalizer canonicalizer = new AggressiveUrlCanonicalizer();
 
@@ -60,82 +56,18 @@ public class WatchedFileSurtMap {
         this.canonicalizer = canonicalizer;
     }
 
-    /**
-     * @return the checkInterval in seconds
-     */
-    public int getCheckInterval() {
-        return checkInterval;
-    }
-
-    /**
-     * @param checkInterval
-     *            the checkInterval in seconds to set
-     */
-    public void setCheckInterval(int checkInterval) {
-        this.checkInterval = checkInterval;
-    }
-
-    /**
-     * Thread object of update thread -- also is flag indicating if the thread
-     * has already been started -- static, and access to it is synchronized.
-     */
-    private static Thread updateThread = null;
-
-    /**
-     * load exclusion file and startup polling thread to check for updates
-     * 
-     * @throws IOException
-     *             if the exclusion file could not be read.
-     */
-    public void init() {
-        if (this.recentlySeenUriUniqFilter.getTextSource() != null) {
-            LOGGER.warning(
-                    "Initialising TTL MAP: " + this.recentlySeenUriUniqFilter
-                .getTextSource().getFile().getAbsolutePath());
-        } else {
-            LOGGER.severe("No TTL Map text source defined!");
-        }
-        try {
-            reloadFile();
-        } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "Exception when loading file!", e);
-        }
-        if (checkInterval > 0) {
-            startUpdateThread();
-        }
-    }
-
-    protected void reloadFile() throws IOException {
+    protected File getSourceFile() {
         if (this.recentlySeenUriUniqFilter == null
                 || this.recentlySeenUriUniqFilter.getTextSource() == null)
-            return;
+            return null;
 
-        File file = this.recentlySeenUriUniqFilter.getTextSource().getFile();
-
-        long currentMod = file.lastModified();
-        if (currentMod == lastUpdated) {
-            if (currentMod == 0) {
-                LOGGER.severe("No file at " + file.getAbsolutePath());
-            }
-            return;
-        }
-        LOGGER.info("(Re)loading file " + file.getAbsolutePath());
-        try {
-            currentMap = loadFile(file.getAbsolutePath());
-            lastUpdated = currentMod;
-            LOGGER.info("Reload " + file.getAbsolutePath() + " OK");
-        } catch (IOException e) {
-            lastUpdated = -1;
-            currentMap = null;
-            e.printStackTrace();
-            LOGGER.severe("Reload " + file.getAbsolutePath() + " FAILED:"
-                    + e.getLocalizedMessage());
-        }
+        return this.recentlySeenUriUniqFilter.getTextSource().getFile();
     }
 
-    protected Map<String, Integer> loadFile(String path) throws IOException {
+
+    protected void loadFile() throws IOException {
         Map<String, Integer> newMap = new HashMap<String, Integer>();
-        FlatFile ff = new FlatFile(path);
+        FlatFile ff = new FlatFile(this.getSourceFile().getAbsolutePath());
         CloseableIterator<String> itr = ff.getSequentialIterator();
         LOGGER.fine("EXCLUSION-MAP: looking at " + itr.hasNext());
         while (itr.hasNext()) {
@@ -169,7 +101,9 @@ public class WatchedFileSurtMap {
             newMap.put(surt, ps);
         }
         itr.close();
-        return newMap;
+        // And assign it:
+        currentMap = newMap;
+        return;
     }
 
     /**
@@ -183,78 +117,5 @@ public class WatchedFileSurtMap {
         return currentMap;
     }
 
-    private synchronized void startUpdateThread() {
-        if (updateThread != null) {
-            return;
-        }
-        updateThread = new CacheUpdaterThread(this, checkInterval);
-        updateThread.start();
-    }
-
-    public synchronized boolean isRunning() {
-        if (updateThread == null) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    private synchronized void stopUpdateThread() {
-        if (updateThread == null) {
-            return;
-        }
-        updateThread.interrupt();
-    }
-
-    private class CacheUpdaterThread extends Thread {
-        /**
-         * object which merges CDX files with the BDBResourceIndex
-         */
-        private WatchedFileSurtMap service = null;
-
-        private int runInterval;
-
-        /**
-         * @param service
-         *            ExclusionFactory which will be reloaded
-         * @param runInterval
-         *            int number of seconds between reloads
-         */
-        public CacheUpdaterThread(WatchedFileSurtMap service,
-                int runInterval) {
-            super("CacheUpdaterThread");
-            super.setDaemon(true);
-            this.service = service;
-            this.runInterval = runInterval;
-            LOGGER.info("CacheUpdaterThread is alive.");
-        }
-
-        public void run() {
-            int sleepInterval = runInterval;
-            while (true) {
-                try {
-                    try {
-                        service.reloadFile();
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-                    Thread.sleep(sleepInterval * 1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    return;
-                }
-            }
-        }
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.archive.wayback.accesscontrol.ExclusionFilterFactory#shutdown()
-     */
-    public void shutdown() {
-        stopUpdateThread();
-    }
 
 }

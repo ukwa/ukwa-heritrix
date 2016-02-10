@@ -10,6 +10,7 @@ import org.archive.spring.ConfigPathConfigurer;
 import org.archive.wayback.UrlCanonicalizer;
 import org.archive.wayback.surt.SURTTokenizer;
 import org.archive.wayback.util.url.AggressiveUrlCanonicalizer;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
 import org.springframework.context.Lifecycle;
@@ -47,7 +48,7 @@ import com.google.common.hash.Hashing;
  *
  */
 public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
-        implements Serializable, Lifecycle {
+        implements Serializable, Lifecycle, InitializingBean {
     private static final long serialVersionUID = 1061526253773091309L;
 
     private static Logger LOGGER = Logger
@@ -222,6 +223,17 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
     public boolean isRunning() {
         LOGGER.info("Called isRunning()");
         return this.ttlMap.isRunning();
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * org.springframework.beans.factory.InitializingBean#afterPropertiesSet()
+     */
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        this.ttlMap.init();
     }
 
 }
