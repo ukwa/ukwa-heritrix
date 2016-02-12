@@ -64,9 +64,15 @@ public class WatchedFileSurtPrefixedDecideRule extends SurtPrefixedDecideRule
                 } finally {
                     IOUtils.closeQuietly(reader);
                 }
-                // And swap into place:
-                synchronized (surtPrefixes) {
-                    surtPrefixes = newSurtPrefixes;
+                // Ignore empty files (assume this is in error):
+                if (newSurtPrefixes.size() == 0) {
+                    logger.severe(
+                            "No SURTs found! Assuming this is in error - not modifying current SURTs");
+                } else {
+                    // And swap into place:
+                    synchronized (surtPrefixes) {
+                        surtPrefixes = newSurtPrefixes;
+                    }
                 }
                 // Log current surt prefixes (for debugging):
                 for (String s : surtPrefixes) {

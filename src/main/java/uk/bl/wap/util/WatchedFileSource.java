@@ -55,8 +55,8 @@ public abstract class WatchedFileSource {
             LOGGER.log(Level.SEVERE, "Exception when loading file!", e);
         }
         if (checkInterval > 0) {
-            LOGGER.info(
-                    "Starting update thread watching " + this.getSourceFile());
+            LOGGER.info("Starting update watcher thread for "
+                    + this.getSourceFile());
             startUpdateThread();
         } else {
             LOGGER.info("Not starting watcher thread, checkInterval = "
@@ -78,12 +78,18 @@ public abstract class WatchedFileSource {
 
         long currentMod = file.lastModified();
         if (currentMod == lastUpdated) {
-            LOGGER.info("File " + file.getName() + " appears unchanged.");
+            LOGGER.fine("File " + file.getName() + " appears unchanged.");
             if (currentMod == 0) {
                 LOGGER.severe("No file at " + file.getAbsolutePath());
             }
             return;
         }
+
+        if (file.length() == 0) {
+            LOGGER.severe("File at " + file.getAbsolutePath() + " is empty!");
+            return;
+        }
+
         LOGGER.info("(Re)loading file " + file.getAbsolutePath());
         try {
             loadFile();
