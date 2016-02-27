@@ -47,7 +47,7 @@ public class ExtractorJson extends ContentExtractor {
                 try {
                     int max = getExtractorParameters().getMaxOutlinks();
                     addRelativeToBase(curi, max, link,
-                            LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);
+                            LinkContext.INFERRED_MISC, Hop.INFERRED);
                 } catch (URIException e) {
                     logUriError(e, curi.getUURI(), link);
                 }
