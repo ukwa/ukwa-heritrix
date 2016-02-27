@@ -53,20 +53,38 @@ public class RobotsTxtSitemapExtractor extends ContentExtractor {
     @Override
     protected boolean innerExtract(CrawlURI curi) {
         try {
-            List<String> links = parseRobotsTxt(curi.getRecorder()
+
+            // Clone the CrawlURI and change hop path and avoid queueing
+            // sitemaps as prerequisites (i.e. strip P from hop path).
+            CrawlURI curiClone = new CrawlURI(curi.getUURI(),
+                    curi.getPathFromSeed().replace("P", ""), curi.getVia(),
+                    curi.getViaContext());
+
+            // Parse the robots for the sitemaps.
+            List<String> links = parseRobotsTxt(
+                    curi.getRecorder()
                     .getContentReplayInputStream());
             LOGGER.finest("Checked " + curi + " GOT " + links);
+
+            // Get the max outlinks (needed by add method):
+            int max = getExtractorParameters().getMaxOutlinks();
+
+            // Enqueue:
             for (String link : links) {
                 try {
-                    int max = getExtractorParameters().getMaxOutlinks();
                     LOGGER.info("Found site map: " + link);
-                    addRelativeToBase(curi, max, link,
-                            LinkContext.SPECULATIVE_MISC, Hop.SPECULATIVE);
+                    // Add links but using the cloned CrawlURI as the crawl
+                    // context.
+                    addRelativeToBase(curiClone, max, link,
+                            LinkContext.NAVLINK_MISC, Hop.NAVLINK);
                 } catch (URIException e) {
                     logUriError(e, curi.getUURI(), link);
                 }
             }
+
+            // Return number of links discovered:
             return (links.size() > 0);
+
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, curi.getURI(), e);
             curi.getNonFatalFailures().add(e);
