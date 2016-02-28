@@ -69,7 +69,7 @@ public class RobotsTxtSitemapExtractor extends ContentExtractor {
             // Get the max outlinks (needed by add method):
             int max = getExtractorParameters().getMaxOutlinks();
 
-            // Enqueue:
+            // Accrue links:
             for (String link : links) {
                 try {
                     LOGGER.info("Found site map: " + link);
@@ -80,6 +80,11 @@ public class RobotsTxtSitemapExtractor extends ContentExtractor {
                 } catch (URIException e) {
                     logUriError(e, curi.getUURI(), link);
                 }
+            }
+
+            // Patch outlinks back into original curi:
+            for (CrawlURI outlink : curiClone.getOutLinks()) {
+                curi.getOutLinks().add(outlink);
             }
 
             // Return number of links discovered:
