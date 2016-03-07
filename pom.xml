@@ -150,7 +150,7 @@
       <dependency>
          <groupId>biz.paluch.redis</groupId>
          <artifactId>lettuce</artifactId>
-         <version>4.0.1.Final</version>
+         <version>3.4.2.Final</version>
          <exclusions>
             <exclusion>
                <artifactId>guava</artifactId>
