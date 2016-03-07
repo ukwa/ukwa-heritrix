@@ -31,6 +31,8 @@ public class RedisRecentlySeenUriUniqFilter
 
     private String redisEndpoint = "redis://redis:6379";
 
+    private int redisDB = 0;
+
     private StatefulRedisConnection<String, String> connection;
 
     private RedisClient redisClient;
@@ -50,10 +52,25 @@ public class RedisRecentlySeenUriUniqFilter
 
     /**
      * @param redisEndpoint
-     *            the redisEndpoint to set
+     *            the redisEndpoint to set, defaults to "redis://redis:6379"
      */
     public void setRedisEndpoint(String redisEndpoint) {
         this.redisEndpoint = redisEndpoint;
+    }
+
+    /**
+     * @return the DB number
+     */
+    public int getDB() {
+        return redisDB;
+    }
+
+    /**
+     * @param DB
+     *            the DB number to use, defaults to 0
+     */
+    public void setDB(int DB) {
+        this.redisDB = DB;
     }
 
     @Override
@@ -62,6 +79,9 @@ public class RedisRecentlySeenUriUniqFilter
         connection = redisClient
                 .connect();
         syncCommands = connection.sync();
+
+        // Select the database to use:
+        syncCommands.select(redisDB);
 
         System.out.println("Connected to Redis");
     }
