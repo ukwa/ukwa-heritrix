@@ -136,7 +136,11 @@ public class RedisRecentlySeenUriUniqFilter
     // i.e. db0:keys=16224270,expires=16224270,avg_ttl=2149615
     protected static long parseKeyspaceInfo(String result) {
         String[] parts = result.split("[=,]+");
-        return Integer.parseInt(parts[1]);
+        if (parts.length > 1) {
+            return Integer.parseInt(parts[1]);
+        } else {
+            return 0;
+        }
     }
 
 }
