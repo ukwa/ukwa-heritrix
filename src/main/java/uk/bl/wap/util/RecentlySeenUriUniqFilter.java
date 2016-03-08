@@ -70,6 +70,10 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
     // Hash function used for building keys:
     private HashFunction hf = Hashing.murmur3_128();
 
+    // Whether to use the hash of the URI rather than the URI (e.g. if
+    // the implementation needs short keys)
+    private boolean useHashedUriKey = false;
+
     /**
      * Default constructor
      */
@@ -157,6 +161,21 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
     }
 
     /**
+     * @return the useHashedUriKey
+     */
+    public boolean isUseHashedUriKey() {
+        return useHashedUriKey;
+    }
+
+    /**
+     * @param useHashedUriKey
+     *            the useHashedUriKey to set
+     */
+    public void setUseHashedUriKey(boolean useHashedUriKey) {
+        this.useHashedUriKey = useHashedUriKey;
+    }
+
+    /**
      * 
      * Use the map to look up the TTL for this Url.
      * 
@@ -190,7 +209,12 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
      */
     protected boolean setAdd(CharSequence uri_cs) {
         String uri = uri_cs.toString();
-        String key = hf.hashBytes(uri.getBytes()).toString();
+        String key;
+        if (useHashedUriKey) {
+            key = hf.hashBytes(uri.getBytes()).toString();
+        } else {
+            key = uri;
+        }
         int ttl_s = getTTLForUrl(uri);
         // Allow entries to expire after a while, defaults, ranges, etc,
         // surt-prefixed.

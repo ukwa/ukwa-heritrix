@@ -124,11 +124,19 @@ public class RedisRecentlySeenUriUniqFilter
 
     @Override
     protected long setCount() {
-        String result = connection.info("keyspace");
-        LOGGER.info("Got: " + result);
-        // dbXXX: keys=XXX,expires=XXX
-        // db0:keys=16224270,expires=16224270,avg_ttl=2149615
+        if (connection != null) {
+            String result = connection.info("keyspace");
+            LOGGER.finest("Got: " + result);
+            return parseKeyspaceInfo(result);
+        }
         return 0;
+    }
+
+    // e.g. dbXXX: keys=XXX,expires=XXX
+    // i.e. db0:keys=16224270,expires=16224270,avg_ttl=2149615
+    protected static long parseKeyspaceInfo(String result) {
+        String[] parts = result.split("[=,]+");
+        return Integer.parseInt(parts[1]);
     }
 
 }
