@@ -72,8 +72,10 @@ public class RedisRecentlySeenUriUniqFilter
         this.redisDB = DB;
     }
 
-    @Override
-    public void start() {
+    /**
+     * 
+     */
+    private void connect() {
         redisClient = RedisClient.create(redisEndpoint);
         connection = redisClient
                 .connect();
@@ -82,6 +84,11 @@ public class RedisRecentlySeenUriUniqFilter
         connection.select(redisDB);
 
         System.out.println("Connected to Redis");
+    }
+
+    @Override
+    public void start() {
+        this.connect();
     }
 
     @Override
@@ -124,7 +131,7 @@ public class RedisRecentlySeenUriUniqFilter
 
     @Override
     protected long setCount() {
-        if (connection != null) {
+        if (connection != null && connection.isOpen()) {
             String result = connection.info("keyspace");
             LOGGER.finest("Got: " + result);
             return parseKeyspaceInfo(result);
