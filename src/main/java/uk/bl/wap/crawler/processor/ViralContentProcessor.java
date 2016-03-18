@@ -23,16 +23,21 @@ public class ViralContentProcessor extends Processor {
     private final static Logger LOGGER = Logger
             .getLogger(ViralContentProcessor.class.getName());
     private static final long serialVersionUID = -321505737175991914L;
-    private static final int MAX_SCANNERS = 10;
+    private static final int MAX_SCANNERS = 100;
     private static final long MAX_WAIT = -1L;
+    private int poolSize = MAX_SCANNERS;
     private int virusCount = 0;
     private ClamdScannerPoolFactory clamdScannerPoolFactory = new ClamdScannerPoolFactory();
     private ObjectPool<ClamdScanner> clamdScannerPool = null;
 
     @SuppressWarnings("unchecked")
     public ViralContentProcessor() {
+        initializePool();
+    }
+
+    private void initializePool() {
         clamdScannerPool = new GenericObjectPool<ClamdScanner>(
-                clamdScannerPoolFactory, MAX_SCANNERS,
+                clamdScannerPoolFactory, poolSize,
                 GenericObjectPool.WHEN_EXHAUSTED_BLOCK, MAX_WAIT);
     }
 
@@ -83,6 +88,22 @@ public class ViralContentProcessor extends Processor {
 
     public int getStreamMaxLength() {
         return (Integer) kp.get("streamMaxLength");
+    }
+
+    /**
+     * @return the poolSize
+     */
+    public int getPoolSize() {
+        return poolSize;
+    }
+
+    /**
+     * @param poolSize
+     *            the poolSize to set
+     */
+    public void setPoolSize(int poolSize) {
+        this.poolSize = poolSize;
+        initializePool();
     }
 
     @Override
