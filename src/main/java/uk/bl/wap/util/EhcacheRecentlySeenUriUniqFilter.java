@@ -62,7 +62,7 @@ public class EhcacheRecentlySeenUriUniqFilter
      * @return
      */
     public Ehcache getCache() {
-        if (cache == null || !cache.getStatus().equals(Status.STATUS_ALIVE)) {
+        if (!isCacheAvailable()) {
             setupCache();
         }
         return cache;
@@ -74,6 +74,14 @@ public class EhcacheRecentlySeenUriUniqFilter
      */
     public void setCache(Ehcache cache) {
         this.cache = cache;
+    }
+
+    private boolean isCacheAvailable() {
+        if (cache == null || !cache.getStatus().equals(Status.STATUS_ALIVE)) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     /**
@@ -137,10 +145,14 @@ public class EhcacheRecentlySeenUriUniqFilter
     }
 
     /**
-     * 
+     * Not that this in not a 'setter', it's the count (size) of a set.
      */
     protected long setCount() {
-        return getCache().getSize();
+        if (this.isCacheAvailable()) {
+            return getCache().getSize();
+        } else {
+            return 0;
+        }
     }
 
     @Override
