@@ -36,6 +36,8 @@ public class EhcacheRecentlySeenUriUniqFilter
 
     private int maxEntriesLocalHeap = 1000 * 1000;
 
+    private int maxElementsOnDisk = 0;
+
     public EhcacheRecentlySeenUriUniqFilter() {
         super();
     }
@@ -85,6 +87,36 @@ public class EhcacheRecentlySeenUriUniqFilter
     }
 
     /**
+     * @return the maxEntriesLocalHeap
+     */
+    public int getMaxEntriesLocalHeap() {
+        return maxEntriesLocalHeap;
+    }
+
+    /**
+     * @param maxEntriesLocalHeap
+     *            the maxEntriesLocalHeap to set
+     */
+    public void setMaxEntriesLocalHeap(int maxEntriesLocalHeap) {
+        this.maxEntriesLocalHeap = maxEntriesLocalHeap;
+    }
+
+    /**
+     * @return the maxElementsOnDisk
+     */
+    public int getMaxElementsOnDisk() {
+        return maxElementsOnDisk;
+    }
+
+    /**
+     * @param maxElementsOnDisk
+     *            the maxElementsOnDisk to set
+     */
+    public void setMaxElementsOnDisk(int maxElementsOnDisk) {
+        this.maxElementsOnDisk = maxElementsOnDisk;
+    }
+
+    /**
      * 
      */
     private void setupCache() {
@@ -106,9 +138,10 @@ public class EhcacheRecentlySeenUriUniqFilter
             cache = new Cache(new CacheConfiguration("recentlySeenUrls",
                     maxEntriesLocalHeap)
                             .memoryStoreEvictionPolicy(
-                                    MemoryStoreEvictionPolicy.LFU)
+                                    MemoryStoreEvictionPolicy.LRU)
                             .eternal(false).timeToLiveSeconds(this.defaultTTL)
                             .diskExpiryThreadIntervalSeconds(0)
+                            .maxEntriesLocalDisk(maxElementsOnDisk)
                             .diskPersistent(true).overflowToDisk(true));
             manager.addCache(cache);
         }
