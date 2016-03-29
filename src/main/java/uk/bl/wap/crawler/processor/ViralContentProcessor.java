@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.pool.BasePoolableObjectFactory;
-import org.apache.commons.pool.ObjectPool;
-import org.apache.commons.pool.impl.GenericObjectPool;
 import org.archive.io.ReplayInputStream;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
@@ -16,29 +13,16 @@ import uk.bl.wap.util.ClamdScanner;
 
 /**
  * 
- * @author rcoram
+ * @author rcoram, Andrew Jackson
  */
 
 public class ViralContentProcessor extends Processor {
     private final static Logger LOGGER = Logger
             .getLogger(ViralContentProcessor.class.getName());
-    private static final long serialVersionUID = -321505737175991914L;
-    private static final int MAX_SCANNERS = 100;
-    private static final long MAX_WAIT = -1L;
-    private int poolSize = MAX_SCANNERS;
+
     private int virusCount = 0;
-    private ClamdScannerPoolFactory clamdScannerPoolFactory = new ClamdScannerPoolFactory();
-    private ObjectPool<ClamdScanner> clamdScannerPool = null;
 
-    @SuppressWarnings("unchecked")
     public ViralContentProcessor() {
-        initializePool();
-    }
-
-    private void initializePool() {
-        clamdScannerPool = new GenericObjectPool<ClamdScanner>(
-                clamdScannerPoolFactory, poolSize,
-                GenericObjectPool.WHEN_EXHAUSTED_BLOCK, MAX_WAIT);
     }
 
     /**
@@ -47,7 +31,6 @@ public class ViralContentProcessor extends Processor {
     @Autowired
     public void setClamdHost(String clamdHost) {
         kp.put("clamdHost", clamdHost);
-        clamdScannerPoolFactory.setClamdHost(clamdHost);
     }
 
     public String getClamdHost() {
@@ -64,7 +47,6 @@ public class ViralContentProcessor extends Processor {
     @Autowired
     public void setClamdPort(int port) {
         kp.put("clamdPort", port);
-        clamdScannerPoolFactory.setClamdPort(port);
     }
 
     /**
@@ -73,7 +55,6 @@ public class ViralContentProcessor extends Processor {
     @Autowired
     public void setClamdTimeout(int clamdTimeout) {
         kp.put("clamdTimeout", clamdTimeout);
-        clamdScannerPoolFactory.setClamdTimeout(clamdTimeout);
     }
 
     public int getClamdTimeout() {
@@ -83,27 +64,15 @@ public class ViralContentProcessor extends Processor {
     @Autowired
     public void setStreamMaxLength(int streamMaxLength) {
         kp.put("streamMaxLength", streamMaxLength);
-        clamdScannerPoolFactory.setStreamMaxLength(streamMaxLength);
     }
 
     public int getStreamMaxLength() {
         return (Integer) kp.get("streamMaxLength");
     }
 
-    /**
-     * @return the poolSize
-     */
-    public int getPoolSize() {
-        return poolSize;
-    }
-
-    /**
-     * @param poolSize
-     *            the poolSize to set
-     */
-    public void setPoolSize(int poolSize) {
-        this.poolSize = poolSize;
-        initializePool();
+    protected ClamdScanner getScanner() {
+        return new ClamdScanner(this.getClamdHost(), this.getClamdPort(),
+                this.getClamdTimeout(), this.getStreamMaxLength());
     }
 
     @Override
@@ -111,10 +80,12 @@ public class ViralContentProcessor extends Processor {
         ClamdScanner scanner = null;
         ReplayInputStream in = null;
         try {
-            scanner = clamdScannerPool.borrowObject();
-            LOGGER.log(Level.FINE, "ClamAV scanning " + curi.getURI());
+            LOGGER.log(Level.FINER, "ClamAV scanning " + curi.getURI());
+            scanner = getScanner();
             in = curi.getRecorder().getReplayInputStream();
             String result = scanner.clamdScan(in);
+            LOGGER.log(Level.FINE, "ClamAV scanned " + curi.getURI()
+                    + " got result: " + result);
             if (result.matches("^([1-2]:\\s+)?stream:.+$")) {
                 if (!result.matches("^([1-2]:\\s+)?stream: OK.*$")) {
                     curi.getAnnotations().add(result);
@@ -135,7 +106,7 @@ public class ViralContentProcessor extends Processor {
         }
         if (scanner != null) {
             try {
-                clamdScannerPool.returnObject(scanner);
+                scanner = null;
             } catch (Exception e) {
                 LOGGER.log(Level.WARNING, "innerProcess(): " + e.toString());
             }
@@ -157,49 +128,4 @@ public class ViralContentProcessor extends Processor {
         return report.toString();
     }
 
-    @SuppressWarnings("rawtypes")
-    public class ClamdScannerPoolFactory extends BasePoolableObjectFactory {
-        String clamdHost;
-        Integer clamdPort;
-        Integer clamdTimeout;
-        Integer streamMaxLength;
-
-        @Override
-        public Object makeObject() throws Exception {
-            return new ClamdScanner(this.getClamdHost(), this.getClamdPort(),
-                    this.getClamdTimeout(), this.getStreamMaxLength());
-        }
-
-        public void setClamdHost(String clamdHost) {
-            this.clamdHost = clamdHost;
-        }
-
-        private String getClamdHost() {
-            return this.clamdHost;
-        }
-
-        public int getClamdPort() {
-            return this.clamdPort;
-        }
-
-        public void setClamdPort(int clamdPort) {
-            this.clamdPort = clamdPort;
-        }
-
-        public void setClamdTimeout(int clamdTimeout) {
-            this.clamdTimeout = clamdTimeout;
-        }
-
-        private int getClamdTimeout() {
-            return this.clamdTimeout;
-        }
-
-        public void setStreamMaxLength(int streamMaxLength) {
-            this.streamMaxLength = streamMaxLength;
-        }
-
-        private int getStreamMaxLength() {
-            return streamMaxLength;
-        }
-    }
 }
