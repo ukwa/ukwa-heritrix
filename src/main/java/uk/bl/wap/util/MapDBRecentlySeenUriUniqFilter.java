@@ -39,6 +39,8 @@ public class MapDBRecentlySeenUriUniqFilter extends RecentlySeenUriUniqFilter {
 
     private int lockScale = 1024;
 
+    private long sizeCounter = 0;
+
     /**
      * 
      * @return
@@ -82,6 +84,7 @@ public class MapDBRecentlySeenUriUniqFilter extends RecentlySeenUriUniqFilter {
         Long oldValue = this.cache.putIfAbsent(key, currentTime);
         if (oldValue == null) {
             LOGGER.finest("New URL - stored " + key + " -> " + currentTime);
+            this.sizeCounter++;
             return true;
         }
         LOGGER.finest("Seen URL - stored value is " + key + " -> " + oldValue);
@@ -115,7 +118,9 @@ public class MapDBRecentlySeenUriUniqFilter extends RecentlySeenUriUniqFilter {
     @Override
     protected long setCount() {
         if (this.cache != null) {
-            return this.cache.sizeLong();
+            // This is accurate but actually recounts! and so is v expensive!
+            // return this.cache.sizeLong();
+            return this.sizeCounter;
         }
         return 0;
     }
@@ -179,6 +184,9 @@ public class MapDBRecentlySeenUriUniqFilter extends RecentlySeenUriUniqFilter {
         // Set up the cache:
         if (db.exists("onDiskUriCache")) {
             cache = db.hashMap("onDiskUriCache");
+            LOGGER.info("Cache size count begun...");
+            this.sizeCounter = this.cache.sizeLong();
+            LOGGER.info("Cache size count finished: " + this.sizeCounter);
         } else {
             cache = db.hashMapCreate("onDiskUriCache")
                 .keySerializer(Serializer.STRING)
