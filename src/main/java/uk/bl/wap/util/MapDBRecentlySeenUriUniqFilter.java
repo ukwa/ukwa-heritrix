@@ -17,6 +17,9 @@ import org.springframework.beans.factory.annotation.Required;
  * Note that this version uses the TTL on check, having stored the PUT time,
  * rather than storing the EXPIRE time (as other implementations do).
  * 
+ * Note default lockScale for MapDB is 16. This defaults to 1024, which will
+ * consume more RAM. It can be configured via the crawler beans file.
+ * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
@@ -34,6 +37,8 @@ public class MapDBRecentlySeenUriUniqFilter extends RecentlySeenUriUniqFilter {
 
     private HTreeMap<String, Long> cache;
 
+    private int lockScale = 1024;
+
     /**
      * 
      * @return
@@ -49,6 +54,21 @@ public class MapDBRecentlySeenUriUniqFilter extends RecentlySeenUriUniqFilter {
     @Required
     public void setCacheStorePath(String cacheStorePath) {
         this.cacheStorePath = cacheStorePath;
+    }
+
+    /**
+     * @return the lockScale
+     */
+    public int getLockScale() {
+        return lockScale;
+    }
+
+    /**
+     * @param lockScale
+     *            the lockScale to set
+     */
+    public void setLockScale(int lockScale) {
+        this.lockScale = lockScale;
     }
 
     /* (non-Javadoc)
@@ -153,8 +173,9 @@ public class MapDBRecentlySeenUriUniqFilter extends RecentlySeenUriUniqFilter {
         }
         // Create the DB:
         db = DBMaker.fileDB(new File(cacheFolder, "recentlySeen.db"))
-                .closeOnJvmShutdown().transactionDisable().cacheSoftRefEnable()
-                .checksumEnable().compressionEnable().fileMmapEnable().make();
+                .closeOnJvmShutdown().lockScale(lockScale).metricsEnable()
+                .cacheSoftRefEnable().checksumEnable().compressionEnable()
+                .fileMmapEnable().make();
         // Set up the cache:
         if (db.exists("onDiskUriCache")) {
             cache = db.hashMap("onDiskUriCache");
