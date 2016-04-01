@@ -14,6 +14,8 @@ import org.archive.modules.seeds.SeedModule;
  * A dummy seeds module for use when other mechanisms are being used to inject
  * and manage seeds.
  * 
+ * Just passes seeds on rather than reading or storing them.
+ * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
@@ -45,7 +47,8 @@ public class NoOpSeedsModule extends SeedModule {
      */
     @Override
     public void addSeed(CrawlURI curi) {
-        LOGGER.fine("Ignoring addSeed(CrawlURI) " + curi.getURI());
+        LOGGER.fine("(only) publishing addSeed(CrawlURI) " + curi.getURI());
+        publishAddedSeed(curi);
     }
 
 }

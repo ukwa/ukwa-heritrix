@@ -13,11 +13,34 @@ import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
 import net.sf.ehcache.Status;
 import net.sf.ehcache.config.CacheConfiguration;
+import net.sf.ehcache.config.CacheConfiguration.TransactionalMode;
 import net.sf.ehcache.config.Configuration;
 import net.sf.ehcache.config.DiskStoreConfiguration;
+import net.sf.ehcache.config.MemoryUnit;
 import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 
 /**
+ * Recently Seen URI filter based on EhCache
+ * 
+ * Should work and resume reliably if shutdown is normal. However, the
+ * 'Enterprise' variant is needed for robust recovery options.
+ * 
+ * (at the moment, just getting it to reload the existing cache is proving
+ * difficult)
+ * 
+ * It seems pointers/references are kept in RAM. Perhaps Ehcache is optimised
+ * for the case where the values are large? Whatever the cause, I am finding the
+ * RAM usage creeps up, with 55 million entries (after GC) when the crawl has
+ * seen about that many URLs (c. 60 million).
+ * 
+ * Loading a heap dump into Eclipse MAT and computing the Dominator Tree showed
+ * Ehcache was consuming too much RAM.
+ * 
+ * @see http://help.eclipse.org/mars/index.jsp?topic=%2Forg.eclipse.mat.ui.help%
+ *      2Freference%2Ffindingmemoryleak.html
+ * @see http://help.eclipse.org/mars/index.jsp?topic=%2Forg.eclipse.mat.ui.help%
+ *      2Fconcepts%2Fdominatortree.html
+ * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
@@ -34,7 +57,7 @@ public class EhcacheRecentlySeenUriUniqFilter
     private CacheManager manager;
     private Ehcache cache;
 
-    private int maxEntriesLocalHeap = 1000 * 1000;
+    private int maxEntriesLocalHeap = 1000;
 
     private int maxElementsOnDisk = 0;
 
@@ -123,26 +146,37 @@ public class EhcacheRecentlySeenUriUniqFilter
         LOGGER.info("Setting up Ehcache...");
         if (manager == null
                 || !manager.getStatus().equals(Status.STATUS_ALIVE)) {
+            LOGGER.info("Creating Ehcache manager with cacheStorePath: "
+                    + cacheStorePath);
             Configuration configuration = new Configuration();
-            DiskStoreConfiguration diskStoreConfiguration = new DiskStoreConfiguration();
-            diskStoreConfiguration.setPath(cacheStorePath);
-            // Already created a configuration object ...
-            configuration.addDiskStore(diskStoreConfiguration);
-            manager = CacheManager.create(configuration);
+            configuration.addDiskStore(
+                    new DiskStoreConfiguration().path(cacheStorePath));
+            manager = new CacheManager(configuration);
+            LOGGER.info("Got manager: " + manager.getActiveConfigurationText());
+        }
+        // List known caches:
+        for (String name : manager.getCacheNames()) {
+            LOGGER.info("Manager with path " + manager.getDiskStorePathManager()
+                    + " knows a cache named: " + name);
         }
         // Get existing cache if there is one:
-        cache = manager.getEhcache("recentlySeenUrls");
+        String cacheName = "recentlyseenurls";
+        cache = manager.getEhcache(cacheName);
         // Otherwise, make a new one:
         if (cache == null) {
-            LOGGER.info("Setting up default Ehcache configuration.");
-            cache = new Cache(new CacheConfiguration("recentlySeenUrls",
-                    maxEntriesLocalHeap)
+            LOGGER.info("Setting up new, default Ehcache configuration.");
+            cache = new Cache(
+                    new CacheConfiguration().name(cacheName)
                             .memoryStoreEvictionPolicy(
                                     MemoryStoreEvictionPolicy.LRU)
                             .eternal(false).timeToLiveSeconds(this.defaultTTL)
-                            .diskExpiryThreadIntervalSeconds(0)
+                            .diskExpiryThreadIntervalSeconds(60 * 10)
                             .maxEntriesLocalDisk(maxElementsOnDisk)
-                            .diskPersistent(true).overflowToDisk(true));
+                            .maxBytesLocalHeap(1, MemoryUnit.MEGABYTES)
+                            .transactionalMode(TransactionalMode.OFF)
+                            // .maxEntriesLocalHeap(maxEntriesLocalHeap)
+                            .overflowToDisk(true)
+                            .diskPersistent(true));
             manager.addCache(cache);
         }
     }
