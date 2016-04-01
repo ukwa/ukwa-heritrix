@@ -13,10 +13,8 @@ import net.sf.ehcache.Ehcache;
 import net.sf.ehcache.Element;
 import net.sf.ehcache.Status;
 import net.sf.ehcache.config.CacheConfiguration;
-import net.sf.ehcache.config.CacheConfiguration.TransactionalMode;
 import net.sf.ehcache.config.Configuration;
 import net.sf.ehcache.config.DiskStoreConfiguration;
-import net.sf.ehcache.config.MemoryUnit;
 import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
 
 /**
@@ -32,6 +30,8 @@ import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
  * for the case where the values are large? Whatever the cause, I am finding the
  * RAM usage creeps up, with 55 million entries (after GC) when the crawl has
  * seen about that many URLs (c. 60 million).
+ * 
+ * Possibly, maxBytesLocalHeap might work better?
  * 
  * Loading a heap dump into Eclipse MAT and computing the Dominator Tree showed
  * Ehcache was consuming too much RAM.
@@ -57,7 +57,9 @@ public class EhcacheRecentlySeenUriUniqFilter
     private CacheManager manager;
     private Ehcache cache;
 
-    private int maxEntriesLocalHeap = 1000;
+    private int maxEntriesLocalHeap = 1000 * 1000;
+
+    private int maxGBLocalHeap = 10;
 
     private int maxElementsOnDisk = 0;
 
@@ -172,9 +174,9 @@ public class EhcacheRecentlySeenUriUniqFilter
                             .eternal(false).timeToLiveSeconds(this.defaultTTL)
                             .diskExpiryThreadIntervalSeconds(60 * 10)
                             .maxEntriesLocalDisk(maxElementsOnDisk)
-                            .maxBytesLocalHeap(1, MemoryUnit.MEGABYTES)
-                            .transactionalMode(TransactionalMode.OFF)
-                            // .maxEntriesLocalHeap(maxEntriesLocalHeap)
+                            // .maxBytesLocalHeap(maxGBLocalHeap,
+                            // MemoryUnit.GIGABYTES)
+                            .maxEntriesLocalHeap(maxEntriesLocalHeap)
                             .overflowToDisk(true)
                             .diskPersistent(true));
             manager.addCache(cache);
