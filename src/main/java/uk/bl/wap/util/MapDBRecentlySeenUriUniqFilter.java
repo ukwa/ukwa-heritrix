@@ -41,6 +41,8 @@ public class MapDBRecentlySeenUriUniqFilter extends RecentlySeenUriUniqFilter {
 
     private long sizeCounter = 0;
 
+    private long flushFrequency = 2;
+
     /**
      * 
      * @return
@@ -85,6 +87,12 @@ public class MapDBRecentlySeenUriUniqFilter extends RecentlySeenUriUniqFilter {
         if (oldValue == null) {
             LOGGER.finest("New URL - stored " + key + " -> " + currentTime);
             this.sizeCounter++;
+            // Periodically flush (to control RAM usage):
+            if (this.sizeCounter % flushFrequency == 0) {
+                LOGGER.fine("Flushing URI cache...");
+                this.db.commit();
+                LOGGER.fine("Flushed URI cache.");
+            }
             return true;
         }
         LOGGER.finest("Seen URL - stored value is " + key + " -> " + oldValue);

@@ -7,9 +7,7 @@ import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.util.SetBasedUriUniqFilter;
 import org.archive.spring.ConfigFile;
 import org.archive.spring.ConfigPathConfigurer;
-import org.archive.wayback.UrlCanonicalizer;
-import org.archive.wayback.surt.SURTTokenizer;
-import org.archive.wayback.util.url.AggressiveUrlCanonicalizer;
+import org.archive.surt.SURTTokenizer;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Required;
@@ -59,7 +57,6 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
     public static final int WEEK = DAY * 7;
     public int defaultTTL = 52 * WEEK;
 
-    private UrlCanonicalizer canonicalizer = new AggressiveUrlCanonicalizer();
 
     private ConfigPathConfigurer configPathConfigurer = null;
 
@@ -96,21 +93,6 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
     public void setConfigPathConfigurer(
             ConfigPathConfigurer configPathConfigurer) {
         this.configPathConfigurer = configPathConfigurer;
-    }
-
-    /**
-     * @return the canonicalizer
-     */
-    public UrlCanonicalizer getCanonicalizer() {
-        return canonicalizer;
-    }
-
-    /**
-     * @param canonicalizer
-     *            the canonicalizer to set
-     */
-    public void setCanonicalizer(UrlCanonicalizer canonicalizer) {
-        this.canonicalizer = canonicalizer;
     }
 
     public ConfigFile getTextSource() {
@@ -184,8 +166,7 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
      */
     private Integer getTTLForUrl(String url) {
         try {
-            SURTTokenizer st = new SURTTokenizer(url,
-                    canonicalizer.isSurtForm());
+            SURTTokenizer st = new SURTTokenizer(url);
             while (true) {
                 String nextSearch = st.nextSearch();
                 if (nextSearch == null) {

@@ -93,11 +93,6 @@
          <scope>provided</scope>
       </dependency>
       <dependency>
-         <groupId>com.rabbitmq</groupId>
-         <artifactId>amqp-client</artifactId>
-         <version>3.4.3</version>
-      </dependency>
-      <dependency>
          <groupId>com.maxmind.geoip2</groupId>
          <artifactId>geoip2</artifactId>
          <version>0.7.1</version>
@@ -133,19 +128,9 @@
          <version>3.0.2</version>
       </dependency>
       <dependency>
-         <groupId>org.apache.commons</groupId>
-         <artifactId>commons-collections4</artifactId>
-         <version>4.0</version>
-      </dependency>
-      <dependency>
          <groupId>net.sf.ehcache</groupId>
          <artifactId>ehcache</artifactId>
          <version>2.10.1</version>
-      </dependency>
-      <dependency>
-         <groupId>org.netpreserve.openwayback</groupId>
-         <artifactId>openwayback-core</artifactId>
-         <version>2.2.0</version>
       </dependency>
       <dependency>
          <groupId>biz.paluch.redis</groupId>

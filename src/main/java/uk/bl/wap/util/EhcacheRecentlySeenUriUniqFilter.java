@@ -63,6 +63,10 @@ public class EhcacheRecentlySeenUriUniqFilter
 
     private int maxElementsOnDisk = 0;
 
+    private long sizeCounter = 0;
+
+    private long flushFrequency = 2;
+
     public EhcacheRecentlySeenUriUniqFilter() {
         super();
     }
@@ -180,6 +184,8 @@ public class EhcacheRecentlySeenUriUniqFilter
                             .overflowToDisk(true)
                             .diskPersistent(true));
             manager.addCache(cache);
+        } else {
+            this.sizeCounter = cache.getSize();
         }
     }
 
@@ -198,9 +204,17 @@ public class EhcacheRecentlySeenUriUniqFilter
         Element added = getCache().putIfAbsent(element);
         if (added == null) {
             LOGGER.finest("Cache entry " + key + " > " + uri + " is new.");
+            this.sizeCounter++;
         } else {
             LOGGER.finest("Cache entry " + key + " > " + uri
                     + " is already in the cache.");
+        }
+
+        // Periodically flush (to control RAM usage):
+        if (this.sizeCounter % flushFrequency == 0) {
+            LOGGER.fine("Flushing URI cache...");
+            this.cache.flush();
+            LOGGER.fine("Flushed URI cache.");
         }
 
         return (added == null);
@@ -217,11 +231,7 @@ public class EhcacheRecentlySeenUriUniqFilter
      * Not that this in not a 'setter', it's the count (size) of a set.
      */
     protected long setCount() {
-        if (this.isCacheAvailable()) {
-            return getCache().getSize();
-        } else {
-            return 0;
-        }
+        return this.sizeCounter;
     }
 
     @Override

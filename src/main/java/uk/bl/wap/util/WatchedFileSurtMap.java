@@ -3,18 +3,16 @@
  */
 package uk.bl.wap.util;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.URIException;
-import org.archive.util.iterator.CloseableIterator;
-import org.archive.wayback.UrlCanonicalizer;
-import org.archive.wayback.surt.SURTTokenizer;
-import org.archive.wayback.util.flatfile.FlatFile;
-import org.archive.wayback.util.url.AggressiveUrlCanonicalizer;
+import org.archive.surt.SURTTokenizer;
 
 /**
  * 
@@ -39,21 +37,11 @@ public class WatchedFileSurtMap extends WatchedFileSource {
     private Map<String, Integer> currentMap = null;
 
 
-    private UrlCanonicalizer canonicalizer = new AggressiveUrlCanonicalizer();
-
     private RecentlySeenUriUniqFilter recentlySeenUriUniqFilter;
 
     public WatchedFileSurtMap(
             RecentlySeenUriUniqFilter recentlySeenUriUniqFilter) {
         this.recentlySeenUriUniqFilter = recentlySeenUriUniqFilter;
-    }
-
-    public UrlCanonicalizer getCanonicalizer() {
-        return canonicalizer;
-    }
-
-    public void setCanonicalizer(UrlCanonicalizer canonicalizer) {
-        this.canonicalizer = canonicalizer;
     }
 
     protected File getSourceFile() {
@@ -67,11 +55,12 @@ public class WatchedFileSurtMap extends WatchedFileSource {
 
     protected void loadFile() throws IOException {
         Map<String, Integer> newMap = new HashMap<String, Integer>();
-        FlatFile ff = new FlatFile(this.getSourceFile().getAbsolutePath());
-        CloseableIterator<String> itr = ff.getSequentialIterator();
-        LOGGER.fine("EXCLUSION-MAP: looking at " + itr.hasNext());
-        while (itr.hasNext()) {
-            String line = (String) itr.next();
+        File ff = new File(this.getSourceFile().getAbsolutePath());
+        FileInputStream itr = new FileInputStream(ff);
+        BufferedReader br = new BufferedReader(new InputStreamReader(itr));
+        LOGGER.fine("EXCLUSION-MAP: looking at " + ff.getAbsolutePath());
+        String line;
+        while ((line = br.readLine()) != null) {
             line = line.trim();
             LOGGER.fine("EXCLUSION-MAP: looking at " + line);
 
@@ -81,20 +70,8 @@ public class WatchedFileSurtMap extends WatchedFileSource {
 
             String[] parts = line.split(" ", 2);
             String key = parts[0];
-            try {
-                key = canonicalizer.urlStringToKey(key);
-            } catch (URIException exc) {
-                LOGGER.finest("Exception when parsing: " + exc);
-                continue;
-            }
-
-            String surt;
-
-            if (canonicalizer.isSurtForm()) {
-                surt = key;
-            } else {
-                surt = key.startsWith("(") ? key : SURTTokenizer.prefixKey(key);
-            }
+            String surt = key.startsWith("(") ? key
+                    : SURTTokenizer.prefixKey(key);
 
             Integer ps = Integer.parseInt(parts[1]);
             LOGGER.fine("EXCLUSION-MAP: adding " + surt + " " + ps + "s");
