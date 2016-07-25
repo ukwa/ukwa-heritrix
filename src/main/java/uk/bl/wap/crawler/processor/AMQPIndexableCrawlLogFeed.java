@@ -136,7 +136,7 @@ public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed {
      * @param celeryMessageFormat
      *            whether to use the Celery message format
      */
-    public void setUseCeleryMessageFormat(boolean celeryMessageFormat) {
+    public void setCeleryMessageFormat(boolean celeryMessageFormat) {
         this.celeryMessageFormat = celeryMessageFormat;
     }
 
