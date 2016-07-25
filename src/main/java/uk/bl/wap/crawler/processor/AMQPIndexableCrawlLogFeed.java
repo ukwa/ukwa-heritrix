@@ -4,6 +4,7 @@
 package uk.bl.wap.crawler.processor;
 
 import java.io.UnsupportedEncodingException;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,8 +22,11 @@ import com.rabbitmq.client.AMQP.BasicProperties;
 
 /**
  * 
- * Variation of AMQPCrawlLogFeed that includes the redirecturl and makes the
+ * Variation of AMQPCrawlLogFeed that includes the redirect url and makes the
  * messages persistent.
+ * 
+ * Optionally use the Celery message format so that framework can process the
+ * tasks easily.
  * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
@@ -31,6 +35,10 @@ public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed {
 
     private final static Logger LOGGER = Logger
             .getLogger(AMQPIndexableCrawlLogFeed.class.getName());
+
+    private boolean celeryMessageFormat = false;
+
+    private String targetCeleryTask = "crawl.tasks.index_uri";
 
     /*
      * (non-Javadoc)
@@ -56,6 +64,11 @@ public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed {
                         "Could not parse redirect Location: " + location);
             }
         }
+        // Re-wrap for Celery if required:
+        if (this.celeryMessageFormat) {
+            jo = this.wrapForCelery(jo);
+        }
+        // Encode and return:
         try {
             return jo.toString().getBytes("UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -81,6 +94,65 @@ public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed {
     @Override
     protected BasicProperties amqpMessageProperties() {
         return props;
+    }
+
+    /**
+     * 
+     * Re-wrap the JSON message in suitable package for sending to a Python
+     * Celery task.
+     * 
+     * @see http://docs.celeryproject.org/en/latest/internals/protocol.html
+     * 
+     * @param jo
+     * @return
+     * 
+     */
+    private JSONObject wrapForCelery(JSONObject payload) {
+        //
+        // {
+        // "id": "e7224d1c-3d15-4478-98e9-2ce39f0f9c53",
+        // "task": "crawl.tasks.verify_sip",
+        // "args": [],
+        // "kwargs": {}
+        // }
+        //
+        JSONObject jo = new JSONObject();
+        jo.append("id", UUID.randomUUID());
+        jo.append("task", this.targetCeleryTask);
+        String[] args = {};
+        jo.append("args", args );
+        jo.append("kwargs", payload);
+        return jo;
+    }
+
+    /**
+     * @return use the celeryMessageFormat?
+     */
+    public boolean isCeleryMessageFormat() {
+        return celeryMessageFormat;
+    }
+
+    /**
+     * @param celeryMessageFormat
+     *            whether to use the Celery message format
+     */
+    public void setUseCeleryMessageFormat(boolean celeryMessageFormat) {
+        this.celeryMessageFormat = celeryMessageFormat;
+    }
+
+    /**
+     * @return the targetCeleryTask
+     */
+    public String getTargetCeleryTask() {
+        return targetCeleryTask;
+    }
+
+    /**
+     * @param targetCeleryTask
+     *            the targetCeleryTask to set
+     */
+    public void setTargetCeleryTask(String targetCeleryTask) {
+        this.targetCeleryTask = targetCeleryTask;
     }
 
 }
