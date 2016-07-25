@@ -107,7 +107,7 @@ public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed {
      * @return
      * 
      */
-    private JSONObject wrapForCelery(JSONObject payload) {
+    protected JSONObject wrapForCelery(JSONObject payload) {
         //
         // {
         // "id": "e7224d1c-3d15-4478-98e9-2ce39f0f9c53",
@@ -117,11 +117,11 @@ public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed {
         // }
         //
         JSONObject jo = new JSONObject();
-        jo.append("id", UUID.randomUUID());
-        jo.append("task", this.targetCeleryTask);
+        jo.put("id", UUID.randomUUID());
+        jo.put("task", this.targetCeleryTask);
         String[] args = {};
-        jo.append("args", args );
-        jo.append("kwargs", payload);
+        jo.put("args", args);
+        jo.put("kwargs", payload);
         return jo;
     }
 
