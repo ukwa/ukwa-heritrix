@@ -73,9 +73,15 @@
          <scope>provided</scope>
       </dependency>
       <dependency>
-         <groupId>org.apache.httpcomponents</groupId>
-         <artifactId>httpclient</artifactId>
-         <version>4.4</version>
+         <groupId>org.archive.heritrix</groupId>
+         <artifactId>heritrix-modules</artifactId>
+         <version>3.3.0-LBS-2016-02</version>
+         <scope>provided</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.archive.heritrix</groupId>
+         <artifactId>heritrix-engine</artifactId>
+         <version>3.3.0-LBS-2016-02</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
@@ -87,19 +93,11 @@
                <artifactId>guava</artifactId>
                <groupId>com.google.guava</groupId>
             </exclusion>
+            <exclusion>
+               <artifactId>httpclient</artifactId>
+               <groupId>org.apache.httpcomponents</groupId>
+            </exclusion>
          </exclusions>
-      </dependency>
-      <dependency>
-         <groupId>org.archive.heritrix</groupId>
-         <artifactId>heritrix-modules</artifactId>
-         <version>3.3.0-LBS-2016-02</version>
-         <scope>provided</scope>
-      </dependency>
-      <dependency>
-         <groupId>org.archive.heritrix</groupId>
-         <artifactId>heritrix-engine</artifactId>
-         <version>3.3.0-LBS-2016-02</version>
-         <scope>provided</scope>
       </dependency>
       <dependency>
          <groupId>com.maxmind.geoip2</groupId>
