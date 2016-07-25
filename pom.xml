@@ -82,7 +82,6 @@
          <groupId>org.archive.heritrix</groupId>
          <artifactId>heritrix-contrib</artifactId>
          <version>3.3.0-LBS-2016-02</version>
-         <scope>provided</scope>
          <exclusions>
             <exclusion>
                <artifactId>guava</artifactId>
