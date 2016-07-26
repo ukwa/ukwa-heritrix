@@ -20,6 +20,8 @@ import org.json.JSONObject;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AMQP.BasicProperties;
@@ -35,8 +37,8 @@ import com.rabbitmq.client.AMQP.BasicProperties;
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
-public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed
-        implements ApplicationContextAware {
+public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed implements
+        ApplicationContextAware, ApplicationListener<ApplicationEvent> {
 
     private final static Logger LOGGER = Logger
             .getLogger(AMQPIndexableCrawlLogFeed.class.getName());
@@ -45,6 +47,7 @@ public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed
 
     private String targetCeleryTask = "crawl.tasks.index_uri";
 
+    private PathSharingContext psc = null;
     private String launchId = null;
 
     /*
@@ -83,20 +86,6 @@ public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    /**
-     * Pick up the launch ID from the ApplicationContext.
-     * 
-     * Requires appCtx be a PathSharingContext
-     * 
-     * @see org.springframework.context.ApplicationContextAware#setApplicationContext(org.springframework.context.ApplicationContext)
-     */
-    public void setApplicationContext(ApplicationContext appCtx)
-            throws BeansException {
-        PathSharingContext psc = (PathSharingContext) appCtx;
-        this.launchId = psc.getCurrentLaunchId();
-        logger.info("Picked up launhId: " + this.launchId);
     }
 
     /**
@@ -176,6 +165,25 @@ public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed
      */
     public void setTargetCeleryTask(String targetCeleryTask) {
         this.targetCeleryTask = targetCeleryTask;
+    }
+
+    /**
+     * Pick up the launch ID from the ApplicationContext.
+     * 
+     * Requires appCtx be a PathSharingContext
+     * 
+     * @see org.springframework.context.ApplicationContextAware#setApplicationContext(org.springframework.context.ApplicationContext)
+     */
+    public void setApplicationContext(ApplicationContext appCtx)
+            throws BeansException {
+        psc = (PathSharingContext) appCtx;
+    }
+
+    @Override
+    public void onApplicationEvent(ApplicationEvent event) {
+        // TODO Auto-generated method stub
+        this.launchId = psc.getCurrentLaunchId();
+        logger.info("Got lauchId: " + this.launchId);
     }
 
 }
