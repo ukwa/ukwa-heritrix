@@ -183,7 +183,7 @@ public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed implements
     public void onApplicationEvent(ApplicationEvent event) {
         // TODO Auto-generated method stub
         this.launchId = psc.getCurrentLaunchId();
-        logger.info("Got lauchId: " + this.launchId);
+        logger.info("Got lauchId: " + this.launchId + " from event " + event);
     }
 
 }
