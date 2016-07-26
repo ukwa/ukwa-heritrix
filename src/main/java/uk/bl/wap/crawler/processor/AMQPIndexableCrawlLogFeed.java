@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.http.HttpHeaders;
+import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.postprocessor.AMQPCrawlLogFeed;
 import org.archive.modules.postprocessor.CrawlLogJsonBuilder;
@@ -181,9 +182,11 @@ public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed implements
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        // TODO Auto-generated method stub
-        this.launchId = psc.getCurrentLaunchId();
-        logger.info("Got lauchId: " + this.launchId + " from event " + event);
+        if (event instanceof CrawlStateEvent) {
+            this.launchId = psc.getCurrentLaunchId();
+            logger.info(
+                    "Got lauchId: " + this.launchId + " from event " + event);
+        }
     }
 
 }
