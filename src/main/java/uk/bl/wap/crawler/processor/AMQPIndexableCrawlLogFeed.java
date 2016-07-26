@@ -15,7 +15,11 @@ import org.archive.modules.postprocessor.AMQPCrawlLogFeed;
 import org.archive.modules.postprocessor.CrawlLogJsonBuilder;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.archive.spring.PathSharingContext;
 import org.json.JSONObject;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
 import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.AMQP.BasicProperties;
@@ -31,7 +35,8 @@ import com.rabbitmq.client.AMQP.BasicProperties;
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
-public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed {
+public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed
+        implements ApplicationContextAware {
 
     private final static Logger LOGGER = Logger
             .getLogger(AMQPIndexableCrawlLogFeed.class.getName());
@@ -39,6 +44,8 @@ public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed {
     private boolean celeryMessageFormat = false;
 
     private String targetCeleryTask = "crawl.tasks.index_uri";
+
+    private String launchId = null;
 
     /*
      * (non-Javadoc)
@@ -64,6 +71,8 @@ public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed {
                         "Could not parse redirect Location: " + location);
             }
         }
+        // Add on the launch ID, so we can find the WARCs easily:
+        jo.put("launch_id", this.launchId);
         // Re-wrap for Celery if required:
         if (this.celeryMessageFormat) {
             jo = this.wrapForCelery(jo);
@@ -74,6 +83,20 @@ public class AMQPIndexableCrawlLogFeed extends AMQPCrawlLogFeed {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Pick up the launch ID from the ApplicationContext.
+     * 
+     * Requires appCtx be a PathSharingContext
+     * 
+     * @see org.springframework.context.ApplicationContextAware#setApplicationContext(org.springframework.context.ApplicationContext)
+     */
+    public void setApplicationContext(ApplicationContext appCtx)
+            throws BeansException {
+        PathSharingContext psc = (PathSharingContext) appCtx;
+        this.launchId = psc.getCurrentLaunchId();
+        logger.info("Picked up launhId: " + this.launchId);
     }
 
     /**
