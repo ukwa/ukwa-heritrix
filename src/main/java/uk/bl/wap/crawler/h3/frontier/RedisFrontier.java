@@ -227,13 +227,15 @@ public class RedisFrontier extends AbstractFrontier
             String q = null;
             if (qs.size() == 0) {
                 System.out.println("No queues active...");
-                String nq = this.connection.srandmember("qs:available");
+                // FIXME Race-condition:
+                String nq = this.connection.srandmember(KEY_QS_AVAILABLE);
+                System.out.println("GOT available queue: " + nq);
                 if( nq == null ) {
                     System.out.println("No queues available...");
                     continue;
                 }
                 this.connection.zadd(KEY_QS_SCHEDULED, now, nq);
-                this.connection.srem("qs:available", nq);
+                this.connection.srem(KEY_QS_AVAILABLE, nq);
                 q = nq;
             } else {
                 q = qs.get(0);
@@ -429,9 +431,11 @@ public class RedisFrontier extends AbstractFrontier
                     curi.getClassKey());
             // TODO 'disown' the queue properly:
         } else {
-            this.connection.zadd(KEY_QS_SCHEDULED,
+            Long count = this.connection.zadd(KEY_QS_SCHEDULED,
                     curi.getRescheduleTime(),
                     curi.getClassKey());
+            System.out.println("Update count: " + count + " with "
+                    + curi.getRescheduleTime());
             String result = this.connection.set("u:object:" + curi.getURI(),
                     Base64.encode(caUriToKryo(curi)));
             System.out.println("RES " + result);
@@ -443,7 +447,6 @@ public class RedisFrontier extends AbstractFrontier
     }
 
     private static String KEY_QS_AVAILABLE = "qs:available";
-    private static String KEY_QS_ACTIVE = "qs:active";
     private static String KEY_QS_SCHEDULED = "qs:scheduled";
 
     private static String getKeyForQueue(String q) {
@@ -471,11 +474,13 @@ public class RedisFrontier extends AbstractFrontier
         System.out.println("RES " + result);
 
         // Add to available queues set, if not already active:
-        Double due = this.connection.zscore(KEY_QS_ACTIVE, queue);
-        boolean isMember = (due == null);
-        // FIXME Race-condition:
-        if (!isMember) {
-            this.connection.sadd("qs:available", queue);
+        Double due = this.connection.zscore(KEY_QS_SCHEDULED, queue);
+        // FIXME Race-condition, but probably not a serious one (as re-adding an
+        // item to the scheduled ZSET will only muck up the launch time):
+        if (null == due) {
+            this.connection.sadd(KEY_QS_AVAILABLE, queue);
+        } else {
+            System.out.println("Is due " + (long) due.doubleValue());
         }
         System.out.println("RES " + result);
 

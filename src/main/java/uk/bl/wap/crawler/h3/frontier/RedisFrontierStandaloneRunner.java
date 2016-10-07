@@ -34,7 +34,8 @@ public class RedisFrontierStandaloneRunner {
         // CrawlURI curi = new CrawlURI(u, pathFromSeed, via, viaContext );
         CrawlURI curi = new CrawlURI(
                 UURIFactory.getInstance("http://example.org"));
-        curi.setPolitenessDelay(5);
+        // Set delay to 10ms for testing...
+        curi.setPolitenessDelay(10);
 
         fp.prepare(curi);
 
