@@ -27,7 +27,7 @@ public class RedisFrontierStandaloneRunner {
 
         RedisFrontier rf = new RedisFrontier();
         rf.setRedisEndpoint("redis://localhost:6379");
-        rf.connect();
+        rf.f.connect();
 
         FrontierPreparer fp = new FrontierPreparer();
 
