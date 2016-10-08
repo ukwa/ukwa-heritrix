@@ -148,7 +148,7 @@ public class RedisFrontier extends AbstractFrontier
     public FrontierGroup getGroup(CrawlURI curi) {
         // TODO Auto-generated method stub
         new Exception().printStackTrace();
-        return new RedisWorkQueue(curi.getClassKey());
+        return new RedisWorkQueue(curi.getClassKey(), f);
     }
 
     @Override

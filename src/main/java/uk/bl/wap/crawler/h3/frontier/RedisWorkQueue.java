@@ -9,20 +9,27 @@ import org.archive.crawler.frontier.WorkQueue;
 import org.archive.crawler.frontier.WorkQueueFrontier;
 import org.archive.modules.CrawlURI;
 
+import uk.bl.wap.crawler.frontier.RedisSimpleFrontier;
+
 /**
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
 public class RedisWorkQueue extends WorkQueue {
 
+    private final String queue;
+
     /**
      * 
      */
     private static final long serialVersionUID = 7310952064588710312L;
 
-    public RedisWorkQueue(String pClassKey) {
+    private final RedisSimpleFrontier f;
+
+    public RedisWorkQueue(String pClassKey, RedisSimpleFrontier rsf) {
         super(pClassKey);
-        // TODO Auto-generated constructor stub
+        this.queue = pClassKey;
+        this.f = rsf;
     }
 
     /* (non-Javadoc)
@@ -31,8 +38,7 @@ public class RedisWorkQueue extends WorkQueue {
     @Override
     protected void insertItem(WorkQueueFrontier frontier, CrawlURI curi,
             boolean overwriteIfPresent) throws IOException {
-        // TODO Auto-generated method stub
-
+        f.enqueue(curi, overwriteIfPresent);
     }
 
     /* (non-Javadoc)
@@ -41,7 +47,7 @@ public class RedisWorkQueue extends WorkQueue {
     @Override
     protected long deleteMatchingFromQueue(WorkQueueFrontier frontier,
             String match) throws IOException {
-        // TODO Auto-generated method stub
+        new Exception().printStackTrace();
         return 0;
     }
 
@@ -51,7 +57,7 @@ public class RedisWorkQueue extends WorkQueue {
     @Override
     protected void deleteItem(WorkQueueFrontier frontier, CrawlURI item)
             throws IOException {
-        // TODO Auto-generated method stub
+        f.dequeue(queue, item.getURI());
 
     }
 
@@ -60,8 +66,16 @@ public class RedisWorkQueue extends WorkQueue {
      */
     @Override
     protected CrawlURI peekItem(WorkQueueFrontier frontier) throws IOException {
-        // TODO Auto-generated method stub
-        return null;
+        CrawlURI curi = null;
+        
+        try {
+            curi = frontier.next();
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+                
+        return curi;
     }
 
 }
