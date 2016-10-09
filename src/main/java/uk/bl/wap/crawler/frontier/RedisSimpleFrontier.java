@@ -8,16 +8,14 @@ import java.util.logging.Logger;
 
 import org.archive.bdb.AutoKryo;
 import org.archive.modules.CrawlURI;
+import org.archive.modules.SchedulingConstants;
 
 import com.anotherbigidea.util.Base64;
 import com.esotericsoftware.kryo.ObjectBuffer;
-import com.google.common.base.Charsets;
 import com.lambdaworks.redis.RedisClient;
 import com.lambdaworks.redis.RedisConnection;
 import com.lambdaworks.redis.ScoredValue;
 import com.lambdaworks.redis.ZAddArgs;
-
-import uk.bl.wap.crawler.h3.frontier.RedisFrontier;
 
 /**
  * 
@@ -34,7 +32,7 @@ import uk.bl.wap.crawler.h3.frontier.RedisFrontier;
 public class RedisSimpleFrontier {
 
     private static final Logger logger = Logger
-            .getLogger(RedisFrontier.class.getName());
+            .getLogger(RedisSimpleFrontier.class.getName());
 
     private String redisEndpoint = "redis://localhost:6379";
 
@@ -80,14 +78,14 @@ public class RedisSimpleFrontier {
     /**
      * 
      */
-    public void connect() {
+    public synchronized void connect() {
         redisClient = RedisClient.create(redisEndpoint);
         connection = redisClient.connect();
 
         // Select the database to use:
         connection.select(redisDB);
 
-        System.out.println("Connected to Redis");
+        logger.info("Connected to Redis");
     }
 
     /* ------- ------- ------- ------- ------- ------- ------- ------- */
@@ -103,76 +101,111 @@ public class RedisSimpleFrontier {
     /* */
     /* ------- ------- ------- ------- ------- ------- ------- ------- */
 
+    /**
+     * Wait for a URL to be due.
+     * 
+     * If no more are scheduled return null.
+     * 
+     * @return
+     */
     public CrawlURI next() {
         CrawlURI curi = null;
 
         // TODO Update/rotate 'owned' queues if required:
         // TODO Find the queue 'owned' by this instance that is due to launch
         // next:
+
         // TODO Pick off the next CrawlURI:
-        
-        // FIXME Race-condition(s)???:
-        while( curi == null ) {
-            long now = System.currentTimeMillis();
-            System.out.println(
-                    "Looking for active queues, due for processing at " + now
-                            + "...");
-            List<ScoredValue<String>> qs = this.connection
-                    .zrangebyscoreWithScores(KEY_QS_SCHEDULED,
-                    Double.NEGATIVE_INFINITY, now, 0, 1);
-            String q = null;
-            if (qs.size() == 0) {
-                System.out.println("No queues active...");
+        while (curi == null) {
+            try {
+                curi = this.due();
+            } catch (Exception e) {
+                return null;
+            }
+            // Sleep if there's nothing due...
+            if (curi == null) {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
-                continue;
             }
-            ScoredValue<String> sq = qs.get(0);
-            double score = sq.score;
-            q = sq.value;
-            List<String> uri = this.connection.zrangebyscore(getKeyForQueue(q),
-                    -10.0, 1.0e10, 0, 1);
-            if (uri.size() == 0) {
-                System.out.println(
-                        "No uris for queue " + q + " retiring the queue.");
-                this.connection.set(KEY_QS_RETIRED, q);
-                this.connection.zrem(KEY_QS_SCHEDULED, q);
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-                continue;
-            }
-            // Okay to go, so activate queue (removing from scheduled, add to
-            // active):
-            // FIXME Race-conditions:
-            this.connection.zadd(KEY_QS_ACTIVE, score, q);
-            this.connection.zrem(KEY_QS_SCHEDULED, q);
-            // And log:
-            System.out.println("Got URI "+uri);
-            curi = getCrawlURIFromRedis(uri.get(0));
         }
 
+        // return what we've got:
         return curi;
     }
 
-    public boolean enqueue(CrawlURI curi, boolean force) {
+    /**
+     * 
+     * If there is a URL due to be crawled, return it.
+     * 
+     * If there are URLs scheduled to be crawled, but not yet, return null.
+     * 
+     * If there are no URLs scheduled to be crawled, throw an Exception.
+     * 
+     * FIXME Race-conditions, as in Redis could end up inconsistent if this
+     * method dies mid-flow.
+     * 
+     * @return
+     * @throws Exception
+     */
+    public synchronized CrawlURI due() throws Exception {
+        long now = System.currentTimeMillis();
+        logger.finest("Looking for active queues, due for processing at " + now
+                + "...");
+        List<ScoredValue<String>> qs = this.connection.zrangebyscoreWithScores(
+                KEY_QS_SCHEDULED, Double.NEGATIVE_INFINITY, now, 0, 1);
+        String q = null;
+        if (qs.size() == 0) {
+            long totalScheduled = this.connection.zcard(KEY_QS_SCHEDULED);
+            long totalActive = this.connection.zcard(KEY_QS_ACTIVE);
+            if ((totalScheduled + totalActive) > 0) {
+                return null;
+            } else {
+                logger.info("No queues scheduled to run.");
+                throw new Exception("No more URLs scheduled!");
+            }
+        }
+        ScoredValue<String> sq = qs.get(0);
+        double score = sq.score;
+        q = sq.value;
+        List<String> uri = this.connection.zrangebyscore(getKeyForQueue(q),
+                -10.0, 1.0e10, 0, 1);
+        if (uri.size() == 0) {
+            logger.info("No uris for queue " + q + " retiring the queue.");
+            this.connection.set(KEY_QS_RETIRED, q);
+            this.connection.zrem(KEY_QS_SCHEDULED, q);
+            return null;
+        }
+        // Okay to go, so activate queue (removing from scheduled, add to
+        // active):
+        this.connection.zadd(KEY_QS_ACTIVE, score, q);
+        this.connection.zrem(KEY_QS_SCHEDULED, q);
+        // And log:
+        logger.info("Got URI " + uri);
+        CrawlURI curi = getCrawlURIFromRedis(uri.get(0));
+        if (curi == null) {
+            throw new Exception("Frontier damaged, CrawlURI for " + uri
+                    + " cannot be found!");
+        }
+        return curi;
+    }
+
+    public synchronized boolean enqueue(CrawlURI curi) {
+        String urlKey = "u:object:" + curi.getURI();
         String queue = curi.getClassKey();
 
         // FIXME The next couple of statements should really be atomic:
         long added = this.connection.zadd(getKeyForQueue(curi),
                 calculateInsertKey(curi), curi.getURI());
-        System.out.println("ADDED " + added);
+        logger.info("ADDED " + added);
 
-        String result = this.connection.set("u:object:" + curi.getURI(),
+        // Also store the URI itself:
+        String result = this.connection.set(urlKey,
                 Base64.encode(caUriToKryo(curi)));
-        System.out.println("RES " + result);
+        logger.info("RES " + result);
 
         // Add to available queues set, if not already active:
         Double due = this.connection.zscore(KEY_QS_SCHEDULED, queue);
@@ -181,14 +214,14 @@ public class RedisSimpleFrontier {
         if (null == due) {
             due = (double) System.currentTimeMillis();
             Long count = this.connection.zadd(KEY_QS_SCHEDULED, due, queue);
-            System.out.println("ADD " + count);
+            logger.info("ADD " + count);
         }
-        System.out.println("Is due " + (long) due.doubleValue());
+        logger.info("Is due " + (long) due.doubleValue());
 
         return added > 0;
     }
 
-    public void reschedule(CrawlURI curi) {
+    public synchronized void reschedule(CrawlURI curi, long fetchTime) {
         if (curi.includesRetireDirective()) {
             // Remove the queue from the fetch list:
             this.connection.zrem(KEY_QS_ACTIVE, curi.getClassKey());
@@ -198,32 +231,32 @@ public class RedisSimpleFrontier {
         } else {
             this.connection.zrem(KEY_QS_ACTIVE, curi.getClassKey());
             Long count = this.connection.zadd(KEY_QS_SCHEDULED,
-                    ZAddArgs.Builder.ch(), curi.getRescheduleTime(),
+                    ZAddArgs.Builder.ch(), fetchTime,
                     curi.getClassKey());
-            System.out.println("Updated count: " + count + " with "
-                    + curi.getRescheduleTime());
+            logger.info("Updated count: " + count + " with " + fetchTime);
             String result = this.connection.set("u:object:" + curi.getURI(),
                     Base64.encode(caUriToKryo(curi)));
-            System.out.println("RES " + result);
+            logger.info("RES " + result);
         }
     }
 
-    public void dequeue(String q, String uri) {
+    public synchronized void dequeue(String q, String uri) {
         // Remove from frontier queue
         this.connection.zrem("q:" + q + ":urls", uri);
         this.connection.del("u:object:" + uri);
     }
 
-    public void releaseQueue(String q, Long nextFetch) {
+    public synchronized void releaseQueue(String q, Long nextFetch) {
         this.connection.zrem(KEY_QS_ACTIVE, q);
         Long count = this.connection.zadd(KEY_QS_SCHEDULED,
                 ZAddArgs.Builder.ch(), nextFetch, q);
-        System.out.println(
-                "Updated count: " + count + " with standard crawl delay.");
+        logger.info(
+                "ReleaseQueue updated count: " + count + " until " + nextFetch);
     }
 
-    public void retireQueue(String q) {
+    public synchronized void retireQueue(String q) {
         this.connection.zrem(KEY_QS_ACTIVE, q);
+        this.connection.zrem(KEY_QS_SCHEDULED, q);
         this.connection.set(KEY_QS_RETIRED, q);
         logger.info("Queue " + q + " retired.");
         // TODO 'disown' the queue properly ???:
@@ -239,7 +272,7 @@ public class RedisSimpleFrontier {
      * 
      * @see org.archive.crawler.frontier.AbstractFrontier#start()
      */
-    public void start() {
+    public synchronized void start() {
         connect();
     }
 
@@ -248,7 +281,7 @@ public class RedisSimpleFrontier {
      * 
      * @see org.archive.crawler.frontier.AbstractFrontier#stop()
      */
-    public void stop() {
+    public synchronized void stop() {
         if (this.connection != null && this.connection.isOpen()) {
             this.connection.close();
         }
@@ -267,48 +300,44 @@ public class RedisSimpleFrontier {
     private static String KEY_QS_RETIRED = "qs:retired";
 
     private static String getKeyForQueue(String q) {
-        System.out.println("Generating key for: " + q);
+        logger.info("Generating key for: " + q);
         return "q:" + q + ":urls";
     }
 
     private static String getKeyForQueue(CrawlURI curi) {
-        System.out.println("Generating key for: " + curi.getClassKey());
+        logger.info("Generating key for: " + curi.getClassKey());
         return "q:" + curi.getClassKey() + ":urls";
     }
 
 
-    private byte[] caUriToKryo(CrawlURI curi) {
+    private synchronized byte[] caUriToKryo(CrawlURI curi) {
         // FIXME Not thread-safe. Need ThreadLocal instance.
         return ob.writeClassAndObject(curi);
     }
 
-    private CrawlURI kryoToCrawlURI(byte[] buf) {
+    private synchronized CrawlURI kryoToCrawlURI(byte[] buf) {
         return ob.readObject(buf, CrawlURI.class);
     }
 
     /**
-     * Derived from BdbFrontier.
      * 
-     * @see org.archive.crawler.frontier.BdbMultipleWorkQueues.
-     *      calculateInsertKey(CrawlURI)
+     * @see SchedulingConstants.HIGHEST = 0, SchedulingConstants.NORMAL = 3 and
+     *      Precedence mean the higher the number the less important (1 is
+     *      highest)
+     * 
+     *      Redis sorts low-to-high by default, so (schedulingConstant << 8) &&
+     *      Precedence should work well.
      * 
      * @param curi
      * @return
      */
-    protected static long calculateInsertKey(CrawlURI curi) {
-        byte[] classKeyBytes = null;
-        int len = 0;
-        classKeyBytes = curi.getClassKey().getBytes(Charsets.UTF_8);
-        len = classKeyBytes.length;
-        byte[] keyData = new byte[len+9];
-        System.arraycopy(classKeyBytes,0,keyData,0,len);
-        keyData[len]=0;
-        long ordinalPlus = curi.getOrdinal() & 0x0000FFFFFFFFFFFFL;
-        ordinalPlus = 
-            ((long)curi.getSchedulingDirective() << 56) | ordinalPlus;
-        long precedence = Math.min(curi.getPrecedence(), 127);
-        ordinalPlus = 
-            (((precedence) & 0xFFL) << 48) | ordinalPlus;
+    protected static double calculateInsertKey(CrawlURI curi) {
+        logger.info("Calculating insertion key for " + curi + " "
+                + curi.getSchedulingDirective() + " " + curi.getPrecedence());
+        double precedence = (curi.getSchedulingDirective() << 8)
+                + curi.getPrecedence();
+        logger.info(
+                "Calculated insertion key for " + curi + " = " + precedence);
         return precedence;
     }
     

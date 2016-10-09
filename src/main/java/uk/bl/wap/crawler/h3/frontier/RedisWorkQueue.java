@@ -8,6 +8,7 @@ import java.io.IOException;
 import org.archive.crawler.frontier.WorkQueue;
 import org.archive.crawler.frontier.WorkQueueFrontier;
 import org.archive.modules.CrawlURI;
+import org.archive.util.ObjectIdentityMemCache;
 
 import uk.bl.wap.crawler.frontier.RedisSimpleFrontier;
 
@@ -30,6 +31,9 @@ public class RedisWorkQueue extends WorkQueue {
         super(pClassKey);
         this.queue = pClassKey;
         this.f = rsf;
+        // We don't use this, but the tally() code hits it via
+        // org.archive.crawler.frontier.WorkQueue.makeDirty(WorkQueue.java:690)
+        this.setIdentityCache(new ObjectIdentityMemCache<WorkQueue>());
     }
 
     /* (non-Javadoc)
@@ -38,7 +42,7 @@ public class RedisWorkQueue extends WorkQueue {
     @Override
     protected void insertItem(WorkQueueFrontier frontier, CrawlURI curi,
             boolean overwriteIfPresent) throws IOException {
-        f.enqueue(curi, overwriteIfPresent);
+        f.enqueue(curi);
     }
 
     /* (non-Javadoc)

@@ -49,7 +49,11 @@ public class RedisFrontierStandaloneRunner {
         }
 
         nextCuri = rf.findEligibleURI();
+        rf.processFinish(curi);
 
+        rf.delete(curi);
+
+        rf.f.retireQueue(curi.getClassKey());
     }
 
 }
