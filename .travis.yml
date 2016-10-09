@@ -22,5 +22,5 @@ services:
 # Run a Redis instance to test against
 before_install:
 - docker pull redis
-- docker run -d -p 6379 redis
+- docker run -d -p 127.0.0.1:6379:6379 redis
 - docker ps -a
