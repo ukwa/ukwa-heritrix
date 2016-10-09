@@ -164,7 +164,7 @@ public class RedisSimpleFrontier {
             if ((totalScheduled + totalActive) > 0) {
                 return null;
             } else {
-                logger.info("No queues scheduled to run.");
+                logger.finer("No queues scheduled to run.");
                 throw new Exception("No more URLs scheduled!");
             }
         }
@@ -184,7 +184,7 @@ public class RedisSimpleFrontier {
         this.connection.zadd(KEY_QS_ACTIVE, score, q);
         this.connection.zrem(KEY_QS_SCHEDULED, q);
         // And log:
-        logger.info("Got URI " + uri);
+        logger.fine("Got URI " + uri);
         CrawlURI curi = getCrawlURIFromRedis(uri.get(0));
         if (curi == null) {
             throw new Exception("Frontier damaged, CrawlURI for " + uri
@@ -200,12 +200,12 @@ public class RedisSimpleFrontier {
         // FIXME The next couple of statements should really be atomic:
         long added = this.connection.zadd(getKeyForQueue(curi),
                 calculateInsertKey(curi), curi.getURI());
-        logger.info("ADDED " + added);
+        logger.finest("ADDED " + added + " for " + curi);
 
         // Also store the URI itself:
         String result = this.connection.set(urlKey,
                 Base64.encode(caUriToKryo(curi)));
-        logger.info("RES " + result);
+        logger.finest("RES " + result + " stored " + curi);
 
         // Add to available queues set, if not already active:
         Double due = this.connection.zscore(KEY_QS_SCHEDULED, queue);
@@ -214,9 +214,9 @@ public class RedisSimpleFrontier {
         if (null == due) {
             due = (double) System.currentTimeMillis();
             Long count = this.connection.zadd(KEY_QS_SCHEDULED, due, queue);
-            logger.info("ADD " + count);
+            logger.finest("ADD " + count + " for uri " + curi);
         }
-        logger.info("Is due " + (long) due.doubleValue());
+        logger.finest("Enqueued URI is due " + (long) due.doubleValue());
 
         return added > 0;
     }
@@ -233,10 +233,10 @@ public class RedisSimpleFrontier {
             Long count = this.connection.zadd(KEY_QS_SCHEDULED,
                     ZAddArgs.Builder.ch(), fetchTime,
                     curi.getClassKey());
-            logger.info("Updated count: " + count + " with " + fetchTime);
+            logger.finest("Updated count: " + count + " with " + fetchTime);
             String result = this.connection.set("u:object:" + curi.getURI(),
                     Base64.encode(caUriToKryo(curi)));
-            logger.info("RES " + result);
+            logger.finest("RES " + result + " updated object for " + curi);
         }
     }
 
@@ -250,7 +250,7 @@ public class RedisSimpleFrontier {
         this.connection.zrem(KEY_QS_ACTIVE, q);
         Long count = this.connection.zadd(KEY_QS_SCHEDULED,
                 ZAddArgs.Builder.ch(), nextFetch, q);
-        logger.info(
+        logger.finest(
                 "ReleaseQueue updated count: " + count + " until " + nextFetch);
     }
 
@@ -300,12 +300,12 @@ public class RedisSimpleFrontier {
     private static String KEY_QS_RETIRED = "qs:retired";
 
     private static String getKeyForQueue(String q) {
-        logger.info("Generating key for: " + q);
+        logger.finest("Generating key for: " + q);
         return "q:" + q + ":urls";
     }
 
     private static String getKeyForQueue(CrawlURI curi) {
-        logger.info("Generating key for: " + curi.getClassKey());
+        logger.finest("Generating key for: " + curi.getClassKey());
         return "q:" + curi.getClassKey() + ":urls";
     }
 
@@ -332,11 +332,11 @@ public class RedisSimpleFrontier {
      * @return
      */
     protected static double calculateInsertKey(CrawlURI curi) {
-        logger.info("Calculating insertion key for " + curi + " "
+        logger.finest("Calculating insertion key for " + curi + " "
                 + curi.getSchedulingDirective() + " " + curi.getPrecedence());
         double precedence = (curi.getSchedulingDirective() << 8)
                 + curi.getPrecedence();
-        logger.info(
+        logger.finest(
                 "Calculated insertion key for " + curi + " = " + precedence);
         return precedence;
     }

@@ -257,7 +257,7 @@ public class RedisFrontier extends AbstractFrontier
     @Override
     protected CrawlURI findEligibleURI() {
         CrawlURI curi = this.f.next();
-        logger.info("Returning: " + curi);
+        logger.finest("Returning: " + curi);
         // Set the number 'inFlight' to zero, so the crawl can end.
         if (curi == null) {
             this.inFlight = 0;
@@ -319,7 +319,7 @@ public class RedisFrontier extends AbstractFrontier
 
         // codes/errors which don't consume the URI, leaving it atop queue
         if (needsReenqueuing(curi)) {
-            logger.info("Re-enqueing " + curi + " " + curi.getFetchStatus());
+            logger.finest("Re-enqueing " + curi + " " + curi.getFetchStatus());
             if (curi.getFetchStatus() != S_DEFERRED) {
                 // wq.expend(holderCost); // all retries but DEFERRED cost
             }
@@ -339,7 +339,7 @@ public class RedisFrontier extends AbstractFrontier
         this.delete(curi);
 
         if (curi.isSuccess()) {
-            logger.info("SUCCESS " + curi);
+            logger.finest("SUCCESS " + curi);
             // codes deemed 'success'
             incrementSucceededFetchCount();
             totalProcessedBytes.addAndGet(curi.getRecordedSize());
@@ -350,7 +350,7 @@ public class RedisFrontier extends AbstractFrontier
             doJournalFinishedSuccess(curi);
 
         } else if (isDisregarded(curi)) {
-            logger.info("DISREGARD " + curi);
+            logger.finest("DISREGARD " + curi);
             // codes meaning 'undo' (even though URI was enqueued,
             // we now want to disregard it from normal success/failure tallies)
             // (eg robots-excluded, operator-changed-scope, etc)
@@ -365,7 +365,7 @@ public class RedisFrontier extends AbstractFrontier
             doJournalDisregarded(curi);
 
         } else {
-            logger.info("FAILED " + curi);
+            logger.finest("FAILED " + curi);
             // codes meaning 'failure'
             incrementFailedFetchCount();
             if (appCtx != null) {
@@ -392,8 +392,8 @@ public class RedisFrontier extends AbstractFrontier
         // Release the queue:
         this.f.releaseQueue(curi.getClassKey(),
                 System.currentTimeMillis() + delay_ms);
-        logger.info("Got delay " + delay_ms);
-        logger.info("Got rescheduleTime " + curi.getRescheduleTime());
+        logger.finest("Got delay " + delay_ms);
+        logger.finest("Got rescheduleTime " + curi.getRescheduleTime());
 
         // If it did not work, update the queue next-fetch time using the
         // CrawlURI re-schedule time:
@@ -427,7 +427,7 @@ public class RedisFrontier extends AbstractFrontier
      */
     @Override
     protected int getInProcessCount() {
-        logger.info("Current inFlight = " + inFlight);
+        logger.fine("Current inFlight = " + inFlight);
         return inFlight;
     }
 
