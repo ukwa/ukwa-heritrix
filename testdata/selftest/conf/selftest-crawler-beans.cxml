@@ -152,6 +152,7 @@ crawlController.pauseAtStart=false
  
  <bean id="uriUniqFilter" 
    class="org.archive.crawler.util.BloomUriUniqFilter" autowire="byName">
+<!--   class="uk.bl.wap.util.FixedSizeCacheUriUniqFilter" autowire="byName" -->
  </bean>
  
  <bean id="crawlController" 

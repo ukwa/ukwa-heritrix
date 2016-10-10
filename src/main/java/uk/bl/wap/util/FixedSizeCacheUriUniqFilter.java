@@ -7,6 +7,14 @@ import org.apache.commons.codec.binary.StringUtils;
 import org.archive.crawler.util.SetBasedUriUniqFilter;
 
 /**
+ * 
+ * This cache-based unique URI filter limits memory usage while ensuring no
+ * false-positives, i.e. it never says it has seen an URI when it has not.
+ * Instead, it will sometimes emit false-negatives instead.
+ * 
+ * Note that because this needs we must store the keys in an array, the memory
+ * usage is much higher than for a Bloom filter.
+ * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
@@ -17,7 +25,7 @@ public class FixedSizeCacheUriUniqFilter extends SetBasedUriUniqFilter {
      */
     private static final long serialVersionUID = 3412882684216842032L;
 
-    private ByteArrayFilter cache = new ByteArrayFilter(1000000000);
+    private ByteArrayFilter cache = new ByteArrayFilter(100000);
     private long total = 0;
 
     /* (non-Javadoc)

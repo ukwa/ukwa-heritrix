@@ -263,7 +263,8 @@ public class RedisFrontier extends AbstractFrontier
         if (curi == null) {
             this.inFlight = 0;
         } else {
-            // Ensure sheet overlays are applied:
+            // Ensure sheet overlays are applied (is appears these are not
+            // persisted - the original BDB-based implementation does this too.)
             sheetOverlaysManager.applyOverlaysTo(curi);
             try {
                 KeyedProperties.loadOverridesFrom(curi);
@@ -330,11 +331,18 @@ public class RedisFrontier extends AbstractFrontier
 
         int holderCost = curi.getHolderCost();
 
+        // FIXME this does not track and reset session/total budgets etc. Really
+        // need to rank the 'available' queue to ensure hosts are not
+        // re-activated quickly.
+        //
+        // wq.setSessionBudget(getBalanceReplenishAmount());
+        // wq.setTotalBudget(getQueueTotalBudget());
+
         // codes/errors which don't consume the URI, leaving it atop queue
         if (needsReenqueuing(curi)) {
             logger.finest("Re-enqueing " + curi + " " + curi.getFetchStatus());
             if (curi.getFetchStatus() != S_DEFERRED) {
-                // wq.expend(holderCost); // all retries but DEFERRED cost
+                // FIXME wq.expend(holderCost); // all retries but DEFERRED cost
             }
             long delay_ms = retryDelayFor(curi) * 1000;
             curi.processingCleanup(); // lose state that shouldn't burden retry

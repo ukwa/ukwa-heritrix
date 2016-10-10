@@ -11,32 +11,18 @@ import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.datamodel.UriUniqFilter;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURIFactory;
-import org.archive.spring.ConfigFile;
 import org.junit.Before;
 import org.junit.Test;
+
+import uk.bl.wap.util.EhcacheRecentlySeenUriUniqFilterTest.Receiver;
 
 /**
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
-public class EhcacheRecentlySeenUriUniqFilterTest {
+public class FixedSizeCacheUriUniqFilterTest {
 
-    String surtFile = "src/test/resources/surt-to-ttl.txt";
-
-    /**
-     * Little URL reciever for testing.
-     *
-     */
-    public static class Receiver implements UriUniqFilter.CrawlUriReceiver {
-        boolean received = false;
-
-        @Override
-        public void receive(CrawlURI item) {
-            this.received = true;
-        }
-    }
-
-    private EhcacheRecentlySeenUriUniqFilter uuf;
+    private FixedSizeCacheUriUniqFilter uuf;
 
     /**
      * @throws java.lang.Exception
@@ -49,10 +35,8 @@ public class EhcacheRecentlySeenUriUniqFilterTest {
                         .getAbsolutePath());
 
         // Set up the filter
-        uuf = new EhcacheRecentlySeenUriUniqFilter();
-        uuf.setTextSource(new ConfigFile("", surtFile));
-        uuf.setDefaultTTL(10);
-        uuf.start();
+        uuf = new FixedSizeCacheUriUniqFilter();
+
     }
 
     /**
@@ -62,11 +46,11 @@ public class EhcacheRecentlySeenUriUniqFilterTest {
      * @param reciptExpected
      * @throws URIException
      */
-    private void checkFilter(RecentlySeenUriUniqFilter uuf, String key,
+    private void checkFilter(UriUniqFilter uuf, String key,
             boolean reciptExpected) throws URIException {
 
         // Setup
-        Receiver rx = new Receiver();
+        Receiver rx = new uk.bl.wap.util.EhcacheRecentlySeenUriUniqFilterTest.Receiver();
         uuf.setDestination(rx);
 
         // Add
@@ -89,12 +73,6 @@ public class EhcacheRecentlySeenUriUniqFilterTest {
         checkFilter(uuf, "http://www.bbc.co.uk", true);
         checkFilter(uuf, "http://www.bbc.co.uk", false);
         checkFilter(uuf, "http://www.bbc.com", true);
-        checkFilter(uuf, "http://www.bbc.com", false);
-        // Wait for the system to forget:
-        Thread.sleep(2 * 1000);
-        // And re-try:
-        checkFilter(uuf, "http://www.bbc.co.uk", true);
-        // But this still hasn't timed-out:
         checkFilter(uuf, "http://www.bbc.com", false);
     }
 
