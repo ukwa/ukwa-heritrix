@@ -257,10 +257,21 @@ public class RedisFrontier extends AbstractFrontier
     @Override
     protected CrawlURI findEligibleURI() {
         CrawlURI curi = this.f.next();
+
         logger.finest("Returning: " + curi);
         // Set the number 'inFlight' to zero, so the crawl can end.
         if (curi == null) {
             this.inFlight = 0;
+        } else {
+            // Ensure sheet overlays are applied:
+            sheetOverlaysManager.applyOverlaysTo(curi);
+            try {
+                KeyedProperties.loadOverridesFrom(curi);
+                // curi.setSessionBudget(getBalanceReplenishAmount());
+                // curi.setTotalBudget(getQueueTotalBudget());
+            } finally {
+                KeyedProperties.clearOverridesFrom(curi);
+            }
         }
         return curi;
     }
@@ -290,6 +301,8 @@ public class RedisFrontier extends AbstractFrontier
 
     @Override
     protected void processScheduleAlways(CrawlURI curi) {
+        assert KeyedProperties.overridesActiveFrom(curi);
+
         this.discoveredUrisCount++;
         this.inFlight++;
         this.f.enqueue(curi);
