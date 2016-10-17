@@ -44,6 +44,7 @@ public class WrenderProcessor extends Processor implements
 
     public static final String HTTP_SCHEME = "http";
     public static final String HTTPS_SCHEME = "https";
+    public static final String ANNOTATION = "WrenderedURL";
 
     /**
      * Can this processor fetch the given CrawlURI. May set a fetch status if
@@ -156,7 +157,7 @@ public class WrenderProcessor extends Processor implements
      */
     protected static void processHar(JSONObject har, CrawlURI curi) {
         // Annotate:
-        curi.getAnnotations().add("Wrendered");
+        curi.getAnnotations().add(ANNOTATION);
         // Find the request for the curi:
         JSONArray entries = har.getJSONObject("log").getJSONArray("entries");
         for (int i = 0; i < entries.length(); i++) {
