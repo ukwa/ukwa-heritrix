@@ -37,7 +37,7 @@ public class WrenderProcessorTest {
 
         File wrjson = new File("src/test/resources/wrender-example.json");
         JSONObject har = WrenderProcessor
-                .readJsonFromUrl(wrjson.toURI().toString());
+                .readJsonFromUrl(wrjson.toURI().toURL());
         WrenderProcessor.processHar(har, curi);
 
         assertEquals("Status code was not found!", 200, curi.getFetchStatus());

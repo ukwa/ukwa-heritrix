@@ -9,6 +9,8 @@ import java.nio.charset.Charset;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.ws.rs.core.UriBuilder;
+
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
 import org.archive.crawler.event.CrawlStateEvent;
@@ -36,6 +38,8 @@ public class WrenderProcessor extends Processor implements
         ApplicationContextAware,
         ApplicationListener<ApplicationEvent> {
 
+    private String wrenderEndpoint = "http://localhost:8000/render";
+
     private PathSharingContext psc = null;
     private String launchId = null;
 
@@ -45,6 +49,22 @@ public class WrenderProcessor extends Processor implements
     public static final String HTTP_SCHEME = "http";
     public static final String HTTPS_SCHEME = "https";
     public static final String ANNOTATION = "WrenderedURL";
+
+    /**
+     * 
+     * @return
+     */
+    public String getWrenderEndpoint() {
+        return wrenderEndpoint;
+    }
+
+    /**
+     * 
+     * @param wrenderEndpoint
+     */
+    public void setWrenderEndpoint(String wrenderEndpoint) {
+        this.wrenderEndpoint = wrenderEndpoint;
+    }
 
     /**
      * Can this processor fetch the given CrawlURI. May set a fetch status if
@@ -133,7 +153,10 @@ public class WrenderProcessor extends Processor implements
         int tries = 0;
         while (tries < 3) {
             try {
-                JSONObject har = readJsonFromUrl("wrenderUrl");
+                UriBuilder builder = UriBuilder.fromUri(getWrenderEndpoint())
+                        .queryParam("url", curi.getURI());
+                URL wrenderUrl = builder.build().toURL();
+                JSONObject har = readJsonFromUrl(wrenderUrl);
                 processHar(har, curi);
                 return true;
             } catch (Exception e) {
@@ -199,9 +222,9 @@ public class WrenderProcessor extends Processor implements
      * @throws IOException
      * @throws JSONException
      */
-    protected static JSONObject readJsonFromUrl(String url)
+    protected static JSONObject readJsonFromUrl(URL url)
             throws IOException, JSONException {
-        InputStream is = new URL(url).openStream();
+        InputStream is = url.openStream();
         try {
             BufferedReader rd = new BufferedReader(
                     new InputStreamReader(is, Charset.forName("UTF-8")));
