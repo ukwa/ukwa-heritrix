@@ -1,0 +1,149 @@
+{
+  "log": {
+    "creator": {
+      "name": "PhantomJS", 
+      "version": "2.1.1"
+    }, 
+    "entries": [
+      {
+        "cache": {}, 
+        "pageref": "http://example.org/", 
+        "request": {
+          "bodySize": -1, 
+          "cookies": [], 
+          "headers": [
+            {
+              "name": "Accept", 
+              "value": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            }, 
+            {
+              "name": "User-Agent", 
+              "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X) AppleWebKit/538.1 (KHTML, like Gecko) PhantomJS/2.1.1 Safari/538.1"
+            }, 
+            {
+              "name": "Warcprox-Meta", 
+              "value": "{ \"warc-prefix\": \"wrender\" }"
+            }
+          ], 
+          "headersSize": -1, 
+          "httpVersion": "HTTP/1.1", 
+          "method": "GET", 
+          "queryString": [], 
+          "url": "http://example.org/"
+        }, 
+        "response": {
+          "bodySize": 1270, 
+          "content": {
+            "mimeType": "text/html", 
+            "size": 1270
+          }, 
+          "cookies": [], 
+          "headers": [
+            {
+              "name": "content-length", 
+              "value": "1270"
+            }, 
+            {
+              "name": "x-ec-custom-error", 
+              "value": "1"
+            }, 
+            {
+              "name": "x-cache", 
+              "value": "HIT, MISS from smoothwall.local"
+            }, 
+            {
+              "name": "content-encoding", 
+              "value": "identity"
+            }, 
+            {
+              "name": "via", 
+              "value": "1.1 smoothwall.local (squid/3.5.19)"
+            }, 
+            {
+              "name": "accept-ranges", 
+              "value": "bytes"
+            }, 
+            {
+              "name": "expires", 
+              "value": "Mon, 24 Oct 2016 12:30:47 GMT"
+            }, 
+            {
+              "name": "vary", 
+              "value": "Accept-Encoding"
+            }, 
+            {
+              "name": "server", 
+              "value": "ECS (ewr/15BD)"
+            }, 
+            {
+              "name": "last-modified", 
+              "value": "Fri, 09 Aug 2013 23:54:35 GMT"
+            }, 
+            {
+              "name": "etag", 
+              "value": "\"359670651\""
+            }, 
+            {
+              "name": "cache-control", 
+              "value": "max-age=604800"
+            }, 
+            {
+              "name": "date", 
+              "value": "Mon, 17 Oct 2016 12:30:47 GMT"
+            }, 
+            {
+              "name": "content-type", 
+              "value": "text/html"
+            }, 
+            {
+              "name": "Connection", 
+              "value": "close"
+            }
+          ], 
+          "headersSize": -1, 
+          "httpVersion": "HTTP/1.1", 
+          "redirectURL": "", 
+          "status": 200, 
+          "statusText": "OK"
+        }, 
+        "startedDateTime": "2016-10-17T12:30:57.709Z", 
+        "time": 321, 
+        "timings": {
+          "blocked": 0, 
+          "connect": -1, 
+          "dns": -1, 
+          "receive": 3, 
+          "send": 0, 
+          "ssl": -1, 
+          "wait": 318
+        }
+      }
+    ], 
+    "pages": [
+      {
+        "cookies": [], 
+        "id": "http://example.org/", 
+        "map": [
+          {
+            "href": "http://www.iana.org/domains/example", 
+            "location": {
+              "bottom": 302.875, 
+              "height": 18, 
+              "left": 340, 
+              "right": 475.25, 
+              "top": 284.875, 
+              "width": 135.25
+            }
+          }
+        ], 
+        "pageTimings": {
+          "onLoad": 2320
+        }, 
+        "startedDateTime": "2016-10-17T12:30:57.710Z", 
+        "title": "Example Domain", 
+        "url": "http://example.org/"
+      }
+    ], 
+    "version": "1.0.0"
+  }
+}

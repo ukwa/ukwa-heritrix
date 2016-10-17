@@ -21,11 +21,11 @@ import org.archive.crawler.util.SetBasedUriUniqFilter;
 public class FixedSizeCacheUriUniqFilter extends SetBasedUriUniqFilter {
 
     /**
-     * 
+     * org.archive.util.CLibrary
      */
     private static final long serialVersionUID = 3412882684216842032L;
 
-    private ByteArrayFilter cache = new ByteArrayFilter(100000);
+    private ByteArrayFilter cache = new ByteArrayFilter(100 * 1000);
     private long total = 0;
 
     /* (non-Javadoc)
