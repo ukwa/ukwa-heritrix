@@ -162,6 +162,7 @@ public class WrenderProcessor extends Processor implements
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE,
                         "Web rendering failed with unexpected exception ", e);
+                tries++;
             }
             try {
                 Thread.sleep(1000 * 10);
