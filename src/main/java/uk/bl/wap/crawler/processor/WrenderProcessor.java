@@ -14,6 +14,7 @@ import javax.ws.rs.core.UriBuilder;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.io.IOUtils;
 import org.archive.crawler.event.CrawlStateEvent;
+import org.archive.crawler.framework.CrawlController;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
@@ -26,6 +27,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
@@ -49,6 +51,17 @@ public class WrenderProcessor extends Processor implements
     public static final String HTTP_SCHEME = "http";
     public static final String HTTPS_SCHEME = "https";
     public static final String ANNOTATION = "WrenderedURL";
+
+    protected CrawlController controller;
+
+    public CrawlController getCrawlController() {
+        return this.controller;
+    }
+
+    @Autowired
+    public void setCrawlController(CrawlController controller) {
+        this.controller = controller;
+    }
 
     /**
      * 
@@ -155,20 +168,25 @@ public class WrenderProcessor extends Processor implements
             try {
                 UriBuilder builder = UriBuilder.fromUri(getWrenderEndpoint())
                         .queryParam("url", curi.getURI());
+                // Add warc_prefix based on launch ID
+                builder = builder.queryParam("warc_prefix",
+                        "WREN-" + controller.getMetadata().getJobName() + "-"
+                                + launchId);
                 URL wrenderUrl = builder.build().toURL();
                 JSONObject har = readJsonFromUrl(wrenderUrl);
                 processHar(har, curi);
                 return true;
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE,
-                        "Web rendering failed with unexpected exception ", e);
+                        "Web rendering " + getWrenderEndpoint()
+                                + " failed with unexpected exception ",
+                        e);
                 tries++;
             }
             try {
                 Thread.sleep(1000 * 10);
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                LOGGER.log(Level.SEVERE, "Sleep was interrupted!", e);
             }
         }
         return false;
