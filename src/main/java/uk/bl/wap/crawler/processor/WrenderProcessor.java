@@ -123,7 +123,8 @@ public class WrenderProcessor extends Processor implements
         boolean wrendered = this.doWrender(curi);
         // Did that work?
         if (wrendered) {
-            // Wrendering worked, so halt this chain.
+            // Wrendering worked, so jump past the usual fetchers/extractors:
+            // return ProcessResult.jump("ipAnnotator");
             return ProcessResult.FINISH;
         } else {
             // If that did't work, let the usual H3 process chain handle this
@@ -169,12 +170,16 @@ public class WrenderProcessor extends Processor implements
                 UriBuilder builder = UriBuilder.fromUri(getWrenderEndpoint())
                         .queryParam("url", curi.getURI());
                 // Add warc_prefix based on launch ID
-                builder = builder.queryParam("warc_prefix",
-                        "WREN-" + controller.getMetadata().getJobName() + "-"
-                                + launchId);
+                String warcPrefix = "WREN-"
+                        + controller.getMetadata().getJobName() + "-"
+                        + launchId;
+                builder = builder.queryParam("warc_prefix", warcPrefix);
                 URL wrenderUrl = builder.build().toURL();
                 JSONObject har = readJsonFromUrl(wrenderUrl);
                 processHar(har, curi);
+                // Annotate:
+                curi.getAnnotations().add(ANNOTATION);
+                curi.addExtraInfo("warcPrefix", warcPrefix);
                 return true;
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE,
@@ -198,8 +203,6 @@ public class WrenderProcessor extends Processor implements
      * @param curi
      */
     protected static void processHar(JSONObject har, CrawlURI curi) {
-        // Annotate:
-        curi.getAnnotations().add(ANNOTATION);
         // Find the request for the curi:
         JSONArray entries = har.getJSONObject("log").getJSONArray("entries");
         for (int i = 0; i < entries.length(); i++) {

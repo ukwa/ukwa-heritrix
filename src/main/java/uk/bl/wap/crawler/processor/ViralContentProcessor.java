@@ -80,9 +80,11 @@ public class ViralContentProcessor extends Processor {
         ClamdScanner scanner = null;
         ReplayInputStream in = null;
         try {
-            LOGGER.log(Level.FINER, "ClamAV scanning " + curi.getURI());
             scanner = getScanner();
             in = curi.getRecorder().getReplayInputStream();
+            long start = in.setToResponseBodyStart();
+            LOGGER.log(Level.FINER, "ClamAV scanning " + curi.getURI()
+                    + " skipping headers @ " + start);
             String result = scanner.clamdScan(in);
             LOGGER.log(Level.FINE, "ClamAV scanned " + curi.getURI()
                     + " got result: " + result);
@@ -95,7 +97,7 @@ public class ViralContentProcessor extends Processor {
                 LOGGER.log(Level.WARNING, "Invalid ClamAV response: " + result);
             }
         } catch (Throwable e) {
-            LOGGER.log(Level.WARNING, "innerProcess(): " + e.toString());
+            LOGGER.log(Level.WARNING, "innerProcess(): " + e.toString(), e);
         } finally {
             try {
                 if (in != null)
@@ -108,7 +110,7 @@ public class ViralContentProcessor extends Processor {
             try {
                 scanner = null;
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "innerProcess(): " + e.toString());
+                LOGGER.log(Level.WARNING, "innerProcess(): " + e.toString(), e);
             }
         }
     }
