@@ -42,9 +42,8 @@ public class ViralContentProcessorTest {
                         new File("src/test/resources/eicar.com.txt")),
                 "UTF-8"));
         vcp.innerProcess(curi);
-        System.out.print(vcp.report());
+        LOGGER.fine(vcp.report());
         assertTrue("", vcp.report().contains("Viruses found:   1"));
-        System.out.println("Annots" + curi.getAnnotations());
     }
 
 }

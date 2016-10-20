@@ -35,6 +35,20 @@ import org.springframework.context.ApplicationListener;
 
 /**
  * An alternative to FetchHTTP & ExtractHTML
+ * 
+ * Not dissimilar to
+ * {@link https://github.com/adam-miller/ExternalBrowserExtractorHTML} but based
+ * on using an external HTTP service to aid isolation and load-balancing.
+ * 
+ * The HTTP endpoint implementation is here:
+ * {@link https://github.com/ukwa/webrender-phantomjs}
+ * 
+ * Expects the browser rendering process to handle archiving the downloaded
+ * resource e.g. via warcprox.
+ * 
+ * TODO consider adding a downloadViaHeritrix option for those without warcprox
+ * to hand.
+ * 
  */
 public class WrenderProcessor extends Processor implements
         ApplicationContextAware,

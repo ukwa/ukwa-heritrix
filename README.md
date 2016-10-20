@@ -5,7 +5,7 @@ To test and build:
 
     mvn clean install assembly:single
 
-Modules for Heritrix 3.2.0+
+Modules for Heritrix 3.3.0+
 
 * AnnotationMatchesListRegexDecideRule: DecideRule for checking against annotations.
 * AsynchronousMQExtractor: publishes messages to an external queue for processing (see '[WebTools](https://github.com/openplanets/wap.git)'; )
@@ -20,3 +20,5 @@ Modules for Heritrix 3.2.0+
 * IpAnnotator: annotates each URI with the IP.
 * ViralContentProcessor: passes incoming URIs to ClamAv.
 * WARCViralWriterProcessor, XorInputStream: workarounds for force-writing of 'conversion' records based on XOR'd version of the original data.
+* RobotsTxtSitemapExtractor: Extracts and enqueues sitemap links from robots.txt files.
+* WrenderProcessor: Runs pages through a web-rendering web service rather than the usual H3 processing.
