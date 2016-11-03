@@ -235,16 +235,19 @@ public class WrenderProcessor extends Processor implements
             JSONObject page = pages.getJSONObject(i);
             JSONArray map = page.getJSONArray("map");
             for (int j = 0; j < map.length(); j++) {
-                String newUri = map.getJSONObject(j).getString("href");
-                try {
-                    UURI dest = UURIFactory.getInstance(curi.getBaseURI(),
-                            newUri);
-                    CrawlURI link = curi.createCrawlURI(dest,
-                            LinkContext.NAVLINK_MISC, Hop.NAVLINK);
-                    curi.getOutLinks().add(link);
-                } catch (URIException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
+                // Not all map entries have a 'href' (e.g. 'onclick')
+                if (map.getJSONObject(j).has("href")) {
+                    String newUri = map.getJSONObject(j).getString("href");
+                    try {
+                        UURI dest = UURIFactory.getInstance(curi.getBaseURI(),
+                                newUri);
+                        CrawlURI link = curi.createCrawlURI(dest,
+                                LinkContext.NAVLINK_MISC, Hop.NAVLINK);
+                        curi.getOutLinks().add(link);
+                    } catch (URIException e) {
+                        LOGGER.log(Level.SEVERE,
+                                "URIException when processing " + newUri, e);
+                    }
                 }
             }
         }
