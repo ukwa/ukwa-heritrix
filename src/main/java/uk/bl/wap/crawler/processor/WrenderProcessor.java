@@ -198,7 +198,7 @@ public class WrenderProcessor extends Processor implements
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE,
                         "Web rendering " + getWrenderEndpoint()
-                                + " failed with unexpected exception ",
+                                + " failed with unexpected exception: " + e,
                         e);
                 tries++;
             }
