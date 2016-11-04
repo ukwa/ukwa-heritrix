@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.charset.Charset;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -254,7 +255,9 @@ public class WrenderProcessor extends Processor implements
     }
 
     /**
-     * Attempts to read a JSON result from the given URL
+     * Attempts to read a JSON result from the given URL.
+     * 
+     * Will time-out if there is no response.
      * 
      * @param url
      * @return
@@ -263,7 +266,12 @@ public class WrenderProcessor extends Processor implements
      */
     protected static JSONObject readJsonFromUrl(URL url)
             throws IOException, JSONException {
-        InputStream is = url.openStream();
+        URLConnection con = url.openConnection();
+        con.setConnectTimeout(30 * 1000); // 30s time-out for connections in
+                                          // case service is a bit busy.
+        con.setReadTimeout(3 * 60 * 1000); // Long (3m) time-out for reads as
+                                           // rendering can be slow.
+        InputStream is = con.getInputStream();
         try {
             BufferedReader rd = new BufferedReader(
                     new InputStreamReader(is, Charset.forName("UTF-8")));
