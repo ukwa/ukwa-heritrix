@@ -236,21 +236,43 @@ public class WrenderProcessor extends Processor implements
             JSONObject page = pages.getJSONObject(i);
             JSONArray map = page.getJSONArray("map");
             for (int j = 0; j < map.length(); j++) {
-                // Not all map entries have a 'href' (e.g. 'onclick')
-                if (map.getJSONObject(j).has("href")) {
-                    String newUri = map.getJSONObject(j).getString("href");
-                    try {
-                        UURI dest = UURIFactory.getInstance(curi.getBaseURI(),
-                                newUri);
-                        CrawlURI link = curi.createCrawlURI(dest,
-                                LinkContext.NAVLINK_MISC, Hop.NAVLINK);
-                        curi.getOutLinks().add(link);
-                    } catch (URIException e) {
-                        LOGGER.log(Level.SEVERE,
-                                "URIException when processing " + newUri, e);
+                JSONObject mapi = map.getJSONObject(j);
+                // Not all map entries have a 'href' (e.g. 'onclick'):
+                if (mapi.has("href")) {
+                    Object href = mapi.get("href");
+                    // Most hrefs are simple strings:
+                    if (href instanceof String) {
+                        String newUri = (String) href;
+                        enqueueLink(newUri, curi);
+                    }
+                    // But some are dictionaries with URLs under 'animVal' and
+                    // 'baseVal' keys.
+                    // See https://github.com/ukwa/python-shepherd/issues/15
+                    else if (href instanceof JSONObject) {
+                        JSONObject jhref = (JSONObject) href;
+                        for (String href_key : JSONObject.getNames(jhref)) {
+                            enqueueLink(jhref.getString(href_key), curi);
+                        }
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * 
+     * @param newUri
+     * @param curi
+     */
+    private static void enqueueLink(String newUri, CrawlURI curi) {
+        try {
+            UURI dest = UURIFactory.getInstance(curi.getBaseURI(), newUri);
+            CrawlURI link = curi.createCrawlURI(dest, LinkContext.NAVLINK_MISC,
+                    Hop.NAVLINK);
+            curi.getOutLinks().add(link);
+        } catch (URIException e) {
+            LOGGER.log(Level.SEVERE, "URIException when processing " + newUri,
+                    e);
         }
     }
 

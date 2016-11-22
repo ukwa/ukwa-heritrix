@@ -1,10 +1,11 @@
 package uk.bl.wap.crawler.processor;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURIFactory;
@@ -41,13 +42,48 @@ public class WrenderProcessorTest {
         WrenderProcessor.processHar(har, curi);
 
         assertEquals("Status code was not found!", 200, curi.getFetchStatus());
-        assertTrue("Annotation was not found!",
-                curi.getAnnotations().contains(WrenderProcessor.ANNOTATION));
         assertEquals("CrawlURIs not as expected!", 1,
                 curi.getOutLinks().size());
         CrawlURI l = curi.getOutLinks().iterator().next();
         assertEquals("Can't find expected outlink!",
                 "http://www.iana.org/domains/example", l.getURI());
+
+        // Another test that has SVG-style hrefs in it.
+
+    }
+
+    /**
+     * Another test that has SVG-style hrefs in it.
+     * 
+     * @throws JSONException
+     * @throws IOException
+     */
+    @Test
+    public void testProcessHarWithSvgHrefs() throws JSONException, IOException {
+
+        CrawlURI curi = new CrawlURI(
+                UURIFactory.getInstance("http://www.thisismoney.co.uk/"));
+
+        File wrjson = new File(
+                "src/test/resources/wrender-svg-hrefs-example.json");
+        JSONObject har = WrenderProcessor
+                .readJsonFromUrl(wrjson.toURI().toURL());
+        WrenderProcessor.processHar(har, curi);
+
+        // This is a redirect, which is not directly recorded in the
+        // request/response chain:
+        assertEquals("Status code was not found!", 0, curi.getFetchStatus());
+        assertEquals("CrawlURIs not as expected!", 523,
+                curi.getOutLinks().size());
+        // Extract links into a simple String array:
+        List<String> links = new ArrayList<String>();
+        for (CrawlURI l : curi.getOutLinks()) {
+            links.add(l.getURI());
+        }
+        // Check the special link was there:
+        boolean found = links.contains(
+                "https://img4.sentifi.com/enginev1.11041653/images/widget_livemonitor/chart_bg.png");
+        assertEquals("Can't find expected outlink!", true, found);
 
     }
 
