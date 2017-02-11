@@ -7,6 +7,8 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,6 +57,14 @@ public class WrenderProcessor extends Processor implements
         ApplicationContextAware,
         ApplicationListener<ApplicationEvent> {
 
+    private int connectTimeout = 5 * 60 * 1000; // Default 5 minutes
+
+    private int readTimeout = 20 * 60 * 1000; // Default 20 minutes
+
+    private int maxTries = 10; // Retry 10 times.
+
+    private int secondsBetweenRetries = 2 * 60; // Retry once every two minutes.
+
     private String wrenderEndpoint = "http://localhost:8000/render";
 
     private PathSharingContext psc = null;
@@ -76,6 +86,42 @@ public class WrenderProcessor extends Processor implements
     @Autowired
     public void setCrawlController(CrawlController controller) {
         this.controller = controller;
+    }
+
+    public int getConnectTimeout() {
+        return connectTimeout;
+    }
+
+    /**
+     * @param connectTimeout
+     *            connection timeout in microseconds, e.g. 1 minute = 60 * 1000
+     */
+    public void setConnectTimeout(int connectTimeout) {
+        this.connectTimeout = connectTimeout;
+    }
+
+    public int getReadTimeout() {
+        return readTimeout;
+    }
+
+    /**
+     * @param readTimeout
+     *            read timeout in microseconds, e.g. 1 minute = 60 * 1000
+     */
+    public void setReadTimeout(int readTimeout) {
+        this.readTimeout = readTimeout;
+    }
+
+    public int getMaxTries() {
+        return maxTries;
+    }
+
+    /**
+     * @param maxTries
+     *            maximum number of times to retry the web render request.
+     */
+    public void setMaxTries(int maxTries) {
+        this.maxTries = maxTries;
     }
 
     /**
@@ -171,6 +217,21 @@ public class WrenderProcessor extends Processor implements
     }
     
     /**
+     * Create a prefix for the WARC file names, based on job name, launch id,
+     * and current date.
+     * 
+     * WREN-{job}-{launchId}-{yyyyMMdd}
+     * 
+     * @return
+     */
+    private String buildWarcPrefix() {
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
+        return "WREN-" + controller.getMetadata().getJobName() + "-" + launchId
+                + "-" + format.format(cal.getTime());
+    }
+
+    /**
      * Attempts to perform the rendering process.
      * 
      * Will retry a few times if this fails in an unexpected way.
@@ -180,17 +241,17 @@ public class WrenderProcessor extends Processor implements
      */
     private boolean doWrender(CrawlURI curi) {
         int tries = 0;
-        while (tries < 3) {
+        while (tries < maxTries) {
             try {
                 UriBuilder builder = UriBuilder.fromUri(getWrenderEndpoint())
                         .queryParam("url", curi.getURI());
                 // Add warc_prefix based on launch ID
-                String warcPrefix = "WREN-"
-                        + controller.getMetadata().getJobName() + "-"
-                        + launchId;
+                String warcPrefix = this.buildWarcPrefix();
                 builder = builder.queryParam("warc_prefix", warcPrefix);
                 URL wrenderUrl = builder.build().toURL();
-                JSONObject har = readJsonFromUrl(wrenderUrl);
+                // Read render result as JSON:
+                JSONObject har = readJsonFromUrl(wrenderUrl,
+                        this.connectTimeout, this.readTimeout);
                 processHar(har, curi);
                 // Annotate:
                 curi.getAnnotations().add(ANNOTATION);
@@ -204,7 +265,7 @@ public class WrenderProcessor extends Processor implements
                 tries++;
             }
             try {
-                Thread.sleep(1000 * 10);
+                Thread.sleep(1000 * this.secondsBetweenRetries);
             } catch (InterruptedException e) {
                 LOGGER.log(Level.SEVERE, "Sleep was interrupted!", e);
             }
@@ -286,12 +347,15 @@ public class WrenderProcessor extends Processor implements
      * @throws IOException
      * @throws JSONException
      */
-    protected static JSONObject readJsonFromUrl(URL url)
+    protected static JSONObject readJsonFromUrl(URL url, int connectTimeout,
+            int readTimeout)
             throws IOException, JSONException {
         URLConnection con = url.openConnection();
-        con.setConnectTimeout(30 * 1000); // 30s time-out for connections in
-                                          // case service is a bit busy.
-        con.setReadTimeout(3 * 60 * 1000); // Long (3m) time-out for reads as
+        con.setConnectTimeout(connectTimeout); // Time-out (e.g. 2m) for
+                                              // connections in
+                                              // case service is a bit busy.
+        con.setReadTimeout(readTimeout); // Long (e.g. 5m) time-out for reads
+                                           // as
                                            // rendering can be slow.
         InputStream is = con.getInputStream();
         try {

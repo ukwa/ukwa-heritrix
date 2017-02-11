@@ -38,7 +38,7 @@ public class WrenderProcessorTest {
 
         File wrjson = new File("src/test/resources/wrender-example.json");
         JSONObject har = WrenderProcessor
-                .readJsonFromUrl(wrjson.toURI().toURL());
+                .readJsonFromUrl(wrjson.toURI().toURL(), 5, 5);
         WrenderProcessor.processHar(har, curi);
 
         assertEquals("Status code was not found!", 200, curi.getFetchStatus());
@@ -67,7 +67,7 @@ public class WrenderProcessorTest {
         File wrjson = new File(
                 "src/test/resources/wrender-svg-hrefs-example.json");
         JSONObject har = WrenderProcessor
-                .readJsonFromUrl(wrjson.toURI().toURL());
+                .readJsonFromUrl(wrjson.toURI().toURL(), 5, 5);
         WrenderProcessor.processHar(har, curi);
 
         // This is a redirect, which is not directly recorded in the
