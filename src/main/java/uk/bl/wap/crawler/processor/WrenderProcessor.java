@@ -283,11 +283,19 @@ public class WrenderProcessor extends Processor implements
         JSONArray entries = har.getJSONObject("log").getJSONArray("entries");
         for (int i = 0; i < entries.length(); i++) {
             JSONObject entry = entries.getJSONObject(i);
-            if (curi.getURI()
-                    .equals(entry.getJSONObject("request").getString("url"))) {
-                // Extract status code:
-                curi.setFetchStatus(
-                        entry.getJSONObject("response").getInt("status"));
+            // Turn string from HAR into a URI before comparison, to
+            // compensate for escaped characters etc.:
+            try {
+                UURI requestUri = UURIFactory.getInstance(
+                        entry.getJSONObject("request").getString("url"));
+                if (curi.getUURI().equals(requestUri)) {
+                    // Extract status code:
+                    curi.setFetchStatus(
+                            entry.getJSONObject("response").getInt("status"));
+                }
+            } catch (URIException e) {
+                LOGGER.warning("Could not parse as UURI: "
+                        + entry.getJSONObject("request").getString("url"));
             }
         }
         
