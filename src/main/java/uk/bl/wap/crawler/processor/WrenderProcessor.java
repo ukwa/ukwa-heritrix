@@ -256,7 +256,13 @@ public class WrenderProcessor extends Processor implements
                 // Annotate:
                 curi.getAnnotations().add(ANNOTATION);
                 curi.addExtraInfo("warcPrefix", warcPrefix);
-                return true;
+                // If we didn't find a status code, assume rendering failed:
+                if (curi.getFetchStatus() == 0) {
+                    return false;
+                } else {
+                    // Otherwise, handle as normal:
+                    return true;
+                }
             } catch (Exception e) {
                 LOGGER.log(Level.SEVERE,
                         "Web rendering " + getWrenderEndpoint()
@@ -274,6 +280,11 @@ public class WrenderProcessor extends Processor implements
     }
 
     /**
+     * 
+     * Note that the status code must be set for outlinks to be enqueued.
+     * @see org.archive.crawler.postprocessor.CandidatesProcessor.innerProcess(CrawlURI)
+     * 
+     * So we attempt to find it here. If this fails, we say the render failed (see above)
      * 
      * @param har
      * @param curi
