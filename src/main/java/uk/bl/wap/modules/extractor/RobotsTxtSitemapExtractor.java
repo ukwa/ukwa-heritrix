@@ -60,6 +60,9 @@ public class RobotsTxtSitemapExtractor extends ContentExtractor {
                     curi.getPathFromSeed().replace("P", ""), curi.getVia(),
                     curi.getViaContext());
 
+            // Also copy the source over:
+            curiClone.setSourceTag(curi.getSourceTag());
+
             // Parse the robots for the sitemaps.
             List<String> links = parseRobotsTxt(
                     curi.getRecorder()
