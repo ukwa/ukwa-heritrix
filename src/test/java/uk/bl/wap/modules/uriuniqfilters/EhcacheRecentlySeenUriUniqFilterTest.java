@@ -1,7 +1,7 @@
 /**
  * 
  */
-package uk.bl.wap.util;
+package uk.bl.wap.modules.uriuniqfilters;
 
 import static org.junit.Assert.assertEquals;
 
@@ -11,18 +11,35 @@ import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.datamodel.UriUniqFilter;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURIFactory;
+import org.archive.spring.ConfigFile;
 import org.junit.Before;
 import org.junit.Test;
 
-import uk.bl.wap.util.EhcacheRecentlySeenUriUniqFilterTest.Receiver;
+import uk.bl.wap.modules.uriuniqfilters.EhcacheRecentlySeenUriUniqFilter;
+import uk.bl.wap.modules.uriuniqfilters.RecentlySeenUriUniqFilter;
 
 /**
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
-public class FixedSizeCacheUriUniqFilterTest {
+public class EhcacheRecentlySeenUriUniqFilterTest {
 
-    private FixedSizeCacheUriUniqFilter uuf;
+    String surtFile = "src/test/resources/surt-to-ttl.txt";
+
+    /**
+     * Little URL reciever for testing.
+     *
+     */
+    public static class Receiver implements UriUniqFilter.CrawlUriReceiver {
+        boolean received = false;
+
+        @Override
+        public void receive(CrawlURI item) {
+            this.received = true;
+        }
+    }
+
+    private EhcacheRecentlySeenUriUniqFilter uuf;
 
     /**
      * @throws java.lang.Exception
@@ -35,8 +52,10 @@ public class FixedSizeCacheUriUniqFilterTest {
                         .getAbsolutePath());
 
         // Set up the filter
-        uuf = new FixedSizeCacheUriUniqFilter();
-
+        uuf = new EhcacheRecentlySeenUriUniqFilter();
+        uuf.setTextSource(new ConfigFile("", surtFile));
+        uuf.setDefaultTTL(10);
+        uuf.start();
     }
 
     /**
@@ -46,11 +65,11 @@ public class FixedSizeCacheUriUniqFilterTest {
      * @param reciptExpected
      * @throws URIException
      */
-    private void checkFilter(UriUniqFilter uuf, String key,
+    private void checkFilter(RecentlySeenUriUniqFilter uuf, String key,
             boolean reciptExpected) throws URIException {
 
         // Setup
-        Receiver rx = new uk.bl.wap.util.EhcacheRecentlySeenUriUniqFilterTest.Receiver();
+        Receiver rx = new Receiver();
         uuf.setDestination(rx);
 
         // Add
@@ -73,6 +92,12 @@ public class FixedSizeCacheUriUniqFilterTest {
         checkFilter(uuf, "http://www.bbc.co.uk", true);
         checkFilter(uuf, "http://www.bbc.co.uk", false);
         checkFilter(uuf, "http://www.bbc.com", true);
+        checkFilter(uuf, "http://www.bbc.com", false);
+        // Wait for the system to forget:
+        Thread.sleep(2 * 1000);
+        // And re-try:
+        checkFilter(uuf, "http://www.bbc.co.uk", true);
+        // But this still hasn't timed-out:
         checkFilter(uuf, "http://www.bbc.com", false);
     }
 

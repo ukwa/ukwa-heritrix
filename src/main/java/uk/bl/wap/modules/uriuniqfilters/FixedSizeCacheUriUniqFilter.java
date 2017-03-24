@@ -1,10 +1,12 @@
 /**
  * 
  */
-package uk.bl.wap.util;
+package uk.bl.wap.modules.uriuniqfilters;
 
 import org.apache.commons.codec.binary.StringUtils;
 import org.archive.crawler.util.SetBasedUriUniqFilter;
+
+import uk.bl.wap.util.ByteArrayFilter;
 
 /**
  * 

@@ -12,7 +12,6 @@ import org.archive.io.ReplayInputStream;
 import org.archive.io.warc.WARCRecordInfo;
 import org.archive.io.warc.WARCWriter;
 import org.archive.modules.CrawlURI;
-import org.archive.modules.writer.WARCWriterProcessor;
 import org.archive.util.anvl.ANVLRecord;
 
 import uk.bl.wap.io.XorInputStream;
@@ -24,7 +23,7 @@ import uk.bl.wap.io.XorInputStream;
  * @author rcoram
  */
 
-public class WARCViralWriterProcessor extends WARCWriterProcessor {
+public class WARCViralWriterProcessor extends ExtendedWARCWriterProcessor {
     private static final long serialVersionUID = 5818334757714399335L;
 
     @Override

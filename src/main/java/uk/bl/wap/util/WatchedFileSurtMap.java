@@ -14,6 +14,8 @@ import java.util.logging.Logger;
 
 import org.archive.surt.SURTTokenizer;
 
+import uk.bl.wap.modules.uriuniqfilters.RecentlySeenUriUniqFilter;
+
 /**
  * 
  * Based on OpenWayback StaticMapExclusionFilterFactory.

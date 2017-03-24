@@ -1,7 +1,7 @@
 /**
  * 
  */
-package uk.bl.wap.util;
+package uk.bl.wap.modules.uriuniqfilters;
 
 import java.io.File;
 import java.util.logging.Logger;
@@ -79,7 +79,7 @@ public class MapDBRecentlySeenUriUniqFilter extends RecentlySeenUriUniqFilter {
      * @see uk.bl.wap.util.RecentlySeenUriUniqFilter#setAddWithTTL(java.lang.String, java.lang.String, int)
      */
     @Override
-    boolean setAddWithTTL(String key, String uri, int ttl_s) {
+    public boolean setAddWithTTL(String key, String uri, int ttl_s) {
         long currentTime = System.currentTimeMillis() / 1000;
         LOGGER.finest("Checking cache for " + key + " -> " + currentTime
                 + " TTL " + ttl_s);

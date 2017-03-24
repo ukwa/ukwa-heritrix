@@ -1,7 +1,7 @@
 /**
  * 
  */
-package uk.bl.wap.util;
+package uk.bl.wap.modules.uriuniqfilters;
 
 import java.util.logging.Logger;
 
@@ -108,7 +108,7 @@ public class RedisRecentlySeenUriUniqFilter
     /**
      * 
      */
-    protected boolean setAddWithTTL(String key, String uri, int ttl_s) {
+    public boolean setAddWithTTL(String key, String uri, int ttl_s) {
         // Add to the cache, if absent:
         SetArgs setArgs = SetArgs.Builder.nx().ex(ttl_s);
         // Talk to redis:

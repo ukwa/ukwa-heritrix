@@ -1,4 +1,4 @@
-package uk.bl.wap.util;
+package uk.bl.wap.modules.uriuniqfilters;
 
 import java.io.Serializable;
 import java.util.logging.Logger;
@@ -16,6 +16,8 @@ import org.springframework.context.Lifecycle;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 
+import uk.bl.wap.util.WatchedFileSurtMap;
+
 /**
  * 
  * This UriUniqFilter or 'Already Seen URIs' filter uses an off-the-shelf cache
@@ -28,7 +30,7 @@ import com.google.common.hash.Hashing;
  * URLs that are visited at varying frequencies.
  * 
  * It converts the URL to a large hash and uses that as the key, thus supporting
- * systems that place limits on the size of the key. The 128-bit keys shoudl
+ * systems that place limits on the size of the key. The 128-bit keys should
  * look like this:
  * 
  * 6c1b07bc7bbc4be347939ac4a93c437a
@@ -207,9 +209,10 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
      * @param key
      * @param uri
      * @param ttl_s
-     * @return
+     * @return true if the item is new and is being added to the set of known
+     *         URIs
      */
-    abstract boolean setAddWithTTL(String key, String uri, int ttl_s);
+    abstract public boolean setAddWithTTL(String key, String uri, int ttl_s);
 
 
     @Override

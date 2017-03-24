@@ -1,7 +1,7 @@
 /**
  * 
  */
-package uk.bl.wap.util;
+package uk.bl.wap.modules.uriuniqfilters;
 
 import java.util.logging.Logger;
 
@@ -192,7 +192,7 @@ public class EhcacheRecentlySeenUriUniqFilter
     /**
      * 
      */
-    protected boolean setAddWithTTL(String key, String uri, int ttl_s) {
+    public boolean setAddWithTTL(String key, String uri, int ttl_s) {
         // Build the cache entry:
         Element element = new Element(key, uri);
 

@@ -1,8 +1,10 @@
-package uk.bl.wap.util;
+package uk.bl.wap.modules.uriuniqfilters;
 
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
+
+import uk.bl.wap.modules.uriuniqfilters.RedisRecentlySeenUriUniqFilter;
 
 public class RedisRecentlySeenUriUniqFilterTest {
 
