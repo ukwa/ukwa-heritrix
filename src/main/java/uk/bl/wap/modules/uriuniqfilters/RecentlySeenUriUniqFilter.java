@@ -110,12 +110,10 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
             // And this is needed for it to work:
             this.textSource.setBase(this.getConfigPathConfigurer().getPath());
         }
-        this.ttlMap.shutdown();
-        this.ttlMap.init();
     }
 
     /**
-     * @return the defaultTTL
+     * @return the defaultTTL (seconds)
      */
     public int getDefaultTTL() {
         return defaultTTL;
@@ -123,7 +121,7 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
 
     /**
      * @param defaultTTL
-     *            the defaultTTL to set
+     *            the defaultTTL (in seconds) to set
      */
     public void setDefaultTTL(int defaultTTL) {
         this.defaultTTL = defaultTTL;
@@ -138,7 +136,7 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
 
     /**
      * @param sourceCheckInterval
-     *            the sourceCheckInterval to set
+     *            the sourceCheckInterval to set in seconds
      */
     public void setSourceCheckInterval(int sourceCheckInterval) {
         this.ttlMap.setCheckInterval(sourceCheckInterval);

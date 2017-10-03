@@ -181,7 +181,9 @@ public class WrenderProcessor extends Processor implements
     public ProcessResult innerProcessResult(CrawlURI curi)
             throws InterruptedException {
         // Attempt to render and extract links using a web-rendering service:
+        curi.setFetchBeginTime(System.currentTimeMillis());
         boolean wrendered = this.doWrender(curi);
+        curi.setFetchCompletedTime(System.currentTimeMillis());
         // Did that work?
         if (wrendered) {
             // Wrendering worked, so jump past the usual fetchers/extractors:

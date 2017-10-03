@@ -1,0 +1,23 @@
+filebeat:
+  # List of prospectors to fetch data.
+  prospectors:
+    -
+      paths:
+        - "/heritrix/output/logs/*/crawl.log"
+        - "/heritrix/output/logs/*/*/crawl.log"
+      type: log
+      document_type: heritrix
+      fields:
+        crawl_id: test-crawler
+
+shipper:
+  name: heritrix
+
+output:
+  logstash:
+    enabled: true
+
+    hosts: ["monitrix:5044"]
+
+    tls:
+      disabled: true

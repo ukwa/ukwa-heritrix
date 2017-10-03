@@ -3,18 +3,23 @@
  */
 package uk.bl.wap.util;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
@@ -32,19 +37,29 @@ import org.archive.util.DateUtils;
 import org.archive.util.MimetypeUtils;
 import org.json.JSONObject;
 
+import uk.bl.wap.modules.recrawl.OutbackCDXPersistLoadProcessor;
+
 /**
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
 public class OutbackCDXClient {
-    private static final Log log = LogFactory.getLog(OutbackCDXClient.class);
+    private static final Logger logger = Logger
+            .getLogger(OutbackCDXPersistLoadProcessor.class.getName());
 
     private HttpClient client;
     private PoolingHttpClientConnectionManager conman;
 
-    private String outbackCdxPrefix = "http://localhost:9090/fc?url=";// "http://crawl-index/timeline?url=";
+    private String endpoint = "http://localhost:9090/fc";// ?url=";//
+                                                         // "http://crawl-index/timeline?url=";
 
-    private int socketTimeout = 10000;
+    public String getEndpoint() {
+        return endpoint;
+    }
+
+    public void setEndpoint(String endpoint) {
+        this.endpoint = endpoint;
+    }
 
     private String contentDigestScheme = "sha1:";
 
@@ -62,6 +77,8 @@ public class OutbackCDXClient {
     public String getContentDigestScheme() {
         return contentDigestScheme;
     }
+
+    private int socketTimeout = 10000;
 
     /**
      * socket timeout (SO_TIMEOUT) for HTTP client in milliseconds.
@@ -140,6 +157,8 @@ public class OutbackCDXClient {
 
     private long queryRangeSecs = 6L * 30 * 24 * 3600;
 
+    private int totalSentRecords = 0;
+
     /**
      * 
      * @param queryRangeSecs
@@ -164,7 +183,8 @@ public class OutbackCDXClient {
     protected String buildURL(String url) {
         // we don't need to pass scheme part, but no problem passing it.
         StringBuilder sb = new StringBuilder();
-        sb.append(this.outbackCdxPrefix);
+        sb.append(this.endpoint);
+        sb.append("?url=");
         String encodedURL;
         try {
             encodedURL = URLEncoder.encode(url, "UTF-8");
@@ -179,6 +199,7 @@ public class OutbackCDXClient {
     public InputStream getCDX(String qurl)
             throws InterruptedException, IOException {
         final String url = buildURL(qurl);
+        logger.fine("GET " + url);
         HttpGet m = new HttpGet(url);
         m.setConfig(RequestConfig.custom().setConnectTimeout(connectionTimeout)
                 .setSocketTimeout(socketTimeout).build());
@@ -196,19 +217,25 @@ public class OutbackCDXClient {
                 cumulativeFetchTime.addAndGet(System.currentTimeMillis() - t0);
                 StatusLine sl = resp.getStatusLine();
                 if (sl.getStatusCode() != 200) {
-                    log.error("GET " + url + " failed with status="
+                    logger.severe("GET " + url + " failed with status="
                             + sl.getStatusCode() + " " + sl.getReasonPhrase());
                     entity = resp.getEntity();
                     entity.getContent().close();
                     entity = null;
+                    if (sl.getStatusCode() == 404) {
+                        logger.warning(
+                                "Got a 404: the collection has probably not been created yet.");
+                        return null;
+                    }
                     continue;
                 }
                 entity = resp.getEntity();
             } catch (IOException ex) {
-                log.error(
+                logger.severe(
                         "GEt " + url + " failed with error " + ex.getMessage());
             } catch (Exception ex) {
-                log.error("GET " + url + " failed with error ", ex);
+                logger.log(Level.SEVERE, "GET " + url + " failed with error ",
+                        ex);
             }
         } while (entity == null && ++attempts < 3);
         if (entity == null) {
@@ -233,6 +260,9 @@ public class OutbackCDXClient {
             throws IOException, InterruptedException {
         // Perform the query:
         InputStream is = this.getCDX(qurl);
+        if (is == null) {
+            return null;
+        }
         // read CDX lines, save most recent (at the end) hash.
         ByteBuffer buffer = ByteBuffer.allocate(32);
         ByteBuffer tsbuffer = ByteBuffer.allocate(14);
@@ -306,8 +336,59 @@ public class OutbackCDXClient {
         return info.isEmpty() ? null : info;
     }
 
+    /**
+     * Put this URI into OutbackCDX
+     * 
+     * @param curi
+     */
     public void putUri(CrawlURI curi) {
-        // FIXME Put this URI into OutbackCDX
+        // Re-format as CDX-11 string:
+        String cdx11 = toCDXLine(curi);
+        logger.fine("POSTING: " + cdx11);
+
+        boolean retry = true;
+        while (retry) {
+            try {
+                // POST to the endpoint:
+                URL u = new URL(endpoint);
+                HttpURLConnection conn = (HttpURLConnection) u.openConnection();
+                conn.setDoOutput(true);
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type",
+                        "application/x-www-form-urlencoded");
+                OutputStream os = conn.getOutputStream();
+                os.write(cdx11.getBytes("UTF-8"));
+                os.close();
+                if (conn.getResponseCode() == 200) {
+                    // Read the response:
+                    BufferedReader in = new BufferedReader(
+                            new InputStreamReader(conn.getInputStream()));
+                    String inputLine;
+                    StringBuffer response = new StringBuffer();
+                    while ((inputLine = in.readLine()) != null) {
+                        response.append(inputLine);
+                    }
+                    in.close();
+                    logger.finest(response.toString());
+                    // It worked! No need to retry:
+                    logger.finest("Sent the record.");
+                    this.totalSentRecords += 1;
+                    retry = false;
+                } else {
+                    logger.warning(
+                            "Got response code: " + conn.getResponseCode());
+                }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "POSTing failed with ", e);
+                try {
+                    Thread.sleep(1000 * 10);
+                } catch (InterruptedException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
+            }
+        }
+
     }
 
     /**
@@ -328,56 +409,47 @@ public class OutbackCDXClient {
      * @return
      */
     private static String toCDXLine(CrawlURI curi) {
-        JSONObject jo = new JSONObject();
-
-        jo.put("timestamp",
-                ArchiveUtils.getLog17Date(System.currentTimeMillis()));
-
-        jo.put("content_length",
-                curi.isHttpTransaction() && curi.getContentLength() >= 0
-                        ? curi.getContentLength() : JSONObject.NULL);
-        jo.put("size", curi.getContentSize() > 0 ? curi.getContentSize()
-                : JSONObject.NULL);
-
-        jo.put("status_code", checkForNull(curi.getFetchStatus()));
-        jo.put("url", checkForNull(curi.getUURI().toString()));
-        jo.put("hop_path", checkForNull(curi.getPathFromSeed()));
-        jo.put("via", checkForNull(curi.flattenVia()));
-        jo.put("mimetype",
-                checkForNull(MimetypeUtils.truncate(curi.getContentType())));
-        jo.put("thread", checkForNull(curi.getThreadNumber()));
-
+        // Pick out the fetch timestamp:
+        String crawl_timestamp = "-";
         if (curi.containsDataKey(
                 CoreAttributeConstants.A_FETCH_COMPLETED_TIME)) {
             long beganTime = curi.getFetchBeginTime();
-            String fetchBeginDuration = ArchiveUtils.get17DigitDate(beganTime)
-                    + "+" + (curi.getFetchCompletedTime() - beganTime);
-            jo.put("start_time_plus_duration", fetchBeginDuration);
-        } else {
-            jo.put("start_time_plus_duration", JSONObject.NULL);
+            crawl_timestamp = ArchiveUtils.get14DigitDate(beganTime);
         }
-
-        jo.put("content_digest",
-                checkForNull(curi.getContentDigestSchemeString()));
-        jo.put("seed", checkForNull(curi.getSourceTag()));
-
-        JSONObject ei = curi.getExtraInfo();
-        if (ei == null) {
-            ei = new JSONObject();
+        // Be explicit about de-duplicated resources:
+        String content_type = MimetypeUtils.truncate(curi.getContentType());
+        if (curi.getAnnotations().contains("duplicate:digest")) {
+            content_type = "warc/revisit";
         }
-        // copy so we can remove unrolled fields
-        ei = new JSONObject(curi.getExtraInfo().toString());
-        ei.remove("contentSize"); // we get this value above
-        jo.put("warc_filename", checkForNull(ei.remove("warcFilename")));
-        jo.put("warc_offset", checkForNull(ei.remove("warcFileOffset")));
-        jo.put("warc_length", checkForNull(ei.remove("warcRecordLength")));
-        jo.put("extra_info", ei);
+        // Pick out the WARC information:
+        JSONObject jei = curi.getExtraInfo();
+        String warc_filename = jei.optString("warcFilename", "-");
+        String warc_offset = jei.optString("warcFileOffset", "0");
+        String warc_length = jei.optString("warcRecordLength", "0");
+        // Format as CDX-11:
+        StringBuffer sb = new StringBuffer();
+        sb.append("- ");
+        sb.append(crawl_timestamp);
+        sb.append(" ");
+        sb.append(curi.getUURI());
+        sb.append(" ");
+        sb.append(content_type);
+        sb.append(" ");
+        sb.append(curi.getFetchStatus());
+        sb.append(" ");
+        sb.append(curi.getContentDigestSchemeString());
+        sb.append(" ");
+        sb.append(curi.flattenVia());
+        sb.append(" ");
+        sb.append("-"); // Robots field
+        sb.append(" ");
+        sb.append(warc_length);
+        sb.append(" ");
+        sb.append(warc_offset);
+        sb.append(" ");
+        sb.append(warc_filename);
 
-        return jo.toString();
-    }
-
-    protected static Object checkForNull(Object o) {
-        return o != null ? o : JSONObject.NULL;
+        return sb.toString();
     }
 
     /**

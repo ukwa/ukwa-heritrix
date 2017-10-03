@@ -2,3 +2,8 @@
 .classpath
 .project
 target
+
+/jobs/*/20*
+/jobs/*/*.dump
+/jobs/*/latest
+/jobs/*/job.log*

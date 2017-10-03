@@ -3,13 +3,15 @@
  */
 package uk.bl.wap.modules.recrawl;
 
-import java.io.IOException;
+import java.util.logging.Logger;
 
 import org.archive.modules.CrawlURI;
+import org.archive.modules.ProcessResult;
 
 /**
  * 
- * This extends the
+ * This extends the PersistLoadProcessor and puts the current crawl URI into
+ * OutbackCDX
  * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
@@ -17,15 +19,18 @@ import org.archive.modules.CrawlURI;
 public class OutbackCDXPersistStoreProcessor
         extends OutbackCDXPersistLoadProcessor {
 
+    private static final Logger logger = Logger
+            .getLogger(OutbackCDXPersistLoadProcessor.class.getName());
+
     @Override
-    protected void innerProcess(CrawlURI uri) throws InterruptedException {
-        try {
-            // FIXME Implement thsi!
-            this.ocdx.getCDX(uri.getURI());
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+    protected ProcessResult innerProcessResult(CrawlURI curi)
+            throws InterruptedException {
+
+        // Only +ve FetchStatusCodes values belong in the persist store:
+        if (curi.getFetchStatus() > 0) {
+            this.outbackCDXClient.putUri(curi);
         }
+        return ProcessResult.PROCEED;
     }
 
 }

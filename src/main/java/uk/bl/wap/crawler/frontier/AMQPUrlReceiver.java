@@ -38,6 +38,9 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.SchedulingConstants;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
+import org.archive.modules.net.CrawlHost;
+import org.archive.modules.net.CrawlServer;
+import org.archive.modules.net.ServerCache;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.spring.KeyedProperties;
@@ -97,6 +100,17 @@ public class AMQPUrlReceiver
     @Autowired
     public void setCandidates(CandidatesProcessor candidates) {
         this.candidates = candidates;
+    }
+
+    protected ServerCache serverCache;
+
+    public ServerCache getServerCache() {
+        return this.serverCache;
+    }
+
+    @Autowired
+    public void setServerCache(ServerCache serverCache) {
+        this.serverCache = serverCache;
     }
 
     protected String amqpUri = "amqp://guest:guest@localhost:5672/%2f";
@@ -347,15 +361,30 @@ public class AMQPUrlReceiver
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e); // can't happen
             }
+            logger.warning("Processing " + decodedBody);
             JSONObject jo = new JSONObject(decodedBody);
 
             if ("GET".equals(jo.getString("method"))) {
                 try {
                     CrawlURI curi = makeCrawlUri(jo);
                     KeyedProperties.clearAllOverrideContexts();
-                    candidates.runCandidateChain(curi, null);
-                    // appCtx.publishEvent(new
-                    // AMQPUrlReceivedEvent(AMQPUrlReceiver.this, curi));
+                    if (curi.isSeed()) {
+                        candidates.getSeeds().addSeed(curi);
+                        // Also clear any quotas if a seed is marked as forced:
+                        if (curi.forceFetch()) {
+                            candidates.getFrontier().getGroup(curi)
+                                    .getSubstats().clear();
+                            final CrawlServer server = serverCache
+                                    .getServerFor(curi.getUURI());
+                            server.getSubstats().clear();
+                            final CrawlHost host = serverCache
+                                    .getHostFor(curi.getUURI());
+                            host.getSubstats().clear();
+                        }
+                    } else {
+                        candidates.runCandidateChain(curi, null);
+                    }
+                    appCtx.publishEvent(new AMQPUrlReceivedEvent(AMQPUrlReceiver.this, curi));
                 } catch (URIException e) {
                     logger.log(Level.WARNING,
                             "problem creating CrawlURI from json received via AMQP "
@@ -398,7 +427,8 @@ public class AMQPUrlReceiver
         //  "url": "https://analytics.archive.org/0.gif?server_ms=256&server_name=www19.us.archive.org&service=ao&loadtime=358&timediff=-8&locale=en-US&referrer=-&version=2&count=9",
         //  "method": "GET"
         // }
-        protected CrawlURI makeCrawlUri(JSONObject jo) throws URIException,
+        protected CrawlURI makeCrawlUri(JSONObject jo)
+                throws URIException,
                 JSONException {
             JSONObject joHeaders = jo.getJSONObject("headers");
 

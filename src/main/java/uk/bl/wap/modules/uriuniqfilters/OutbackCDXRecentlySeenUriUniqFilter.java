@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.archive.modules.CoreAttributeConstants;
 
@@ -34,7 +36,18 @@ public class OutbackCDXRecentlySeenUriUniqFilter
 
     private static final long serialVersionUID = 361526253773091309L;
 
-    private OutbackCDXClient ocdx = new OutbackCDXClient();
+    private static final Logger LOGGER = Logger
+            .getLogger(OutbackCDXRecentlySeenUriUniqFilter.class.getName());
+
+    private OutbackCDXClient outbackCDXClient = new OutbackCDXClient();
+
+    public OutbackCDXClient getOutbackCDXClient() {
+        return outbackCDXClient;
+    }
+
+    public void setOutbackCDXClient(OutbackCDXClient outbackCDXClient) {
+        this.outbackCDXClient = outbackCDXClient;
+    }
 
     public OutbackCDXRecentlySeenUriUniqFilter() {
     }
@@ -50,17 +63,20 @@ public class OutbackCDXRecentlySeenUriUniqFilter
                 public Long load(String url) {
                     HashMap<String, Object> info;
                     try {
-                        info = ocdx.getLastCrawl(url);
-                        System.out.println("INFO: " + info);
+                        info = outbackCDXClient.getLastCrawl(url);
+                        LOGGER.finest("OutbackCDX.getLastCrawl for " + url
+                                + ": "
+                                + info);
+                        if (info == null) {
+                            return 0l;
+                        }
                         long ms_ts = (long) info
                                 .get(CoreAttributeConstants.A_FETCH_BEGAN_TIME);
                         return ms_ts / 1000;
                     } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        LOGGER.log(Level.SEVERE, "IOException", e);
                     } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+                        LOGGER.log(Level.SEVERE, "InterruptedException", e);
                     }
 
                     // If it's unknown or went wrong, return a very very old
@@ -71,6 +87,7 @@ public class OutbackCDXRecentlySeenUriUniqFilter
 
     // private RemovalListener<? super Object, ? super Object> MY_LISTENER;
 
+
     /* (non-Javadoc)
      * @see uk.bl.wap.util.RecentlySeenUriUniqFilter#setAddWithTTL(java.lang.String, java.lang.String, int)
      */
@@ -79,15 +96,19 @@ public class OutbackCDXRecentlySeenUriUniqFilter
         try {
             Long ts = this.times.get(uri);
             long currentTime = System.currentTimeMillis() / 1000;
-            if (currentTime - ts > ttl_s) {
-                return false;
-            } else {
+            // If we've never seen this before, or if enough time has elapsed
+            // since we last saw it:
+            LOGGER.finest("Got elapsed: " + (currentTime - ts) + " versus TTL "
+                    + ttl_s);
+            if (ts == 0l || currentTime - ts > ttl_s) {
                 this.times.put(uri, currentTime);
                 return true;
+            } else {
+                return false;
             }
         } catch (ExecutionException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE,
+                    "ExecutionException while running setAddWithTT!", e);
         }
         return true;
     }

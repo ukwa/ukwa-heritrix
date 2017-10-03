@@ -1,0 +1,109 @@
+version: '2'
+
+services:
+  # UKWA Heritrix
+  heritrix:
+    build: .
+    ports:
+      - "8443:8443"
+    environment:
+       - "JAVA_OPTS=-Xmx2g"
+       - "CLAMD_HOST=clamd"
+       - "KAFKA_BOOTSTRAP_SERVERS=kafka:9092"
+       - "KAFKA_CRAWLED_TOPIC=frequent-crawl-log"
+       - "KAFKA_TOCRAWL_TOPIC=uris-to-crawl"
+       - "WRENDER_ENDPOINT=http://webrender:8010/render"
+       - "CDXSERVER_ENDPOINT=http://cdxserver:8080/fc"
+       - "JOB_NAME=frequent"
+    links:
+      - clamd
+      - kafka
+      - webrender
+      - cdxserver
+      - acid.matkelly.com
+      - crawl-test-site
+    volumes_from:
+      - dvc:rw  
+
+  # Data Volume Container for crawler job definitions and outputs
+  dvc:
+    image: busybox
+    volumes:
+      - ./target/testing/heritrix/output:/heritrix/output
+      - ./target/testing/heritrix/state:/heritrix/state
+      - ./target/testing/heritrix/wren:/heritrix/wren
+      - ./jobs:/jobs
+
+  # Clamd virus scanning Service
+  clamd:
+    image: ukwa/clamd
+    ports:
+      - "3310:3310"
+
+  # Kafka
+  kafka:
+    image: spotify/kafka
+    ports:
+      - "2181:2181"
+      - "9092:9092"
+    environment:
+      - "ADVERTISED_HOST=kafka"
+      - "ADVERTISED_PORT=9092"
+
+  # PhantomJS web page rendering service
+  webrender:
+    image: ukwa/webrender-phantomjs:2.0.4
+    environment:
+      - "WARCPROX=warcprox:8000"
+      - "LC_ALL=en_US.utf8"
+      - "TMP=/tmp/webrender"
+    ports:
+      - "8010:8010"
+    links:
+      - warcprox
+    #volumes:
+    #  - "./pulse-beta/gunicorn.ini:/webrender/gunicorn.ini" # Override render server configuration
+
+# WARC Proxy, with de-duplication disabled and a rapid rollover:
+  warcprox:
+    image: ukwa/warcprox #:2.0-py36-alpine
+    command: "warcprox -b 0.0.0.0 -d /heritrix/wren --base32 --gzip --rollover-idle-time 600 --dedup-db-file /dev/null --stats-db-file /dev/null --quiet"
+    environment:
+      - "LC_ALL=en_US.utf8"
+      - "TMP=/tmp/warcprox"
+    ports:
+      - "8000:8000"
+    links:
+      - acid.matkelly.com
+      - crawl-test-site
+    ulimits:
+      nproc: 2000 # See https://github.com/internetarchive/warcprox/blob/2.x/warcprox/warcproxy.py#L413
+    volumes_from:
+      - dvc:rw  
+
+  # tinycdxserver
+  cdxserver:
+    image: ukwa/tinycdxserver
+    command: "java -jar outbackcdx.jar -v -d /cdx-data -p 8080 -b 0.0.0.0"
+    ports:
+      - "9090:8080"
+  #  volumes:
+  #    - ./testing/cdx:/cdx-data
+
+  # ----------
+  # Test sites
+  # ----------
+
+  # Local version of the Archival Acid Test: http://acid.matkelly.com
+  acid.matkelly.com:
+    image: ukwa/archival-acid-test
+    ports:
+      - "180:80"  
+
+  # Local version of the UKWA test site: http://data.webarchive.org.uk/crawl-test-site/
+  crawl-test-site:
+    command: jekyll serve
+    image: ukwa/crawl-test-site
+    ports:
+      - "280:4000"
+

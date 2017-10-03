@@ -21,9 +21,9 @@ package uk.bl.wap.modules.recrawl;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
@@ -44,10 +44,18 @@ import uk.bl.wap.util.OutbackCDXClient;
  * 
  */
 public class OutbackCDXPersistLoadProcessor extends Processor {
-    private static final Log log = LogFactory
-            .getLog(OutbackCDXPersistLoadProcessor.class);
+    private static final Logger logger = Logger
+            .getLogger(OutbackCDXPersistLoadProcessor.class.getName());
     
-    protected OutbackCDXClient ocdx = new OutbackCDXClient();
+    protected OutbackCDXClient outbackCDXClient = new OutbackCDXClient();
+
+    public OutbackCDXClient getOutbackCDXClient() {
+        return outbackCDXClient;
+    }
+
+    public void setOutbackCDXClient(OutbackCDXClient outbackCDXClient) {
+        this.outbackCDXClient = outbackCDXClient;
+    }
 
     private int historyLength = 2;
 
@@ -91,9 +99,10 @@ public class OutbackCDXPersistLoadProcessor extends Processor {
     protected ProcessResult innerProcessResult(CrawlURI curi) throws InterruptedException {
         Map<String, Object> info = null;
         try {
-            info = ocdx.getLastCrawl(curi.toString());
+            info = outbackCDXClient.getLastCrawl(curi.toString());
+            logger.finest("GOT " + info + " for " + curi);
         } catch (IOException ex) {
-            log.error("Error calling OutbackCDX!", ex);
+            logger.log(Level.SEVERE, "Error calling OutbackCDX!", ex);
             errorCount.incrementAndGet();
         }
         if (info != null) {
@@ -101,6 +110,7 @@ public class OutbackCDXPersistLoadProcessor extends Processor {
                     (Long)info.get(FetchHistoryHelper.A_TIMESTAMP), historyLength);
             if (history != null)
                 history.putAll(info);
+            logger.finest("Now have history: " + history);
             loadedCount.incrementAndGet();
         } else {
             missedCount.incrementAndGet();
