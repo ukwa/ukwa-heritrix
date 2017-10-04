@@ -22,3 +22,10 @@ Modules for Heritrix 3.3.0+
 * WARCViralWriterProcessor, XorInputStream: workarounds for force-writing of 'conversion' records based on XOR'd version of the original data.
 * RobotsTxtSitemapExtractor: Extracts and enqueues sitemap links from robots.txt files.
 * WrenderProcessor: Runs pages through a web-rendering web service rather than the usual H3 processing.
+
+
+cat testdata/seed.json | kafka-console-producer --broker-list kafka:9092 --topic uris-to-crawl
+kafka-console-consumer --bootstrap-server kafka:9092 --topic uris-to-crawl --from-beginning
+
+kafka-console-consumer --bootstrap-server kafka:9092 --topic frequent-crawl-log --from-beginning
+
