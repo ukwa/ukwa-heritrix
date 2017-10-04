@@ -5,6 +5,7 @@ package uk.bl.wap.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,7 +41,7 @@ public abstract class WatchedFileSource {
      * Thread object of update thread -- also is flag indicating if the thread
      * has already been started -- static, and access to it is synchronized.
      */
-    private Thread updateThread = null;
+    private CacheUpdaterThread updateThread = null;
 
     /**
      * load exclusion file and startup polling thread to check for updates
@@ -125,8 +126,7 @@ public abstract class WatchedFileSource {
         if (updateThread == null) {
             return;
         }
-        updateThread.interrupt();
-        new Exception("But WHY?").printStackTrace();
+        updateThread.shutdown();
     }
 
     private class CacheUpdaterThread extends Thread {
@@ -135,6 +135,8 @@ public abstract class WatchedFileSource {
         private WatchedFileSource service = null;
 
         private int runInterval;
+
+        private AtomicBoolean keepRunning = new AtomicBoolean(true);
 
         /**
          * @param service
@@ -152,7 +154,7 @@ public abstract class WatchedFileSource {
 
         public void run() {
             int sleepInterval = runInterval;
-            while (true) {
+            while (keepRunning.get()) {
                 try {
                     try {
                         service.checkForReload();
@@ -166,6 +168,10 @@ public abstract class WatchedFileSource {
                     e.printStackTrace();
                 }
             }
+        }
+
+        public void shutdown() {
+            this.keepRunning.set(false);
         }
     }
 
