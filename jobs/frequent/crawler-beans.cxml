@@ -139,12 +139,12 @@
 	<bean id="listRegexFilterOut" class="org.archive.modules.deciderules.MatchesListRegexDecideRule">
 		<property name="decision" value="REJECT" />
 		<property name="listLogicalOr" value="true" />
-      <!-- 
-		<property name="regexList">
-			<xi:include href="includes.xml" xpointer="xpointer(//includes/excludes/list)" />
-		</property>
-       -->
-	</bean>
+        <property name="regexList">
+           <ref bean="scopeExcludesList"/>
+        </property>
+    </bean>
+    <import resource="excludes.xml"/>
+    
 	<!-- ... ACCEPT those on the same Domain ... -->
 	<bean id="onDomainAccept" class="org.archive.modules.deciderules.surt.OnDomainsDecideRule">
 		<property name="decision" value="ACCEPT" />
@@ -203,7 +203,7 @@
 	<bean id="quotaEnforcer" class="org.archive.crawler.prefetch.QuotaEnforcer">
 		<property name="serverMaxSuccessKb" value="524288" />
 		<!-- This will log all out-of-quota URLs rather than just retiring the queue. -->
-     	<!-- property name="forceRetire" value="false"/ -->
+     	<property name="forceRetire" value="false"/>
 	</bean>
 	<!-- assembled into ordered CandidateChain bean -->
 	<bean id="candidateProcessors" class="org.archive.modules.CandidateChain">
@@ -732,6 +732,7 @@
 		 SheetForDecideRuled beans -->
 	<bean id="sheetOverlaysManager" autowire="byType" class="org.archive.crawler.spring.SheetOverlaysManager">
 	</bean>
+    <import resource="sheets.xml"/>
 	<!-- BDBMODULE: BDB-JE disk persistence manager -->
   <bean id="bdbFrontierBdb" class="org.archive.bdb.BdbModule">
     <property name="dir" value="/heritrix/state/#{systemEnvironment['JOB_NAME'] ?: 'frequent'}/frontier"/>
@@ -775,8 +776,5 @@
 		 to crawler-beans.cxml file, and tracking crawl files for web UI -->
 	<bean id="configPathConfigurer" class="org.archive.spring.ConfigPathConfigurer">
 	</bean>
-   <!-- 
-	<xi:include href="includes.xml" xpointer="xpointer(//includes/sheets/bean)" />
-    -->
 </beans>
 

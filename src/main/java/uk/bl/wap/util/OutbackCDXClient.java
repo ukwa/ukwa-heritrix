@@ -424,7 +424,7 @@ public class OutbackCDXClient {
         // status:
         int fetch_status = curi.getFetchStatus();
         if (fetch_status < 0) {
-            content_type = "failed/status-code" + fetch_status;
+            content_type = "failure-status-code/" + fetch_status;
             fetch_status = 599;
         }
         // Pick out the WARC information:
