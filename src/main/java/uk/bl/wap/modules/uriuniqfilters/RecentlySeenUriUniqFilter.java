@@ -7,6 +7,8 @@ import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.util.SetBasedUriUniqFilter;
 import org.archive.spring.ConfigFile;
 import org.archive.spring.ConfigPathConfigurer;
+import org.archive.spring.HasKeyedProperties;
+import org.archive.spring.KeyedProperties;
 import org.archive.surt.SURTTokenizer;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,7 +50,8 @@ import uk.bl.wap.util.WatchedFileSurtMap;
  *
  */
 public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
-        implements Serializable, Lifecycle, InitializingBean {
+        implements Serializable, Lifecycle, InitializingBean,
+        HasKeyedProperties {
     private static final long serialVersionUID = 1061526253773091309L;
 
     private static Logger LOGGER = Logger
@@ -57,8 +60,6 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
     public static final int HOUR = 60 * 60;
     public static final int DAY = HOUR * 24;
     public static final int WEEK = DAY * 7;
-    public int defaultTTL = 52 * WEEK;
-
 
     private ConfigPathConfigurer configPathConfigurer = null;
 
@@ -72,6 +73,12 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
     // Whether to use the hash of the URI rather than the URI (e.g. if
     // the implementation needs short keys)
     private boolean useHashedUriKey = false;
+
+    protected KeyedProperties kp = new KeyedProperties();
+
+    public KeyedProperties getKeyedProperties() {
+        return kp;
+    }
 
     /**
      * Default constructor
@@ -112,11 +119,15 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
         }
     }
 
+    {
+        setDefaultTTL(52 * WEEK);
+    }
+
     /**
      * @return the defaultTTL (seconds)
      */
     public int getDefaultTTL() {
-        return defaultTTL;
+        return (Integer) kp.get("recentlySeenTTLsecs");
     }
 
     /**
@@ -124,7 +135,9 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
      *            the defaultTTL (in seconds) to set
      */
     public void setDefaultTTL(int defaultTTL) {
-        this.defaultTTL = defaultTTL;
+        LOGGER.warning(
+                "Setting TTL to " + defaultTTL);
+        kp.put("recentlySeenTTLsecs", defaultTTL);
     }
 
     /**
@@ -182,7 +195,7 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
         } catch (URIException e) {
             LOGGER.warning(e.toString());
         }
-        return this.defaultTTL;
+        return this.getDefaultTTL();
     }
 
     /**

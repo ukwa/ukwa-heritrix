@@ -59,7 +59,7 @@
 	<!-- SCOPE: rules for which discovered URIs to crawl; order is very 
 		 important because last decision returned other than 'NONE' wins. -->
 	<bean id="scope" class="org.archive.modules.deciderules.DecideRuleSequence">
-        <property name="logToFile" value="true" />
+        <property name="logToFile" value="false" />
 		<property name="rules">
 			<list>
 				<!-- Begin by REJECTing all... -->
@@ -322,7 +322,7 @@
 	<bean id="extractorJs" class="org.archive.modules.extractor.ExtractorJS">
 	</bean>
     <!-- a processor that scans content for viruses -->
-    <bean id="viralContent" class="uk.bl.wap.crawler.processor.ViralContentProcessor">
+    <bean id="viralContent" class="uk.bl.wap.crawler.postprocessor.ViralContentProcessor">
 		<property name="clamdHost" value="#{systemEnvironment['CLAMD_HOST'] ?: localhost}" />
    		<property name="clamdPort" value="3310" />
    		<property name="clamdTimeout" value="0" />
@@ -485,7 +485,7 @@
 		<property name="writeRevisitForNotModified" value="false" />
 	</bean>
   <!-- This provides a crawl log feed to a queue - note that you'll need to set up a binding that matches these parameters to a queue -->
-  <bean id="crawlLogFeed" class="uk.bl.wap.crawler.processor.KafkaCrawlLogFeed">
+  <bean id="crawlLogFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedCrawlLogFeed">
     <property name="topic" value="#{systemEnvironment['KAFKA_CRAWLED_TOPIC'] ?: 'uris-crawled'}" />
     <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
     <property name="extraFields">
@@ -530,6 +530,17 @@
     </property>
   </bean>
   -->
+     <!-- This provides a crawl log feed to a queue - note that you'll need to set up a binding that matches these parameters to a queue -->
+     <bean id="toCrawlFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedToCrawlFeed">
+       <property name="topic" value="#{systemEnvironment['KAFKA_TOCRAWL_TOPIC'] ?: 'uris-to-crawl'}" />
+       <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
+       <property name="extraFields">
+           <map>
+             <entry key="job_name" value="#{systemEnvironment['JOB_NAME'] ?: 'frequent'}"/>
+           </map>
+       </property>
+     </bean>
+  
 	<bean id="candidates" class="org.archive.crawler.postprocessor.CandidatesProcessor">
 		<property name="seedsRedirectNewSeeds" value="true" />
 	</bean>
@@ -553,9 +564,10 @@
 				<ref bean="persistStoreProcessor" />
                 <!-- send the crawl log to a queue for downstream checks -->
                 <ref bean="crawlLogFeed"/>
-				<!-- ...send each outlink candidate URI to CandidatesChain, 
-					and enqueue those ACCEPTed to the frontier... -->
-				<ref bean="candidates"/>
+                <!-- filter our and send outlink candidate URIs to the to-crawl feed -->
+                <ref bean="toCrawlFeed"/>
+                <!-- get any pre-requisites -->
+                <ref bean="candidates"/>
 				<!-- ...then update stats, shared-structures, frontier decisions -->
 				<ref bean="disposition"/>
 			</list>

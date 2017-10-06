@@ -175,7 +175,8 @@ public class EhcacheRecentlySeenUriUniqFilter
                     new CacheConfiguration().name(cacheName)
                             .memoryStoreEvictionPolicy(
                                     MemoryStoreEvictionPolicy.LRU)
-                            .eternal(false).timeToLiveSeconds(this.defaultTTL)
+                            .eternal(false)
+                            .timeToLiveSeconds(this.getDefaultTTL())
                             .diskExpiryThreadIntervalSeconds(60 * 10)
                             .maxEntriesLocalDisk(maxElementsOnDisk)
                             // .maxBytesLocalHeap(maxGBLocalHeap,

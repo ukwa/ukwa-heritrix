@@ -1,7 +1,7 @@
 /**
  * 
  */
-package uk.bl.wap.crawler.processor;
+package uk.bl.wap.crawler.postprocessor;
 
 import java.io.UnsupportedEncodingException;
 import java.util.UUID;

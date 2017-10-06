@@ -38,11 +38,11 @@ import org.apache.commons.httpclient.URIException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.framework.CrawlController;
+import org.archive.crawler.framework.Frontier.FrontierGroup;
 import org.archive.crawler.postprocessor.CandidatesProcessor;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.SchedulingConstants;
@@ -144,7 +144,10 @@ public class KafkaUrlReceiver
         this.topic = topic;
     }
 
+    private boolean seekToBeginning = true;
+
     protected boolean isRunning = false; 
+
     @Override
     public boolean isRunning() {
         return isRunning;
@@ -163,7 +166,7 @@ public class KafkaUrlReceiver
         private final AtomicBoolean closed = new AtomicBoolean(false);
         private final KafkaConsumer<String, byte[]> consumer;
 
-        public KafkaConsumerRunner() {
+        public KafkaConsumerRunner(boolean seekToBeginning) {
             logger.info("Setting up KafkaConsumerRunner...");
             Properties props = new Properties();
             props.put("bootstrap.servers", getBootstrapServers());
@@ -177,6 +180,13 @@ public class KafkaUrlReceiver
             props.put("value.deserializer",
                     ByteArrayDeserializer.class.getName());
             consumer = new KafkaConsumer<String, byte[]>(props);
+            // Subscribe:
+            consumer.subscribe(Arrays.asList(getTopic()));
+            // Rewind if requested:
+            if (seekToBeginning) {
+                seekToBeginning();
+            }
+
         }
 
         public void run() {
@@ -185,7 +195,7 @@ public class KafkaUrlReceiver
             logger.info("Running KafkaConsumer... :: topic = " + getTopic());
             logger.info(
                     "Running KafkaConsumer... :: group_id = " + getGroupId());
-            consumer.subscribe(Arrays.asList(getTopic()));
+            // And now poll for records:
             while (!closed.get()) {
                 ConsumerRecords<String, byte[]> records = consumer
                         .poll(pollTimeout);
@@ -194,7 +204,7 @@ public class KafkaUrlReceiver
                     try {
                         String decodedBody = new String(record.value(),
                                 "UTF-8");
-                        logger.info(
+                        logger.finer(
                                 "Processing crawl request: " + decodedBody);
                         JSONObject jo = new JSONObject(decodedBody);
 
@@ -210,21 +220,25 @@ public class KafkaUrlReceiver
                                         logger.info(
                                                 "Clearing down quota stats for "
                                                         + curi);
-                                        candidates.getFrontier().getGroup(curi)
-                                                .getSubstats().clear();
+                                        // Group stats:
+                                        FrontierGroup group = candidates
+                                                .getFrontier().getGroup(curi);
+                                        group.getSubstats().clear();
+                                        group.makeDirty();
+                                        // By server:
                                         final CrawlServer server = serverCache
                                                 .getServerFor(curi.getUURI());
                                         server.getSubstats().clear();
+                                        server.makeDirty();
+                                        // And by host:
                                         final CrawlHost host = serverCache
                                                 .getHostFor(curi.getUURI());
                                         host.getSubstats().clear();
+                                        host.makeDirty();
                                     }
                                 } else {
                                     candidates.runCandidateChain(curi, null);
                                 }
-                                // appCtx.publishEvent(new
-                                // KafkaUrlReceivedEvent(KafkaUrlReceiver.this,
-                                // curi));
                             } catch (URIException e) {
                                 logger.log(Level.WARNING,
                                         "problem creating CrawlURI from json received via Kafka "
@@ -267,19 +281,18 @@ public class KafkaUrlReceiver
             if (consumer.subscription().size() > 0) {
                 // Ensure partitions have been assigned by running a .poll():
                 consumer.poll(0);
-                // get the list of partitions assigned to this specific
-                // consumer:
-                Set<TopicPartition> assignedTopicPartitions = consumer
-                        .assignment();
-                // And now seek to the start of them:
-                consumer.seekToBeginning(assignedTopicPartitions);
+                // Reset to the start:
+                consumer.seekToBeginning(consumer.assignment());
             }
         }
 
         // Shutdown hook which can be called from a separate thread
         public void shutdown() {
             closed.set(true);
-            consumer.wakeup();
+            // This forced .poll to exit with a
+            // org.apache.kafka.common.errors.WakeupException
+            // Not sure that's really needed.
+            // consumer.wakeup();
         }
     }
 
@@ -288,27 +301,13 @@ public class KafkaUrlReceiver
 
     @Override
     public void start() {
-        lock.lock();
-        try {
-            // Set up an environment for a new consumer:
-            if (!isRunning) {
-                kafkaConsumer = new KafkaConsumerRunner();
-                kafkaProducerThreads = new ThreadGroup(
-                        Thread.currentThread().getThreadGroup().getParent(),
-                        "KafkaProducerThreads");
-            }
-            // Not running yet...
-            isRunning = false;
-        } finally {
-            lock.unlock();
-        }
     }
 
     @Override
     public void stop() {
         lock.lock();
         try {
-            logger.info("shutting down");
+            logger.info("Shutting down on STOP event...");
             if (isRunning) {
                 kafkaConsumer.shutdown();
                 isRunning = false;
@@ -336,7 +335,6 @@ public class KafkaUrlReceiver
     // }
     protected CrawlURI makeCrawlUri(JSONObject jo)
             throws URIException, JSONException {
-        JSONObject joHeaders = jo.getJSONObject("headers");
 
         UURI uuri = UURIFactory.getInstance(jo.getString("url"));
         UURI via = UURIFactory.getInstance(jo.getString("parentUrl"));
@@ -351,17 +349,21 @@ public class KafkaUrlReceiver
 
         populateHeritableMetadata(curi, parentUrlMetadata);
 
-        // set the http headers from the Kafka message
-        Map<String, String> customHttpRequestHeaders = new HashMap<String, String>();
-        for (Object key : joHeaders.keySet()) {
-            String k = key.toString();
-            if (!k.startsWith(":") && !REQUEST_HEADER_BLACKLIST.contains(k)) {
-                customHttpRequestHeaders.put(k,
-                        joHeaders.getString(key.toString()));
+        // set the http headers from the Kafka message:
+        if (jo.has("headers")) {
+            JSONObject joHeaders = jo.getJSONObject("headers");
+            Map<String, String> customHttpRequestHeaders = new HashMap<String, String>();
+            for (Object key : joHeaders.keySet()) {
+                String k = key.toString();
+                if (!k.startsWith(":")
+                        && !REQUEST_HEADER_BLACKLIST.contains(k)) {
+                    customHttpRequestHeaders.put(k,
+                            joHeaders.getString(key.toString()));
+                }
             }
+            curi.getData().put("customHttpRequestHeaders",
+                    customHttpRequestHeaders);
         }
-        curi.getData().put("customHttpRequestHeaders",
-                customHttpRequestHeaders);
 
         /*
          * Crawl job must be configured to use HighestUriQueuePrecedencePolicy
@@ -413,7 +415,7 @@ public class KafkaUrlReceiver
         switch(event.getState()) {
         case PAUSING: case PAUSED:
             if (this.isRunning) {
-                logger.info("Requesting a pause of the URLConsumer...");
+                logger.info("Requesting shutdown of the KafkaURLReceiver...");
                 this.kafkaConsumer.shutdown();
                 this.isRunning = false;
             }
@@ -421,7 +423,11 @@ public class KafkaUrlReceiver
 
         case RUNNING:
             if (!this.isRunning) {
-                logger.info("Requesting unpause of the URLConsumer...");
+                logger.info("Requesting launch of the KafkaURLReceiver...");
+                kafkaConsumer = new KafkaConsumerRunner(seekToBeginning);
+                kafkaProducerThreads = new ThreadGroup(
+                        Thread.currentThread().getThreadGroup().getParent(),
+                        "KafkaProducerThreads");
                 ThreadFactory threadFactory = new ThreadFactory() {
                     public Thread newThread(Runnable r) {
                         return new Thread(kafkaProducerThreads, r);
@@ -432,6 +438,10 @@ public class KafkaUrlReceiver
                 executorService.execute(kafkaConsumer);
 
                 this.isRunning = true;
+                // Only seek to the beginning at the start of the crawl:
+                if (seekToBeginning) {
+                    seekToBeginning = false;
+                }
             }
             break;
 

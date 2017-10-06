@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo Launching ${JOB_NAME}...
+curl -s -d "action=launch" -k -u $HERITRIX_USER:$HERITRIX_PASSWORD --anyauth --location https://localhost:8443/engine/job/${JOB_NAME}

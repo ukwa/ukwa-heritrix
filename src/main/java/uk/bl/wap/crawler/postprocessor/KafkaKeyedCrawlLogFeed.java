@@ -16,7 +16,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package uk.bl.wap.crawler.processor;
+package uk.bl.wap.crawler.postprocessor;
 
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
@@ -202,7 +202,7 @@ public class KafkaKeyedCrawlLogFeed extends Processor implements Lifecycle {
                 if (kafkaProducer == null) {
                     final Properties props = new Properties();
                     props.put("bootstrap.servers", getBrokerList());
-                    props.put("acks", getAcks());
+                    props.put("acks", Integer.toString(getAcks()));
                     props.put("key.serializer", StringSerializer.class.getName());
                     props.put("value.serializer", ByteArraySerializer.class.getName());
 
@@ -259,11 +259,15 @@ public class KafkaKeyedCrawlLogFeed extends Processor implements Lifecycle {
     }
     protected StatsCallback stats = new StatsCallback();
 
+    protected String getKeyForCrawlURI(CrawlURI curi) {
+        return curi.getClassKey();
+    }
+
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
         byte[] message = buildMessage(curi);
         ProducerRecord<String, byte[]> producerRecord = new ProducerRecord<String, byte[]>(
-                getTopic(), curi.getClassKey(), message);
+                getTopic(), getKeyForCrawlURI(curi), message);
         kafkaProducer().send(producerRecord, stats);
     }
 }

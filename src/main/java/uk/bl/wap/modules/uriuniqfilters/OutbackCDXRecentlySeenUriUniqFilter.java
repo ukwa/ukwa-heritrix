@@ -3,7 +3,6 @@
  */
 package uk.bl.wap.modules.uriuniqfilters;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -62,26 +61,34 @@ public class OutbackCDXRecentlySeenUriUniqFilter
             .build(new CacheLoader<String, Long>() {
                 public Long load(String url) {
                     HashMap<String, Object> info;
+                    while (true) {
                     try {
                         info = outbackCDXClient.getLastCrawl(url);
                         LOGGER.finest("OutbackCDX.getLastCrawl for " + url
                                 + ": "
                                 + info);
-                        if (info == null) {
-                            return 0l;
+                            // If it's unknown, return a very very old
+                            // timestamp:
+                            if (info == null) {
+                                return 0l;
+                            }
+                            long ms_ts = (long) info.get(
+                                    CoreAttributeConstants.A_FETCH_BEGAN_TIME);
+                            return ms_ts / 1000;
+                        } catch (Exception e) {
+                            LOGGER.log(Level.SEVERE,
+                                    "Exception when querying OutbackCDX for url: "
+                                            + url,
+                                    e);
+                            LOGGER.warning("Sleeping for 30s before retrying.");
+                            try {
+                                Thread.sleep(1000 * 30);
+                            } catch (InterruptedException e1) {
+                                LOGGER.warning(
+                                        "Sleeping OutbackCDX client rudely awoken!");
+                            }
                         }
-                        long ms_ts = (long) info
-                                .get(CoreAttributeConstants.A_FETCH_BEGAN_TIME);
-                        return ms_ts / 1000;
-                    } catch (IOException e) {
-                        LOGGER.log(Level.SEVERE, "IOException", e);
-                    } catch (InterruptedException e) {
-                        LOGGER.log(Level.SEVERE, "InterruptedException", e);
                     }
-
-                    // If it's unknown or went wrong, return a very very old
-                    // timestamp:
-                    return 0l;
                 }
             });
 

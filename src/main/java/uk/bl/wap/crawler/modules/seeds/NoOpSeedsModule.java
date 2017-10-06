@@ -23,7 +23,7 @@ public class NoOpSeedsModule extends SeedModule {
     private static final Logger LOGGER = Logger
             .getLogger(NoOpSeedsModule.class.getName());
 
-    /** */
+    /** UID */
     private static final long serialVersionUID = -406997411357519080L;
 
     /* (non-Javadoc)

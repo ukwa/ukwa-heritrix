@@ -29,3 +29,6 @@ kafka-console-consumer --bootstrap-server kafka:9092 --topic uris-to-crawl --fro
 
 kafka-console-consumer --bootstrap-server kafka:9092 --topic frequent-crawl-log --from-beginning
 
+
+
+https://webarchive.jira.com/wiki/spaces/Heritrix/pages/5735014/Heritrix+3.x+API+Guide

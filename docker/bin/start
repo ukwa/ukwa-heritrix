@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# Enable logging to Monitrix (ELK):
+if [ "$MONITRIX_ENABLED" = "true" ]; then
+    echo STARTER: Attempting to send logs to Monitrix
+    filebeat -v -e -c /etc/filebeat/filebeat.yml & 
+else
+	echo STARTER: Monitrix crawl logging disabled
+fi
+
+# Create a delayed launch request:
+launch_job() {
+    echo STARTER: Waiting while Heritrix starts up...
+    sleep 5
+    /h3-bin/bin/job-launch
+}
+launch_job &
+
+# Fire up Heritrix and track it's logs:
+/h3-bin/bin/heritrix -a $HERITRIX_USER:$HERITRIX_PASSWORD -b 0.0.0.0 -j /jobs 
+# not supported properly: "-r ${JOB_NAME}", hence delayed curl-based launcher used above
+
+

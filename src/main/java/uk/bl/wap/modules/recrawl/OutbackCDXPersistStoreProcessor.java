@@ -26,10 +26,11 @@ public class OutbackCDXPersistStoreProcessor
     protected ProcessResult innerProcessResult(CrawlURI curi)
             throws InterruptedException {
 
-        // Only +ve FetchStatusCodes values belong in the persist store:
-        if (curi.getFetchStatus() > 0) {
+        // FIXME Only +ve FetchStatusCodes values belong in the persist store:
+        // ???
+        // if (curi.getFetchStatus() > 0) {
             this.outbackCDXClient.putUri(curi);
-        }
+        // }
         return ProcessResult.PROCEED;
     }
 

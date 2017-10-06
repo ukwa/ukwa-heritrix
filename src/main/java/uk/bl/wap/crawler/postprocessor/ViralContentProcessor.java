@@ -1,4 +1,4 @@
-package uk.bl.wap.crawler.processor;
+package uk.bl.wap.crawler.postprocessor;
 
 import java.io.IOException;
 import java.util.logging.Level;

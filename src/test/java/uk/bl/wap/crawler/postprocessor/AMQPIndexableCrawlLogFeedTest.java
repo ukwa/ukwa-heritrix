@@ -1,4 +1,4 @@
-package uk.bl.wap.crawler.processor;
+package uk.bl.wap.crawler.postprocessor;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,6 +11,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
+
+import uk.bl.wap.crawler.postprocessor.AMQPIndexableCrawlLogFeed;
 
 public class AMQPIndexableCrawlLogFeedTest {
 

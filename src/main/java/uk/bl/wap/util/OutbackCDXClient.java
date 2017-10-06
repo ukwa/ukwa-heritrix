@@ -8,10 +8,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.util.Date;
@@ -26,6 +25,7 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.archive.modules.CoreAttributeConstants;
@@ -180,25 +180,19 @@ public class OutbackCDXClient {
         return ArchiveUtils.get14DigitDate(startDate);
     }
 
-    protected String buildURL(String url) {
-        // we don't need to pass scheme part, but no problem passing it.
-        StringBuilder sb = new StringBuilder();
-        sb.append(this.endpoint);
-        sb.append("?url=");
-        String encodedURL;
-        try {
-            encodedURL = URLEncoder.encode(url, "UTF-8");
-        } catch (UnsupportedEncodingException ex) {
-            encodedURL = url;
+    protected String buildURL(String url, int limit, boolean mostRecentFirst)
+            throws URISyntaxException {
+        URIBuilder uriBuilder = new URIBuilder(this.endpoint)
+                .addParameter("url", url).addParameter("limit", "" + limit);
+        if (mostRecentFirst) {
+            uriBuilder.addParameter("sort", "reverse");
         }
-        sb.append(encodedURL);
-        // sb.append(buildStartDate())
-        return sb.toString();
+        return uriBuilder.build().toString();
     }
 
-    public InputStream getCDX(String qurl)
-            throws InterruptedException, IOException {
-        final String url = buildURL(qurl);
+    public InputStream getCDX(String qurl, int limit, boolean mostRecentFirst)
+            throws InterruptedException, IOException, URISyntaxException {
+        final String url = buildURL(qurl, limit, mostRecentFirst);
         logger.fine("GET " + url);
         HttpGet m = new HttpGet(url);
         m.setConfig(RequestConfig.custom().setConnectTimeout(connectionTimeout)
@@ -255,11 +249,12 @@ public class OutbackCDXClient {
      * @return
      * @throws IOException
      * @throws InterruptedException
+     * @throws URISyntaxException
      */
     public HashMap<String, Object> getLastCrawl(String qurl)
-            throws IOException, InterruptedException {
+            throws IOException, InterruptedException, URISyntaxException {
         // Perform the query:
-        InputStream is = this.getCDX(qurl);
+        InputStream is = this.getCDX(qurl, 1, true);
         if (is == null) {
             return null;
         }
@@ -415,11 +410,22 @@ public class OutbackCDXClient {
                 CoreAttributeConstants.A_FETCH_COMPLETED_TIME)) {
             long beganTime = curi.getFetchBeginTime();
             crawl_timestamp = ArchiveUtils.get14DigitDate(beganTime);
+        } else {
+            // Use now as the event date if there isn't one:
+            crawl_timestamp = ArchiveUtils
+                    .get14DigitDate(System.currentTimeMillis());
         }
         // Be explicit about de-duplicated resources:
         String content_type = MimetypeUtils.truncate(curi.getContentType());
         if (curi.getAnnotations().contains("duplicate:digest")) {
             content_type = "warc/revisit";
+        }
+        // Clean up -ve fetch status as OutbackCDX status does not store -ve
+        // status:
+        int fetch_status = curi.getFetchStatus();
+        if (fetch_status < 0) {
+            content_type = "failed/status-code" + fetch_status;
+            fetch_status = 599;
         }
         // Pick out the WARC information:
         JSONObject jei = curi.getExtraInfo();
@@ -435,7 +441,7 @@ public class OutbackCDXClient {
         sb.append(" ");
         sb.append(content_type);
         sb.append(" ");
-        sb.append(curi.getFetchStatus());
+        sb.append(fetch_status);
         sb.append(" ");
         sb.append(curi.getContentDigestSchemeString());
         sb.append(" ");

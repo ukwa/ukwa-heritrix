@@ -18,7 +18,6 @@
  */
 package uk.bl.wap.modules.recrawl;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -35,6 +34,20 @@ import uk.bl.wap.util.OutbackCDXClient;
 /**
  * A {@link Processor} for retrieving recrawl info from a remote OutbackCDX
  * instance.
+ * 
+ * As we're looking up the content hash, it could also a good time to look up
+ * the last known crawl time-stamp. This could then be used to avoid re-crawling
+ * URLs that have already been crawled within the requested time-frame, but have
+ * been re-queued. The forceFetch field could be used to override this if
+ * necessary.
+ * 
+ * This would be more efficient as we could avoid making this request when
+ * processing candidate URIs. This would make frontier re-builds much faster
+ * (e.g. after a crash), with the caveat that we will want to avoid repeatedly
+ * forceFetching the same URLs over and over, so need to keep track of
+ * forceFetch URIs during re-builds and only enqueue each URI once.
+ *
+ * 
  * <p>
  * Based on {@link WbmPersistLoadProcessor} by Kenji Nagahashi
  * </p>
@@ -101,7 +114,7 @@ public class OutbackCDXPersistLoadProcessor extends Processor {
         try {
             info = outbackCDXClient.getLastCrawl(curi.toString());
             logger.finest("GOT " + info + " for " + curi);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
             logger.log(Level.SEVERE, "Error calling OutbackCDX!", ex);
             errorCount.incrementAndGet();
         }

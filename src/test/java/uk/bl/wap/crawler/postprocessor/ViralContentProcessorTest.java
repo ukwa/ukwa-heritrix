@@ -1,7 +1,7 @@
 /**
  * 
  */
-package uk.bl.wap.crawler.processor;
+package uk.bl.wap.crawler.postprocessor;
 
 import static org.junit.Assert.assertTrue;
 
@@ -16,6 +16,8 @@ import org.archive.net.UURIFactory;
 import org.archive.util.Recorder;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import uk.bl.wap.crawler.postprocessor.ViralContentProcessor;
 
 /**
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
