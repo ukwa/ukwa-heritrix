@@ -143,7 +143,7 @@
            <ref bean="scopeExcludesList"/>
         </property>
     </bean>
-    <import resource="excludes.xml"/>
+    <import resource="./excludes.xml"/>
     
 	<!-- ... ACCEPT those on the same Domain ... -->
 	<bean id="onDomainAccept" class="org.archive.modules.deciderules.surt.OnDomainsDecideRule">
@@ -732,7 +732,7 @@
 		 SheetForDecideRuled beans -->
 	<bean id="sheetOverlaysManager" autowire="byType" class="org.archive.crawler.spring.SheetOverlaysManager">
 	</bean>
-    <import resource="sheets.xml"/>
+    <import resource="./sheets.xml"/>
 	<!-- BDBMODULE: BDB-JE disk persistence manager -->
   <bean id="bdbFrontierBdb" class="org.archive.bdb.BdbModule">
     <property name="dir" value="/heritrix/state/#{systemEnvironment['JOB_NAME'] ?: 'frequent'}/frontier"/>
