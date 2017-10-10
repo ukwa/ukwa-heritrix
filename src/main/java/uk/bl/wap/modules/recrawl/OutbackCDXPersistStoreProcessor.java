@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 
 import org.archive.modules.CrawlURI;
 import org.archive.modules.ProcessResult;
+import org.archive.modules.fetcher.FetchStatusCodes;
 
 /**
  * 
@@ -26,11 +27,12 @@ public class OutbackCDXPersistStoreProcessor
     protected ProcessResult innerProcessResult(CrawlURI curi)
             throws InterruptedException {
 
-        // FIXME Only +ve FetchStatusCodes values belong in the persist store:
-        // ???
-        // if (curi.getFetchStatus() > 0) {
+        // Do not push this record if a different engine (e.g. Wrender) is
+        // handling this (otherwise we can collide on timestamp(seconds)+URL:
+        if (curi.getFetchStatus() != FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR) {
             this.outbackCDXClient.putUri(curi);
-        // }
+        }
+
         return ProcessResult.PROCEED;
     }
 
