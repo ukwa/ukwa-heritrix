@@ -19,6 +19,7 @@
 
 package uk.bl.wap.crawler.frontier;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,6 +41,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.archive.checkpointing.Checkpoint;
+import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Frontier.FrontierGroup;
@@ -76,7 +79,7 @@ import org.springframework.context.Lifecycle;
  */
 public class KafkaUrlReceiver
         implements Lifecycle, ApplicationContextAware,
-        ApplicationListener<CrawlStateEvent> {
+        ApplicationListener<CrawlStateEvent>, Checkpointable {
 
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 2423423423894L;
@@ -184,7 +187,12 @@ public class KafkaUrlReceiver
             consumer.subscribe(Arrays.asList(getTopic()));
             // Rewind if requested:
             if (seekToBeginning) {
+                logger.warning("Rewinding to the beginning of the " + getTopic()
+                        + " URL queue.");
                 seekToBeginning();
+            } else {
+                logger.info("Resuming consumption of the " + getTopic()
+                        + " URL queue.");
             }
 
         }
@@ -457,5 +465,29 @@ public class KafkaUrlReceiver
         u.start();
         u.onApplicationEvent(
                 new CrawlStateEvent("", CrawlController.State.RUNNING, ""));
+    }
+
+    @Override
+    public void startCheckpoint(Checkpoint checkpointInProgress) {
+        // No action needed.
+    }
+
+    @Override
+    public void doCheckpoint(Checkpoint checkpointInProgress)
+            throws IOException {
+        // No action needed.
+    }
+
+    @Override
+    public void finishCheckpoint(Checkpoint checkpointInProgress) {
+        // No action needed.
+    }
+
+    @Override
+    public void setRecoveryCheckpoint(Checkpoint recoveryCheckpoint) {
+        // It seems we should recover from a checkpoint. In that case DO NOT
+        // rewind the Kafka queue.
+        this.seekToBeginning = false;
+
     }
 }
