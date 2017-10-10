@@ -8,22 +8,32 @@ services:
       - "8443:8443"
     environment:
        - "JAVA_OPTS=-Xmx2g"
-       - "CLAMD_HOST=clamd"
+       - "JOB_NAME=frequent"
+       - "LAUNCH_AUTOMATICALLY=false"
        - "KAFKA_BOOTSTRAP_SERVERS=kafka:9092"
        - "KAFKA_CRAWLED_TOPIC=frequent-crawl-log"
        - "KAFKA_TOCRAWL_TOPIC=uris-to-crawl"
-       - "WRENDER_ENDPOINT=http://webrender:8010/render"
        - "CDXSERVER_ENDPOINT=http://cdxserver:8080/fc"
-       - "JOB_NAME=frequent"
+       - "USE_WEBRENDER=true"
+       - "WRENDER_ENDPOINT=http://webrender:8010/render"
+       - "USE_VIRUS_SCANNER=true"
+       - "CLAMD_HOST=clamd"
     links:
       - clamd
       - kafka
       - webrender
       - cdxserver
       - acid.matkelly.com
-      - crawl-test-site
+      - data.webarchive.org.uk
     volumes_from:
       - dvc:rw  
+
+  # Crawl control console
+  control:
+    image: ukwa/ukwa-manage:ingest-ng-phase-2
+    links:
+      - heritrix
+      - kafka
 
   # Data Volume Container for crawler job definitions and outputs
   dvc:
@@ -32,6 +42,7 @@ services:
       - ./target/testing/heritrix/output:/heritrix/output
       - ./target/testing/heritrix/state:/heritrix/state
       - ./target/testing/heritrix/wren:/heritrix/wren
+      - ./jobs:/jobs
 
   # Clamd virus scanning Service
   clamd:
@@ -48,6 +59,14 @@ services:
     environment:
       - "ADVERTISED_HOST=kafka"
       - "ADVERTISED_PORT=9092"
+
+  # Kafka UI
+  kafka-ui:
+    image: janschultecom/docker-trifecta
+    ports:
+      - "9000:9000"
+    environment:
+      - "ZK_HOST=kafka:2181"
 
   # PhantomJS web page rendering service
   webrender:
@@ -74,7 +93,7 @@ services:
       - "8000:8000"
     links:
       - acid.matkelly.com
-      - crawl-test-site
+      - data.webarchive.org.uk
     ulimits:
       nproc: 2000 # See https://github.com/internetarchive/warcprox/blob/2.x/warcprox/warcproxy.py#L413
     volumes_from:
@@ -99,10 +118,9 @@ services:
     ports:
       - "180:80"  
 
-  # Local version of the UKWA test site: http://data.webarchive.org.uk/crawl-test-site/
-  crawl-test-site:
-    command: jekyll serve
+  # Local version of the UKWA test site: http://data.webarchive.org.uk/data.webarchive.org.uk/
+  data.webarchive.org.uk:
     image: ukwa/crawl-test-site
     ports:
-      - "280:4000"
+      - "280:80"
 
