@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.archive.modules.CrawlURI;
+import org.archive.modules.fetcher.FetchStatusCodes;
 import org.archive.net.UURIFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -41,7 +42,9 @@ public class WrenderProcessorTest {
                 .readJsonFromUrl(wrjson.toURI().toURL(), 5, 5);
         WrenderProcessor.processHar(har, curi);
 
-        assertEquals("Status code was not found!", 200, curi.getFetchStatus());
+        assertEquals("Status code was not found!",
+                FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR,
+                curi.getFetchStatus());
         assertEquals("CrawlURIs not as expected!", 1,
                 curi.getOutLinks().size());
         CrawlURI l = curi.getOutLinks().iterator().next();
