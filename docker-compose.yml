@@ -9,7 +9,7 @@ services:
     environment:
        - "JAVA_OPTS=-Xmx2g"
        - "JOB_NAME=frequent"
-       - "LAUNCH_AUTOMATICALLY=false"
+       - "LAUNCH_AUTOMATICALLY=true"
        - "KAFKA_BOOTSTRAP_SERVERS=kafka:9092"
        - "KAFKA_CRAWLED_TOPIC=frequent-crawl-log"
        - "KAFKA_TOCRAWL_TOPIC=uris-to-crawl"
@@ -85,10 +85,14 @@ services:
 # WARC Proxy, with de-duplication disabled and a rapid rollover:
   warcprox:
     image: ukwa/warcprox #:2.0-py36-alpine
-    command: "warcprox -b 0.0.0.0 -d /heritrix/wren --base32 --gzip --rollover-idle-time 600 --dedup-db-file /dev/null --stats-db-file /dev/null --quiet"
+    command: "warcprox -b 0.0.0.0 -d /heritrix/wren --base32 --gzip --rollover-idle-time 600 --dedup-db-file /dev/null --stats-db-file /dev/null --quiet --plugin warcprox-plugins.kafkafeed.CaptureFeed --plugin warcprox-plugins.kafkafeed.UpdateOutbackCDX"
     environment:
       - "LC_ALL=en_US.utf8"
       - "TMP=/tmp/warcprox"
+      - "KAFKA_BROKER_LIST=kafka:9092"
+      - "KAFKA_CRAWL_LOG_TOPIC=frequent-crawl-log"
+      - "KAFKA_CRAWL_LOG_ACKS=0"
+      - "CDXSERVER_ENDPOINT=http://cdxserver:8080/fc"
     ports:
       - "8000:8000"
     links:
