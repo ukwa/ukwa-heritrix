@@ -23,6 +23,7 @@ import org.archive.modules.ProcessResult;
 import org.archive.modules.Processor;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
+import org.archive.modules.fetcher.FetchStatusCodes;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.spring.PathSharingContext;
@@ -255,14 +256,17 @@ public class WrenderProcessor extends Processor implements
                 JSONObject har = readJsonFromUrl(wrenderUrl,
                         this.connectTimeout, this.readTimeout);
                 processHar(har, curi);
-                // Annotate:
+
+                // Additional annotation:
                 curi.getAnnotations().add(ANNOTATION);
                 curi.addExtraInfo("warcPrefix", warcPrefix);
+
                 // If we didn't find a status code, assume rendering failed:
                 if (curi.getFetchStatus() == 0) {
                     return false;
                 } else {
-                    // Otherwise, handle as normal:
+                    // Otherwise, handle as
+                    // FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR:
                     return true;
                 }
             } catch (Exception e) {
@@ -302,9 +306,13 @@ public class WrenderProcessor extends Processor implements
                 UURI requestUri = UURIFactory.getInstance(
                         entry.getJSONObject("request").getString("url"));
                 if (curi.getUURI().equals(requestUri)) {
-                    // Extract status code:
+                    // Record that this worked so the rest of the Fetch Chain
+                    // can be skipped:
                     curi.setFetchStatus(
-                            entry.getJSONObject("response").getInt("status"));
+                            FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR);
+                    // Extract status code:
+                    curi.getAnnotations().add("WrenderedStatus:"
+                            + entry.getJSONObject("response").getInt("status"));
                 }
             } catch (URIException e) {
                 LOGGER.warning("Could not parse as UURI: "
