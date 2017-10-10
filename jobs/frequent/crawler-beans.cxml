@@ -139,11 +139,9 @@
 	<bean id="listRegexFilterOut" class="org.archive.modules.deciderules.MatchesListRegexDecideRule">
 		<property name="decision" value="REJECT" />
 		<property name="listLogicalOr" value="true" />
-        <property name="regexList">
-           <ref bean="scopeExcludesList"/>
-        </property>
+        <property name="regexList" ref="scopeExcludesList"/>
     </bean>
-    <import resource="./excludes.xml"/>
+    <import resource="excludes.xml"/>
     
 	<!-- ... ACCEPT those on the same Domain ... -->
 	<bean id="onDomainAccept" class="org.archive.modules.deciderules.surt.OnDomainsDecideRule">
@@ -243,6 +241,7 @@
 		<property name="digestAlgorithm" value="sha1" />
 	</bean>
 	<bean id="wrenderHttp" class="uk.bl.wap.crawler.processor.WrenderProcessor">
+        <property name="enabled" value="#{systemEnvironment['USE_WEBRENDER'] ?: false}"/>
 		<property name="WrenderEndpoint" value="#{systemEnvironment['WRENDER_ENDPOINT'] ?: 'http://localhost:5000/wrender'}" />
         <property name="shouldProcessRule">
             <bean class="org.archive.modules.deciderules.DecideRuleSequence">
@@ -323,6 +322,7 @@
 	</bean>
     <!-- a processor that scans content for viruses -->
     <bean id="viralContent" class="uk.bl.wap.crawler.postprocessor.ViralContentProcessor">
+        <property name="enabled" value="#{systemEnvironment['USE_VIRUS_SCANNER'] ?: false}"/>
 		<property name="clamdHost" value="#{systemEnvironment['CLAMD_HOST'] ?: localhost}" />
    		<property name="clamdPort" value="3310" />
    		<property name="clamdTimeout" value="0" />
@@ -617,10 +617,16 @@
 	
 	<!-- URI UNIQ FILTER: Used by frontier to remember already-included URIs --> 
 	<bean id="uriUniqFilter" class="uk.bl.wap.modules.uriuniqfilters.OutbackCDXRecentlySeenUriUniqFilter">
+       <!-- Default time to elapse before re-crawling a URI is allowed (in seconds): -->
+       <!-- property name="defaultTTL" value=""/ -->
+       <!-- SURT-based prefix mapping of URIs to the elapse times before re-crawling a URI is allowed (in seconds): -->
        <property name="textSource" value="surt-to-ttl.txt"/>
-       <property name="sourceCheckInterval" value="60"/> <!-- Check for an updated TTL map every X seconds -->
+       <!-- Check for an updated SURT to TTL mapping every X seconds -->
+       <property name="sourceCheckInterval" value="60"/> 
+       <!-- reference to shared OutbackCDX configuration: -->
        <property name="outbackCDXClient" ref="outbackCDXClient"/>
 	</bean>
+   <!-- Shared OutbackCDX client and configuration -->
     <bean id="outbackCDXClient" class="uk.bl.wap.util.OutbackCDXClient">
         <property name="endpoint" value="#{systemEnvironment['CDXSERVER_ENDPOINT'] ?: 'http://localhost:9090/fc'}"/>
     </bean>
@@ -732,7 +738,7 @@
 		 SheetForDecideRuled beans -->
 	<bean id="sheetOverlaysManager" autowire="byType" class="org.archive.crawler.spring.SheetOverlaysManager">
 	</bean>
-    <import resource="./sheets.xml"/>
+    <import resource="sheets.xml"/>
 	<!-- BDBMODULE: BDB-JE disk persistence manager -->
   <bean id="bdbFrontierBdb" class="org.archive.bdb.BdbModule">
     <property name="dir" value="/heritrix/state/#{systemEnvironment['JOB_NAME'] ?: 'frequent'}/frontier"/>
