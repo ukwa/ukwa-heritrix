@@ -14,7 +14,10 @@ launch_job() {
     sleep 5
     /h3-bin/bin/job-launch
 }
-launch_job &
+
+if [ "$LAUNCH_AUTOMATICALLY" = "true" ]; then
+    launch_job &
+fi
 
 # Fire up Heritrix and track it's logs:
 /h3-bin/bin/heritrix -a $HERITRIX_USER:$HERITRIX_PASSWORD -b 0.0.0.0 -j /jobs 
