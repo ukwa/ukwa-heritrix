@@ -37,20 +37,21 @@ COPY docker/bin/* /h3-bin/bin/
 COPY jobs /jobs
 
 # Configure Heritrix options:
-ENV FOREGROUND true
+ENV FOREGROUND=true \
+    JAVA_OPTS=-Xmx2g
+    
 #ENV JAVA_OPTS -Xmx2g -Dhttps.protocols=TLSv1,TLSv1.1,TLSv1.2
-ENV JAVA_OPTS -Xmx2g
 
 # Set up some defaults:
-ENV MONITRIX_ENABLED false
-ENV HERITRIX_USER heritrix
-ENV HERITRIX_PASSWORD heritrix
-ENV JOB_NAME frequent
+ENV MONITRIX_ENABLE=false \
+    HERITRIX_USER=heritrix \
+    HERITRIX_PASSWORD=heritrix \
+    JOB_NAME=frequent
 
 # Finish setup:
 EXPOSE 8443
 
-VOLUME /jobs
+#VOLUME /jobs
 VOLUME /output
 
 # Hook in H3 runner script:
