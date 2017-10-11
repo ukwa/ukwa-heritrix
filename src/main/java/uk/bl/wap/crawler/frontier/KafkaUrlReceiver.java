@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -39,12 +40,12 @@ import org.apache.commons.httpclient.URIException;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.event.CrawlStateEvent;
-import org.archive.crawler.framework.CrawlController;
 import org.archive.crawler.framework.Frontier.FrontierGroup;
 import org.archive.crawler.postprocessor.CandidatesProcessor;
 import org.archive.modules.CrawlURI;
@@ -203,81 +204,97 @@ public class KafkaUrlReceiver
             logger.info("Running KafkaConsumer... :: topic = " + getTopic());
             logger.info(
                     "Running KafkaConsumer... :: group_id = " + getGroupId());
-            // And now poll for records:
-            while (!closed.get()) {
-                ConsumerRecords<String, byte[]> records = consumer
-                        .poll(pollTimeout);
-                // Handle new records
-                for (ConsumerRecord<String, byte[]> record : records) {
+            // Until the end...
+            try {
+                // And now poll for records:
+                while (!closed.get()) {
                     try {
-                        String decodedBody = new String(record.value(),
-                                "UTF-8");
-                        logger.finer(
-                                "Processing crawl request: " + decodedBody);
-                        JSONObject jo = new JSONObject(decodedBody);
-
-                        if ("GET".equals(jo.getString("method"))) {
+                        ConsumerRecords<String, byte[]> records = consumer
+                                .poll(pollTimeout);
+                        // Handle new records
+                        for (ConsumerRecord<String, byte[]> record : records) {
                             try {
-                                CrawlURI curi = makeCrawlUri(jo);
-                                KeyedProperties.clearAllOverrideContexts();
-                                if (curi.isSeed()) {
-                                    candidates.getSeeds().addSeed(curi);
-                                    // Also clear any quotas if a seed is marked
-                                    // as forced:
-                                    if (curi.forceFetch()) {
-                                        logger.info(
-                                                "Clearing down quota stats for "
-                                                        + curi);
-                                        // Group stats:
-                                        FrontierGroup group = candidates
-                                                .getFrontier().getGroup(curi);
-                                        group.getSubstats().clear();
-                                        group.makeDirty();
-                                        // By server:
-                                        final CrawlServer server = serverCache
-                                                .getServerFor(curi.getUURI());
-                                        server.getSubstats().clear();
-                                        server.makeDirty();
-                                        // And by host:
-                                        final CrawlHost host = serverCache
-                                                .getHostFor(curi.getUURI());
-                                        host.getSubstats().clear();
-                                        host.makeDirty();
+                                String decodedBody = new String(record.value(),
+                                        "UTF-8");
+                                logger.finer("Processing crawl request: "
+                                        + decodedBody);
+                                JSONObject jo = new JSONObject(decodedBody);
+
+                                if ("GET".equals(jo.getString("method"))) {
+                                    try {
+                                        CrawlURI curi = makeCrawlUri(jo);
+                                        KeyedProperties
+                                                .clearAllOverrideContexts();
+                                        if (curi.isSeed()) {
+                                            candidates.getSeeds().addSeed(curi);
+                                            // Also clear any quotas if a seed
+                                            // is
+                                            // marked
+                                            // as forced:
+                                            if (curi.forceFetch()) {
+                                                logger.info(
+                                                        "Clearing down quota stats for "
+                                                                + curi);
+                                                // Group stats:
+                                                FrontierGroup group = candidates
+                                                        .getFrontier()
+                                                        .getGroup(curi);
+                                                group.getSubstats().clear();
+                                                group.makeDirty();
+                                                // By server:
+                                                final CrawlServer server = serverCache
+                                                        .getServerFor(
+                                                                curi.getUURI());
+                                                server.getSubstats().clear();
+                                                server.makeDirty();
+                                                // And by host:
+                                                final CrawlHost host = serverCache
+                                                        .getHostFor(
+                                                                curi.getUURI());
+                                                host.getSubstats().clear();
+                                                host.makeDirty();
+                                            }
+                                        } else {
+                                            candidates.runCandidateChain(curi,
+                                                    null);
+                                        }
+                                    } catch (URIException e) {
+                                        logger.log(Level.WARNING,
+                                                "problem creating CrawlURI from json received via Kafka "
+                                                        + decodedBody,
+                                                e);
+                                    } catch (JSONException e) {
+                                        logger.log(Level.SEVERE,
+                                                "problem creating CrawlURI from json received via Kafka "
+                                                        + decodedBody,
+                                                e);
+                                    } catch (Exception e) {
+                                        logger.log(Level.SEVERE,
+                                                "Unanticipated problem creating CrawlURI from json received via Kafka "
+                                                        + decodedBody,
+                                                e);
                                     }
+
                                 } else {
-                                    candidates.runCandidateChain(curi, null);
+                                    logger.info(
+                                            "ignoring url with method other than GET - "
+                                                    + decodedBody);
                                 }
-                            } catch (URIException e) {
-                                logger.log(Level.WARNING,
-                                        "problem creating CrawlURI from json received via Kafka "
-                                                + decodedBody,
-                                        e);
-                            } catch (JSONException e) {
-                                logger.log(Level.SEVERE,
-                                        "problem creating CrawlURI from json received via Kafka "
-                                                + decodedBody,
-                                        e);
                             } catch (Exception e) {
                                 logger.log(Level.SEVERE,
-                                        "Unanticipated problem creating CrawlURI from json received via Kafka "
-                                                + decodedBody,
+                                        "problem creating JSON from String received via Kafka "
+                                                + record.value(),
                                         e);
                             }
 
-                        } else {
-                            logger.info(
-                                    "ignoring url with method other than GET - "
-                                            + decodedBody);
                         }
-                    } catch (Exception e) {
-                        logger.log(Level.SEVERE,
-                                "problem creating JSON from String received via Kafka "
-                                        + record.value(),
-                                e);
+
+                    } catch (WakeupException e) {
+                        logger.info("Poll routine awoken for shutdown...");
                     }
-
                 }
-
+            } finally {
+                consumer.close();
             }
         }
 
@@ -287,37 +304,80 @@ public class KafkaUrlReceiver
          */
         public void seekToBeginning() {
             if (consumer.subscription().size() > 0) {
+                logger.info(
+                        "Seeking to the beginning... (this can take a while)");
                 // Ensure partitions have been assigned by running a .poll():
                 consumer.poll(0);
                 // Reset to the start:
                 consumer.seekToBeginning(consumer.assignment());
+                logger.info("Seek-to-beginning has finished.");
             }
         }
 
         // Shutdown hook which can be called from a separate thread
         public void shutdown() {
             closed.set(true);
-            // This forced .poll to exit with a
-            // org.apache.kafka.common.errors.WakeupException
-            // Not sure that's really needed.
-            // consumer.wakeup();
+            // Break out of poll() so we can shut down...
+            consumer.wakeup();
         }
     }
 
     transient private KafkaConsumerRunner kafkaConsumer;
     transient private ThreadGroup kafkaProducerThreads;
+    transient private ExecutorService executorService;
 
     @Override
     public void start() {
+        kafkaProducerThreads = new ThreadGroup(
+                Thread.currentThread().getThreadGroup().getParent(),
+                "KafkaProducerThreads");
+        ThreadFactory threadFactory = new ThreadFactory() {
+            public Thread newThread(Runnable r) {
+                return new Thread(kafkaProducerThreads, r);
+            }
+        };
+        executorService = Executors.newFixedThreadPool(1, threadFactory);
+
     }
 
     @Override
     public void stop() {
+        logger.info("Shutting down on STOP event...");
+        this.shutdown();
+    }
+
+    private void startup() {
         lock.lock();
         try {
-            logger.info("Shutting down on STOP event...");
+            if (!this.isRunning) {
+                logger.info("Requesting launch of the KafkaURLReceiver...");
+                kafkaConsumer = new KafkaConsumerRunner(seekToBeginning);
+                executorService.execute(kafkaConsumer);
+                this.isRunning = true;
+
+                // Only seek to the beginning at the start of the crawl:
+                if (seekToBeginning) {
+                    seekToBeginning = false;
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void shutdown() {
+        lock.lock();
+        try {
             if (isRunning) {
-                kafkaConsumer.shutdown();
+                logger.info("Requesting shutdown of the KafkaURLReceiver...");
+                this.kafkaConsumer.shutdown();
+                try {
+                    this.executorService.awaitTermination(20, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    logger.log(Level.SEVERE,
+                            "Exception while terminating Kafka thread...", e);
+                }
+                this.executorService.shutdownNow();
                 isRunning = false;
             }
         } finally {
@@ -422,49 +482,15 @@ public class KafkaUrlReceiver
     public void onApplicationEvent(CrawlStateEvent event) {
         switch(event.getState()) {
         case PAUSING: case PAUSED:
-            if (this.isRunning) {
-                logger.info("Requesting shutdown of the KafkaURLReceiver...");
-                this.kafkaConsumer.shutdown();
-                this.isRunning = false;
-            }
+            this.shutdown();
             break;
 
         case RUNNING:
-            if (!this.isRunning) {
-                logger.info("Requesting launch of the KafkaURLReceiver...");
-                kafkaConsumer = new KafkaConsumerRunner(seekToBeginning);
-                kafkaProducerThreads = new ThreadGroup(
-                        Thread.currentThread().getThreadGroup().getParent(),
-                        "KafkaProducerThreads");
-                ThreadFactory threadFactory = new ThreadFactory() {
-                    public Thread newThread(Runnable r) {
-                        return new Thread(kafkaProducerThreads, r);
-                    }
-                };
-                ExecutorService executorService = Executors
-                        .newFixedThreadPool(1, threadFactory);
-                executorService.execute(kafkaConsumer);
-
-                this.isRunning = true;
-                // Only seek to the beginning at the start of the crawl:
-                if (seekToBeginning) {
-                    seekToBeginning = false;
-                }
-            }
+            this.startup();
             break;
 
         default:
         }
-    }
-
-    public static void main(String[] args) {
-        KafkaUrlReceiver u = new KafkaUrlReceiver();
-        u.setBootstrapServers("kafka:9092");
-        u.setGroupId("test");
-        u.setTopic("uris-tocrawl");
-        u.start();
-        u.onApplicationEvent(
-                new CrawlStateEvent("", CrawlController.State.RUNNING, ""));
     }
 
     @Override

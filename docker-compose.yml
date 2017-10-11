@@ -85,7 +85,7 @@ services:
 # WARC Proxy, with de-duplication disabled and a rapid rollover:
   warcprox:
     image: ukwa/warcprox #:2.0-py36-alpine
-    command: "warcprox -b 0.0.0.0 -d /heritrix/wren --base32 --gzip --rollover-idle-time 600 --dedup-db-file /dev/null --stats-db-file /dev/null --quiet --plugin warcprox-plugins.kafkafeed.CaptureFeed --plugin warcprox-plugins.kafkafeed.UpdateOutbackCDX"
+    command: "warcprox -b 0.0.0.0 -d /heritrix/wren --base32 --gzip --rollover-idle-time 600 --dedup-db-file /dev/null --stats-db-file /dev/null --quiet --plugin warcprox-plugins.listeners.KafkaCaptureFeed --plugin warcprox-plugins.listeners.UpdateOutbackCDX"
     environment:
       - "LC_ALL=en_US.utf8"
       - "TMP=/tmp/warcprox"

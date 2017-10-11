@@ -1,5 +1,4 @@
-http://www.bbc.co.uk/ 60
-http://www.bl.uk/ 300
+http://www.bbc.co.uk/ 3600
+http://www.bl.uk/ 3600
 http://data.webarchive.org.uk/crawl-test-site/ 60
-(crawl-test-site,:4000)/crawl-test-site 60
-http://acid.matkelly.com/ 300
+http://acid.matkelly.com/ 3600
