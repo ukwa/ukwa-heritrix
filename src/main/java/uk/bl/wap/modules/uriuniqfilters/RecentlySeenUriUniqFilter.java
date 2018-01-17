@@ -3,22 +3,12 @@ package uk.bl.wap.modules.uriuniqfilters;
 import java.io.Serializable;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.util.SetBasedUriUniqFilter;
-import org.archive.spring.ConfigFile;
-import org.archive.spring.ConfigPathConfigurer;
 import org.archive.spring.HasKeyedProperties;
 import org.archive.spring.KeyedProperties;
-import org.archive.surt.SURTTokenizer;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Required;
-import org.springframework.context.Lifecycle;
 
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-
-import uk.bl.wap.util.WatchedFileSurtMap;
 
 /**
  * 
@@ -50,8 +40,7 @@ import uk.bl.wap.util.WatchedFileSurtMap;
  *
  */
 public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
-        implements Serializable, Lifecycle, InitializingBean,
-        HasKeyedProperties {
+        implements Serializable, HasKeyedProperties {
     private static final long serialVersionUID = 1061526253773091309L;
 
     private static Logger LOGGER = Logger
@@ -60,12 +49,6 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
     public static final int HOUR = 60 * 60;
     public static final int DAY = HOUR * 24;
     public static final int WEEK = DAY * 7;
-
-    private ConfigPathConfigurer configPathConfigurer = null;
-
-    private ConfigFile textSource = null;
-
-    protected WatchedFileSurtMap ttlMap = new WatchedFileSurtMap(this);
 
     // Hash function used for building keys:
     private HashFunction hf = Hashing.murmur3_128();
@@ -87,72 +70,25 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
         super();
     }
 
-    /**
-     * @return the configPathConfigurer
-     */
-    public ConfigPathConfigurer getConfigPathConfigurer() {
-        return configPathConfigurer;
-    }
-
-    /**
-     * @param configPathConfigurer
-     *            the configPathConfigurer to set
-     */
-    @Autowired
-    public void setConfigPathConfigurer(
-            ConfigPathConfigurer configPathConfigurer) {
-        this.configPathConfigurer = configPathConfigurer;
-    }
-
-    public ConfigFile getTextSource() {
-        return textSource;
-    }
-
-    @Required
-    public void setTextSource(ConfigFile textSource) {
-        this.textSource = textSource;
-        // Seem to need to plumb this in myself:
-        if (this.getConfigPathConfigurer() != null) {
-            this.textSource.setConfigurer(getConfigPathConfigurer());
-            // And this is needed for it to work:
-            this.textSource.setBase(this.getConfigPathConfigurer().getPath());
-        }
-    }
-
     {
-        setDefaultTTL(52 * WEEK);
+        setRecentlySeenTTLsecs(52 * WEEK);
     }
 
     /**
-     * @return the defaultTTL (seconds)
+     * @return the TTL (seconds)
      */
-    public int getDefaultTTL() {
+    public int getRecentlySeenTTLsecs() {
         return (Integer) kp.get("recentlySeenTTLsecs");
     }
 
     /**
-     * @param defaultTTL
-     *            the defaultTTL (in seconds) to set
+     * @param recentlySeenTTLsecs
+     *            the TTL (in seconds) to set
      */
-    public void setDefaultTTL(int defaultTTL) {
+    public void setRecentlySeenTTLsecs(int recentlySeenTTLsecs) {
         LOGGER.warning(
-                "Setting TTL to " + defaultTTL);
-        kp.put("recentlySeenTTLsecs", defaultTTL);
-    }
-
-    /**
-     * @return the sourceCheckInterval
-     */
-    public int getSourceCheckInterval() {
-        return this.ttlMap.getCheckInterval();
-    }
-
-    /**
-     * @param sourceCheckInterval
-     *            the sourceCheckInterval to set in seconds
-     */
-    public void setSourceCheckInterval(int sourceCheckInterval) {
-        this.ttlMap.setCheckInterval(sourceCheckInterval);
+                "Setting TTL to " + recentlySeenTTLsecs);
+        kp.put("recentlySeenTTLsecs", recentlySeenTTLsecs);
     }
 
     /**
@@ -178,24 +114,9 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
      * @return TTL (in seconds)
      */
     private Integer getTTLForUrl(String url) {
-        try {
-            SURTTokenizer st = new SURTTokenizer(url);
-            while (true) {
-                String nextSearch = st.nextSearch();
-                if (nextSearch == null) {
-                    break;
-                }
-                LOGGER.finest("TTL-MAP:Checking " + nextSearch);
-                if (ttlMap.get().containsKey(nextSearch)) {
-                    Integer ttl = ttlMap.get().get(nextSearch);
-                    LOGGER.fine("TTL-MAP: \"" + ttl + "s\" (" + url + ")");
-                    return ttl;
-                }
-            }
-        } catch (URIException e) {
-            LOGGER.warning(e.toString());
-        }
-        return this.getDefaultTTL();
+        int ttl = this.getRecentlySeenTTLsecs();
+        LOGGER.info("For " + url + " got TTL(s) " + ttl);
+        return ttl;
     }
 
     /**
@@ -224,35 +145,5 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
      *         URIs
      */
     abstract public boolean setAddWithTTL(String key, String uri, int ttl_s);
-
-
-    @Override
-    public void start() {
-        LOGGER.info("Called start()");
-        this.ttlMap.init();
-    }
-
-    @Override
-    public void stop() {
-        LOGGER.info("Called stop()");
-        this.ttlMap.shutdown();
-    }
-
-    @Override
-    public boolean isRunning() {
-        LOGGER.info("Called isRunning()");
-        return this.ttlMap.isRunning();
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.springframework.beans.factory.InitializingBean#afterPropertiesSet()
-     */
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        this.ttlMap.init();
-    }
 
 }

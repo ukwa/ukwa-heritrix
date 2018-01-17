@@ -11,12 +11,8 @@ import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.datamodel.UriUniqFilter;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURIFactory;
-import org.archive.spring.ConfigFile;
 import org.junit.Before;
 import org.junit.Test;
-
-import uk.bl.wap.modules.uriuniqfilters.EhcacheRecentlySeenUriUniqFilter;
-import uk.bl.wap.modules.uriuniqfilters.RecentlySeenUriUniqFilter;
 
 /**
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
@@ -53,8 +49,7 @@ public class EhcacheRecentlySeenUriUniqFilterTest {
 
         // Set up the filter
         uuf = new EhcacheRecentlySeenUriUniqFilter();
-        uuf.setTextSource(new ConfigFile("", surtFile));
-        uuf.setDefaultTTL(10);
+        uuf.setRecentlySeenTTLsecs(10);
         uuf.start();
     }
 

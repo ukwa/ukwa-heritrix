@@ -241,7 +241,7 @@
 		<property name="digestAlgorithm" value="sha1" />
 	</bean>
 	<bean id="wrenderHttp" class="uk.bl.wap.crawler.processor.WrenderProcessor">
-        <property name="enabled" value="#{systemEnvironment['USE_WEBRENDER'] ?: false}"/>
+        <property name="enabled" value="#{systemEnvironment['WEBRENDER_ENABLED'] ?: false}"/>
 		<property name="WrenderEndpoint" value="#{systemEnvironment['WRENDER_ENDPOINT'] ?: 'http://localhost:5000/wrender'}" />
         <property name="shouldProcessRule">
             <bean class="org.archive.modules.deciderules.DecideRuleSequence">
@@ -322,7 +322,7 @@
 	</bean>
     <!-- a processor that scans content for viruses -->
     <bean id="viralContent" class="uk.bl.wap.crawler.postprocessor.ViralContentProcessor">
-        <property name="enabled" value="#{systemEnvironment['USE_VIRUS_SCANNER'] ?: false}"/>
+        <property name="enabled" value="#{systemEnvironment['CLAMD_ENABLED'] ?: false}"/>
 		<property name="clamdHost" value="#{systemEnvironment['CLAMD_HOST'] ?: localhost}" />
    		<property name="clamdPort" value="3310" />
    		<property name="clamdTimeout" value="0" />
@@ -576,7 +576,7 @@
 	
 	<!-- CRAWLCONTROLLER: Control interface, unifying context -->
 	<bean id="crawlController" class="org.archive.crawler.framework.CrawlController">
-		<property name="maxToeThreads" value="200" />
+		<property name="maxToeThreads" value="#{systemEnvironment['MAX_TOE_THREADS'] ?: 200}" />
 		<property name="pauseAtStart" value="false" />
 		<property name="runWhileEmpty" value="true" />
 		<property name="recorderInBufferBytes" value="524288" />
@@ -617,12 +617,8 @@
 	
 	<!-- URI UNIQ FILTER: Used by frontier to remember already-included URIs --> 
 	<bean id="uriUniqFilter" class="uk.bl.wap.modules.uriuniqfilters.OutbackCDXRecentlySeenUriUniqFilter">
-       <!-- Default time to elapse before re-crawling a URI is allowed (in seconds): -->
-       <!-- property name="defaultTTL" value=""/ -->
-       <!-- SURT-based prefix mapping of URIs to the elapse times before re-crawling a URI is allowed (in seconds): -->
-       <property name="textSource" value="surt-to-ttl.txt"/>
-       <!-- Check for an updated SURT to TTL mapping every X seconds -->
-       <property name="sourceCheckInterval" value="60"/> 
+       <!-- Time to elapse before re-crawling a URI is allowed (in seconds): -->
+       <property name="recentlySeenTTLsecs" value="60"/>
        <!-- reference to shared OutbackCDX configuration: -->
        <property name="outbackCDXClient" ref="outbackCDXClient"/>
 	</bean>
@@ -654,8 +650,10 @@
 	
 	<!-- CHECKPOINTSERVICE: checkpointing assistance -->
 	<bean id="checkpointService" class="org.archive.crawler.framework.CheckpointService">
-		<property name="checkpointIntervalMinutes" value="360"/>
+		<property name="checkpointIntervalMinutes" value="#{systemEnvironment['CHECKPOINT_INTERVAL_MINUTES'] ?: 360}"/>
 		<property name="checkpointsDir" value="checkpoints"/>
+        <!-- this controls whether we retain all checkpoints, or only the last one: -->
+        <property name="forgetAllButLatest" value="#{systemEnvironment['CHECKPOINT_FORGET_ALL_BUT_LATEST'] ?: true}"/>
 	</bean>
 	
 	<!-- 

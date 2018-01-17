@@ -11,6 +11,8 @@
                            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd            
                            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd">
                            
+    <!-- This configuration allows regular expressions to be used to 
+    exclude resources, rather than just SURT prefixes -->
     <bean id="scopeExcludesList" class="java.util.ArrayList">
         <constructor-arg>
           <list>

@@ -11,6 +11,7 @@ import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.context.Lifecycle;
 
 /**
  * 
@@ -23,7 +24,8 @@ import org.springframework.beans.factory.annotation.Required;
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
-public class MapDBRecentlySeenUriUniqFilter extends RecentlySeenUriUniqFilter {
+public class MapDBRecentlySeenUriUniqFilter extends RecentlySeenUriUniqFilter
+        implements Lifecycle {
 
     /**  */
     private static final long serialVersionUID = 7016514645624582438L;
@@ -154,14 +156,12 @@ public class MapDBRecentlySeenUriUniqFilter extends RecentlySeenUriUniqFilter {
 
     @Override
     public void start() {
-        super.start();
         LOGGER.info("Called start()");
         this.setupCache();
     }
 
     @Override
     public void stop() {
-        super.stop();
         LOGGER.info("Called stop()");
         this.closeCache();
     }

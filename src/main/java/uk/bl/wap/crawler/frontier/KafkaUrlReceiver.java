@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -48,6 +50,7 @@ import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.framework.Frontier.FrontierGroup;
 import org.archive.crawler.postprocessor.CandidatesProcessor;
+import org.archive.crawler.spring.SheetOverlaysManager;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.SchedulingConstants;
 import org.archive.modules.extractor.Hop;
@@ -68,7 +71,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.Lifecycle;
 
-
 /**
  * Based on
  * /heritrix-contrib/src/main/java/org/archive/crawler/frontier/AMQPUrlReceiver.java
@@ -88,11 +90,21 @@ public class KafkaUrlReceiver
     private static final Logger logger = 
             Logger.getLogger(KafkaUrlReceiver.class.getName());
 
-    public static final String A_RECEIVED_FROM_KAFKA = "receivedFromKafka";
-
     protected ApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext appCtx) throws BeansException {
         this.appCtx = appCtx;
+    }
+
+    protected SheetOverlaysManager sheetOverlaysManager;
+
+    public SheetOverlaysManager getSheetOverlaysManager() {
+        return sheetOverlaysManager;
+    }
+
+    @Autowired
+    public void setSheetOverlaysManager(
+            SheetOverlaysManager sheetOverlaysManager) {
+        this.sheetOverlaysManager = sheetOverlaysManager;
     }
 
     protected CandidatesProcessor candidates;
@@ -139,7 +151,7 @@ public class KafkaUrlReceiver
         this.groupId = groupId;
     }
 
-    protected String topic = "uris-tocrawl";
+    protected String topic = "uris-to-crawl";
     public String getTopic() {
         return topic;
     }
@@ -226,11 +238,13 @@ public class KafkaUrlReceiver
                                         KeyedProperties
                                                 .clearAllOverrideContexts();
                                         if (curi.isSeed()) {
+                                            logger.info("Adding seed to crawl: "
+                                                    + curi);
+                                            // Note that if we have already
+                                            // added a seed this does nothing:
                                             candidates.getSeeds().addSeed(curi);
                                             // Also clear any quotas if a seed
-                                            // is
-                                            // marked
-                                            // as forced:
+                                            // is marked as forced:
                                             if (curi.forceFetch()) {
                                                 logger.info(
                                                         "Clearing down quota stats for "
@@ -255,6 +269,8 @@ public class KafkaUrlReceiver
                                                 host.makeDirty();
                                             }
                                         } else {
+                                            logger.fine("Adding URI to crawl: "
+                                                    + curi);
                                             candidates.runCandidateChain(curi,
                                                     null);
                                         }
@@ -307,8 +323,10 @@ public class KafkaUrlReceiver
                 logger.info(
                         "Seeking to the beginning... (this can take a while)");
                 // Ensure partitions have been assigned by running a .poll():
+                logger.info("Do a poll...");
                 consumer.poll(0);
                 // Reset to the start:
+                logger.info("Now seek...");
                 consumer.seekToBeginning(consumer.assignment());
                 logger.info("Seek-to-beginning has finished.");
             }
@@ -320,6 +338,7 @@ public class KafkaUrlReceiver
             // Break out of poll() so we can shut down...
             consumer.wakeup();
         }
+        
     }
 
     transient private KafkaConsumerRunner kafkaConsumer;
@@ -409,7 +428,7 @@ public class KafkaUrlReceiver
 
         JSONObject parentUrlMetadata = jo.getJSONObject("parentUrlMetadata");
         String parentHopPath = parentUrlMetadata.getString("pathFromSeed");
-        String hop = jo.optString("hop", Hop.INFERRED.getHopString());
+        String hop = jo.optString("hop", "");
         String hopPath = parentHopPath + hop;
 
         CrawlURI curi = new CrawlURI(uuri, hopPath, via,
@@ -433,6 +452,16 @@ public class KafkaUrlReceiver
                     customHttpRequestHeaders);
         }
 
+        // Set up sheet associations, if specified:
+        if (jo.has("sheets")) {
+            List<String> sheetNames = new LinkedList<String>();
+            JSONArray jsn = jo.getJSONArray("sheets");
+            for (int i = 0; i < jsn.length(); i++) {
+                sheetNames.add(jsn.getString(i));
+            }
+            this.setSheetAssociations(curi, sheetNames);
+        }
+
         /*
          * Crawl job must be configured to use HighestUriQueuePrecedencePolicy
          * to ensure these high priority urls really get crawled ahead of
@@ -448,9 +477,34 @@ public class KafkaUrlReceiver
         curi.setForceFetch(jo.optBoolean("forceFetch"));
         curi.setSeed(jo.optBoolean("isSeed"));
 
-        curi.getAnnotations().add(A_RECEIVED_FROM_KAFKA);
-
         return curi;
+    }
+
+    /**
+     * If the crawl request includes a list of Heritrix3 sheets to be associated
+     * with the URL, this can be used to set the sheet associations up.
+     * 
+     */
+    private void setSheetAssociations(CrawlURI curi, List<String> sheets) {
+        // Get the SURT prefix to use:
+        String prefix = curi.getUURI().getSurtForm(); // c.f.
+        // org.archive.crawler.frontier.SurtAuthorityQueueAssignmentPolicy
+        // Get the list of all known sheets:
+        Set<String> allSheetNames = getSheetOverlaysManager().getSheetsByName()
+                .keySet();
+        // Make a list of the valid proposed sheet names:
+        List<String> sheetNames = new LinkedList<String>();
+        for (String sheetName : sheets) {
+            if (allSheetNames.contains(sheetName)) {
+                sheetNames.add(sheetName);
+            } else {
+                logger.severe("Unknown sheet name: " + sheetName);
+            }
+        }
+        // Set the association for this prefix:
+        logger.info("Setting sheets for " + prefix + " to " + sheetNames);
+        getSheetOverlaysManager().getSheetsNamesBySurt().put(prefix,
+                sheetNames);
     }
 
     // set the heritable data from the parent url, passed back to us via Kafka

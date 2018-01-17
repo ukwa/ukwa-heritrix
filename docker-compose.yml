@@ -24,7 +24,7 @@ services:
       - webrender
       - cdxserver
       - acid.matkelly.com
-      - data.webarchive.org.uk
+      - crawl-test-site.webarchive.org.uk
     volumes_from:
       - dvc:rw  
 
@@ -42,7 +42,7 @@ services:
       - ./target/testing/heritrix/output:/heritrix/output
       - ./target/testing/heritrix/state:/heritrix/state
       - ./target/testing/heritrix/wren:/heritrix/wren
-      - ./jobs:/jobs
+  #    - ./jobs:/jobs
 
   # Clamd virus scanning Service
   clamd:
@@ -97,7 +97,7 @@ services:
       - "8000:8000"
     links:
       - acid.matkelly.com
-      - data.webarchive.org.uk
+      - crawl-test-site.webarchive.org.uk
     ulimits:
       nproc: 2000 # See https://github.com/internetarchive/warcprox/blob/2.x/warcprox/warcproxy.py#L413
     volumes_from:
@@ -122,9 +122,9 @@ services:
     ports:
       - "180:80"  
 
-  # Local version of the UKWA test site: http://data.webarchive.org.uk/data.webarchive.org.uk/
-  data.webarchive.org.uk:
-    image: ukwa/crawl-test-site
+  # Local version of the UKWA test site: http://data.webarchive.org.uk/crawl-test-site/
+  crawl-test-site.webarchive.org.uk:
+    image: ukwa/crawl-test-site:with-robots-txt
     ports:
       - "280:80"
 

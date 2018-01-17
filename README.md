@@ -1,5 +1,30 @@
-bl-heritrix-modules
-===================
+UKWA Heritrix
+=============
+
+
+To run a test crawl:
+
+    $ docker-compose up
+
+and somewhere else
+
+    $ cat testdata/seed.json | kafka-console-producer --broker-list localhost:9092 --topic uris-to-crawl
+
+
+    $ kafka-console-consumer --bootstrap-server kafka:9092 --topic uris-to-crawl --from-beginning
+    
+    
+    $ kafka-console-consumer --bootstrap-server kafka:9092 --topic frequent-crawl-log --from-beginning
+    
+    
+Heritrix3 Crawl Jobs
+--------------------
+
+We use [Heririx3 Sheets](https://webarchive.jira.com/wiki/spaces/Heritrix/pages/5735723/Sheets) as a configuration mechanism to allow the crawler behaviour to change based on URL SURT prefix.
+
+
+Summary of Heritrix3 Modules
+----------------------------
 
 To test and build:
 

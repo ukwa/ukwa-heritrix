@@ -6,6 +6,7 @@ package uk.bl.wap.modules.uriuniqfilters;
 import java.util.logging.Logger;
 
 import org.springframework.beans.factory.annotation.Required;
+import org.springframework.context.Lifecycle;
 
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
@@ -45,7 +46,7 @@ import net.sf.ehcache.store.MemoryStoreEvictionPolicy;
  *
  */
 public class EhcacheRecentlySeenUriUniqFilter
-        extends RecentlySeenUriUniqFilter {
+        extends RecentlySeenUriUniqFilter implements Lifecycle {
 
     /** */
     private static final long serialVersionUID = 7156746218148487509L;
@@ -176,7 +177,7 @@ public class EhcacheRecentlySeenUriUniqFilter
                             .memoryStoreEvictionPolicy(
                                     MemoryStoreEvictionPolicy.LRU)
                             .eternal(false)
-                            .timeToLiveSeconds(this.getDefaultTTL())
+                            .timeToLiveSeconds(this.getRecentlySeenTTLsecs())
                             .diskExpiryThreadIntervalSeconds(60 * 10)
                             .maxEntriesLocalDisk(maxElementsOnDisk)
                             // .maxBytesLocalHeap(maxGBLocalHeap,
@@ -266,14 +267,12 @@ public class EhcacheRecentlySeenUriUniqFilter
 
     @Override
     public void start() {
-        super.start();
         LOGGER.info("Called start()");
         this.setupCache();
     }
 
     @Override
     public void stop() {
-        super.stop();
         LOGGER.info("Called stop()");
         this.closeEhcache();
     }
