@@ -20,8 +20,6 @@ import org.junit.Test;
  */
 public class EhcacheRecentlySeenUriUniqFilterTest {
 
-    String surtFile = "src/test/resources/surt-to-ttl.txt";
-
     /**
      * Little URL reciever for testing.
      *
@@ -49,7 +47,7 @@ public class EhcacheRecentlySeenUriUniqFilterTest {
 
         // Set up the filter
         uuf = new EhcacheRecentlySeenUriUniqFilter();
-        uuf.setRecentlySeenTTLsecs(10);
+        uuf.setRecentlySeenTTLsecs(1);
         uuf.start();
     }
 
@@ -92,8 +90,7 @@ public class EhcacheRecentlySeenUriUniqFilterTest {
         Thread.sleep(2 * 1000);
         // And re-try:
         checkFilter(uuf, "http://www.bbc.co.uk", true);
-        // But this still hasn't timed-out:
-        checkFilter(uuf, "http://www.bbc.com", false);
+        checkFilter(uuf, "http://www.bbc.com", true);
     }
 
 }
