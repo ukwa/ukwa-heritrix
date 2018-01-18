@@ -27,9 +27,19 @@ public class OutbackCDXPersistStoreProcessor
     protected ProcessResult innerProcessResult(CrawlURI curi)
             throws InterruptedException {
 
-        // Do not push this record if a different engine (e.g. Wrender) is
-        // handling this (otherwise we can collide on timestamp(seconds)+URL:
-        if (curi.getFetchStatus() != FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR) {
+        //
+        // Update the status CDX when something important happens.
+        //
+        // 1. Do not push this record if a different engine is handling this
+        // (-5002:BLOCKED-BY-CUSTOM-PROCESSOR e.g. web rendering). If we don't
+        // do this, we can collide on timestamp(seconds)+URL.
+        //
+        // 2. Also, do not push this even to the CDX server if we are just
+        // awaiting a prerequisite (-50:DEFERRED).
+        //
+
+        if (curi.getFetchStatus() != FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR
+                && curi.getFetchStatus() != FetchStatusCodes.S_DEFERRED) {
             this.outbackCDXClient.putUri(curi);
         }
 

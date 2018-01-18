@@ -650,7 +650,7 @@
 	
 	<!-- CHECKPOINTSERVICE: checkpointing assistance -->
 	<bean id="checkpointService" class="org.archive.crawler.framework.CheckpointService">
-		<property name="checkpointIntervalMinutes" value="#{systemEnvironment['CHECKPOINT_INTERVAL_MINUTES'] ?: 360}"/>
+		<property name="checkpointIntervalMinutes" value="#{systemEnvironment['CHECKPOINT_INTERVAL_MINUTES'] ?: 1440}"/>
 		<property name="checkpointsDir" value="checkpoints"/>
         <!-- this controls whether we retain all checkpoints, or only the last one: -->
         <property name="forgetAllButLatest" value="#{systemEnvironment['CHECKPOINT_FORGET_ALL_BUT_LATEST'] ?: true}"/>
