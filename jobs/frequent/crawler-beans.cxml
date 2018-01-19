@@ -431,7 +431,7 @@
 			</bean>
 		</property>
 		<property name="compress" value="true" />
-		<property name="prefix" value="BL-VIRAL" />
+		<property name="prefix" value="#{systemEnvironment['WARC_PREFIX'] ?: 'BL'}-VIRAL" />
 		<property name="maxFileSizeBytes" value="1006632959" />
 		<property name="poolMaxActive" value="5" />
 		<property name="skipIdenticalDigests" value="false" />
@@ -468,7 +468,7 @@
 			</bean>
 		</property>
 		<property name="compress" value="true" />
-		<property name="prefix" value="BL" />
+		<property name="prefix" value="#{systemEnvironment['WARC_PREFIX'] ?: 'BL'}" />
 		<property name="maxFileSizeBytes" value="1006632959" />
 		<property name="poolMaxActive" value="5" />
 		<property name="skipIdenticalDigests" value="false" />
