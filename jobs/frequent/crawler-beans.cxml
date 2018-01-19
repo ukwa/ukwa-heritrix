@@ -439,7 +439,7 @@
 		<property name="directory" value="." />
 		<property name="storePaths">
 			<list>
-				<value>/heritrix/output/viral/#{systemEnvironment['JOB_NAME'] ?: 'frequent'}-#{systemEnvironment['HOSTNAME'] ?: 'no-hostname'}/${launchId}/</value>
+				<value>/heritrix/output/#{systemEnvironment['JOB_NAME'] ?: 'frequent'}/#{launchId}-#{systemEnvironment['HOSTNAME'] ?: 'host'}/viral/</value>
 			</list>
 		</property>
 		<property name="writeRequests" value="true" />
@@ -476,7 +476,7 @@
 		<property name="directory" value="." />
 		<property name="storePaths">
 			<list>
-				<value>/heritrix/output/warcs/#{systemEnvironment['JOB_NAME'] ?: 'frequent'}-#{systemEnvironment['HOSTNAME'] ?: 'no-hostname'}/${launchId}/</value>
+				<value>/heritrix/output/#{systemEnvironment['JOB_NAME'] ?: 'frequent'}/#{launchId}-#{systemEnvironment['HOSTNAME'] ?: 'host'}/warcs/</value>
 			</list>
 		</property>
 		<property name="writeRequests" value="true" />
@@ -722,7 +722,7 @@
 	
 	<!-- CRAWLERLOGGERMODULE: shared logging facility -->
 	<bean id="loggerModule" class="org.archive.crawler.reporting.CrawlerLoggerModule">
-		<property name="path" value="/heritrix/output/logs/#{systemEnvironment['JOB_NAME'] ?: 'frequent'}-#{systemEnvironment['HOSTNAME'] ?: 'no-hostname'}/${launchId}/" />
+		<property name="path" value="/heritrix/output/#{systemEnvironment['JOB_NAME'] ?: 'frequent'}/#{launchId}-#{systemEnvironment['HOSTNAME'] ?: 'host'}/logs/" />
 		<property name="crawlLogPath" value="crawl.log" />
 		<property name="alertsLogPath" value="alerts.log" /> 
 		<property name="progressLogPath" value="progress-statistics.log" />
