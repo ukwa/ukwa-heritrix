@@ -143,7 +143,7 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
                     sendToKafka(getTopic(), curi, candidate);
                 } else {
                     // TODO Log discarded URLs for analysis:
-                    // sendToKafka("uris-outofscope", curi, candidate);
+                    // sendToKafka("fc.out-of-scope", curi, candidate);
                 }
                 // Record this diverted URL so it will not be queued
                 // directly:
