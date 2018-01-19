@@ -18,23 +18,16 @@ import com.google.common.hash.Hashing;
  * it to be re-queued for crawling.
  * 
  * This can be used to support regular crawling at arbitrary times of day, with
- * SURT prefixes used to map URLs to TTL. Therefore the same crawl can contain
- * URLs that are visited at varying frequencies.
+ * SURT prefixes used to map URLs to TTL via Sheets. Therefore the same crawl
+ * can contain URLs that are visited at varying frequencies.
+ * 
+ * TODO Consider adding URL-specific TTLs from CrawlURI properties?
  * 
  * It converts the URL to a large hash and uses that as the key, thus supporting
  * systems that place limits on the size of the key. The 128-bit keys should
  * look like this:
  * 
  * 6c1b07bc7bbc4be347939ac4a93c437a
- * 
- * TODO Consider adding 'Opposite of a Bloom filter' behaviour on top of the
- * caches. This would involve truncating the key fairly heavily, so there cannot
- * be more than, say 10 billion keys, in order to keep memory usage down. The
- * trick would then be to log hash collisions and allow the crawl to proceed if
- * different URLs have the same key.
- * 
- * @see http://www.somethingsimilar.com/2012/05/21/the-opposite-of-a-bloom-
- *      filter/
  * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
