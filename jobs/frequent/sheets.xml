@@ -354,12 +354,11 @@
          </map>
       </property>
    </bean>
-   <!-- This resource and any within one hop -->
+   <!-- This resource and any within one hop of the seeds scope -->
    <bean id="plus1Scope" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-            <entry key="hopsCountReject.maxHops" value="1" />
-            <entry key="redirectAccept.enabled" value="true" />
+            <entry key="surtPrefixSeedScope.alsoCheckVia" value="true" />
          </map>
       </property>
    </bean>

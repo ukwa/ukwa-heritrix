@@ -66,7 +66,7 @@
 				<bean class="org.archive.modules.deciderules.RejectDecideRule">
 				</bean>
 				<!-- ...then ACCEPT those with +uk SURT prefixes... -->
-				<bean class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
+				<bean id="surtPrefixSeedScope" class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
 					 <property name="seedsAsSurtPrefixes" value="true" /> 
 					 <property name="alsoCheckVia" value="false" />
 					 <property name="surtsSourceFile" value="surts.txt" />
