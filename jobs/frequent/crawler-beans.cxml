@@ -325,7 +325,7 @@
         <property name="enabled" value="#{systemEnvironment['CLAMD_ENABLED'] ?: false}"/>
 		<property name="clamdHost" value="#{systemEnvironment['CLAMD_HOST'] ?: localhost}" />
    		<property name="clamdPort" value="3310" />
-   		<property name="clamdTimeout" value="0" />
+   		<property name="clamdTimeout" value="60000" />
 		<property name="streamMaxLength" value="94371840"/>
 	</bean>
 	<!-- Configure persistent URI history storage -->
