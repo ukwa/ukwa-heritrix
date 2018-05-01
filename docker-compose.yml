@@ -52,13 +52,29 @@ services:
 
   # Kafka
   kafka:
-    image: spotify/kafka
+    image: wurstmeister/kafka:1.1.0
     ports:
-      - "2181:2181"
-      - "9092:9092"
+      - "9094:9094"
     environment:
-      - "ADVERTISED_HOST=kafka"
-      - "ADVERTISED_PORT=9092"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      HOSTNAME_COMMAND: "docker info | grep ^Name: | cut -d' ' -f 2"
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://_{HOSTNAME_COMMAND}:9094
+      KAFKA_LISTENERS: INSIDE://:9092,OUTSIDE://:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      LOG_RETENTION_HOURS: -1
+      LOG_RETENTION_BYTES: -1
+      NUM_PARTITIONS: 128
+      KAFKA_CREATE_TOPICS: "fc.to-crawl:1024:1,fc.crawled:128:1"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  # Needs a Zookeeper too
+  # ----
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+     - "2181:2181"
 
   # Kafka UI
   kafka-ui:
@@ -66,7 +82,7 @@ services:
     ports:
       - "9000:9000"
     environment:
-      - "ZK_HOST=kafka:2181"
+      - "ZK_HOST=zookeeper:2181"
 
   # PhantomJS web page rendering service
   webrender:
