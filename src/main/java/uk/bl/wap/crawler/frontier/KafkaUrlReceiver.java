@@ -424,7 +424,11 @@ public class KafkaUrlReceiver
             throws URIException, JSONException {
 
         UURI uuri = UURIFactory.getInstance(jo.getString("url"));
-        UURI via = UURIFactory.getInstance(jo.getString("parentUrl"));
+        String viaStr = jo.getString("parentUrl");
+        // Cope if we are passed an empty value by copying the URL:
+        if (viaStr == null || "".equals(viaStr))
+            viaStr = uuri.getURI();
+        UURI via = UURIFactory.getInstance(viaStr);
 
         JSONObject parentUrlMetadata = jo.getJSONObject("parentUrlMetadata");
         String parentHopPath = parentUrlMetadata.getString("pathFromSeed");
