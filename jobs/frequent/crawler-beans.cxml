@@ -59,7 +59,7 @@
 	<!-- SCOPE: rules for which discovered URIs to crawl; order is very 
 		 important because last decision returned other than 'NONE' wins. -->
 	<bean id="scope" class="org.archive.modules.deciderules.DecideRuleSequence">
-        <property name="logToFile" value="false" />
+        <property name="logToFile" value="#{systemEnvironment['SCOPE_LOG_ENABLED'] ?: false}" />
 		<property name="rules">
 			<list>
 				<!-- Begin by REJECTing all... -->
@@ -67,19 +67,18 @@
 				</bean>
 				<!-- ...then ACCEPT those with +uk SURT prefixes... -->
                 <ref bean="surtPrefixSeedScope" />
-				<!-- ...and ACCEPT associated/helper files... -->
+				<!-- ...and ACCEPT extensions likely to be associated/helper files... -->
 				<bean class="org.archive.modules.deciderules.MatchesRegexDecideRule">
 					<property name="regex" value="^https?://[^/]+/.+(?i)(\.(js|css|bmp|gif|jpe?g|[pm]ng|svg|tiff?|ico|web[pm]|aac|aiff?|m3u|m4[av]|midi?|mp[1234acu]|og[agm]|ra?m?|cda|alac|ac3|flac|wav|wm[av]|as[fx]|avi|flv|mov|mpe?g|qt|smil|swf|woff|eot|ttf))\b.*$"/>
 					<property name="decision" value="ACCEPT" />
 				</bean>
+                <!-- always chase down Embeds and Redirects... -->
 				<bean class="org.archive.modules.deciderules.HopsPathMatchesRegexDecideRule">
 					<property name="decision" value="ACCEPT" />
-					<property name="regex" value="^E*$" />
+					<property name="regex" value="^.*[ER]+$" />
 				</bean>
-				<!-- ...  ACCEPT those on the same Domain... -->
+				<!-- ...  ACCEPT those on the same Domain (disabled by default)... -->
 				<ref bean="onDomainAccept" />
-				<!-- ... ACCEPT redirects... -->
-				<ref bean="redirectAccept" />
 				<!-- ...but REJECT those more than a configured link-hop-count from start... -->
 				<ref bean="hopsCountReject" />
 				<!-- ...and REJECT those from a configurable (initially empty) set of URI regexes... -->
@@ -126,14 +125,19 @@
 			</list>
 		</property>
 	</bean>
-    <!-- Top-level bean for managing SURT scope -->
+    <!-- Top-level bean for managing SURT scope (alsoCheckVia enabled via sheet) -->
     <bean id="surtPrefixSeedScope" class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
          <property name="seedsAsSurtPrefixes" value="true" /> 
          <property name="alsoCheckVia" value="false" />
          <property name="surtsSourceFile" value="surts.txt" />
          <property name="surtsDumpFile" value="surts.dump" />
     </bean>
-    <!-- ...but REJECT those more than a configured link-hop-count from start... -->
+    <!-- ... ACCEPT those on the same Domain (enabled via sheet)... -->
+    <bean id="onDomainAccept" class="org.archive.modules.deciderules.surt.OnDomainsDecideRule">
+        <property name="decision" value="ACCEPT" />
+        <property name="enabled" value="false" />
+    </bean>
+    <!-- ...but REJECT those more than a configured link-hop-count from start (modifiable via sheet)... -->
 	<bean id="hopsCountReject" class="org.archive.modules.deciderules.TooManyHopsDecideRule">
 		<property name="maxHops" value="20" />
 	</bean>
@@ -145,17 +149,6 @@
     </bean>
     <import resource="excludes.xml"/>
     
-	<!-- ... ACCEPT those on the same Domain ... -->
-	<bean id="onDomainAccept" class="org.archive.modules.deciderules.surt.OnDomainsDecideRule">
-		<property name="decision" value="ACCEPT" />
-		<property name="enabled" value="false" />
-	</bean>
-	<!-- ... ACCEPT redirects ... -->
-	<bean id="redirectAccept" class="org.archive.modules.deciderules.HopsPathMatchesRegexDecideRule">
-		<property name="decision" value="ACCEPT" />
-		<property name="regex" value="^R+$" />
-		<property name="enabled" value="false" />
-	</bean>
 	<!-- GEO-LOOKUP: specifying location of external database. -->
 <!--
   <bean id="externalGeoLookup" class="uk.bl.wap.modules.deciderules.ExternalGeoLookup">
@@ -739,6 +732,7 @@
 	<bean id="sheetOverlaysManager" autowire="byType" class="org.archive.crawler.spring.SheetOverlaysManager">
 	</bean>
     <import resource="sheets.xml"/>
+    
 	<!-- BDBMODULE: BDB-JE disk persistence manager -->
   <bean id="bdbFrontierBdb" class="org.archive.bdb.BdbModule">
     <property name="dir" value="/heritrix/state/#{systemEnvironment['JOB_NAME'] ?: 'frequent'}/frontier"/>
