@@ -108,7 +108,7 @@ public abstract class RecentlySeenUriUniqFilter extends SetBasedUriUniqFilter
      */
     private Integer getTTLForUrl(String url) {
         int ttl = this.getRecentlySeenTTLsecs();
-        LOGGER.info("For " + url + " got TTL(s) " + ttl);
+        LOGGER.fine("For " + url + " got TTL(s) " + ttl);
         return ttl;
     }
 

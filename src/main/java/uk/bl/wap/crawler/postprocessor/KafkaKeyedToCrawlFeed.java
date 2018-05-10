@@ -142,6 +142,8 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
                 if (this.getScope().accepts(candidate)) {
                     sendToKafka(getTopic(), curi, candidate);
                 } else {
+                    logger.fine("Discarding URI: " + candidate
+                            + " found via: " + candidate.getVia());
                     // TODO Log discarded URLs for analysis:
                     // sendToKafka("fc.out-of-scope", curi, candidate);
                 }

@@ -18,6 +18,7 @@ services:
        - "WEBRENDER_ENDPOINT=http://webrender:8010/render"
        - "CLAMD_ENABLED=true"
        - "CLAMD_HOST=clamd"
+       - "SCOPE_LOG_ENABLED=false"
     links:
       - clamd
       - kafka
@@ -120,7 +121,9 @@ services:
   # tinycdxserver
   cdxserver:
     image: ukwa/tinycdxserver
-    command: "java -jar outbackcdx.jar -v -d /cdx-data -p 8080 -b 0.0.0.0"
+    command: "java -jar outbackcdx.jar -d /cdx-data -p 8080 -b 0.0.0.0"
+    # Verbose form logs submissions:
+    #command: "java -jar outbackcdx.jar -v -d /cdx-data -p 8080 -b 0.0.0.0"
     ports:
       - "9090:8080"
   #  volumes:
