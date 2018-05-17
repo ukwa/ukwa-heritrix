@@ -372,6 +372,9 @@
 				-->
 				<!-- ...extract oulinks from Flash content... -->
 				<ref bean="extractorSwf"/>
+                <!-- ...infer GOV.UK Content API URL for the GOV.UK site... -->
+                <bean class="uk.bl.wap.modules.extractor.GovUkContentAPIExtractor">
+                </bean>
 				<!-- ...add IPs to crawl.log... -->
 				<bean id="ipAnnotator" class="uk.bl.wap.crawler.processor.IpAnnotator">
 				</bean>
