@@ -41,14 +41,8 @@ public class GovUkContentAPIExtractorTest {
         e.process(curi);
 
         // Check for the expected outlink:
-        boolean found = false;
         CrawlURI expected = createExpectedUri();
-        for (CrawlURI l : curi.getOutLinks()) {
-            if (l.equals(expected)) {
-                found = true;
-            }
-        }
-        Assert.assertTrue(found);
+        Assert.assertTrue(curi.getOutLinks().contains(expected));
 
     }
 

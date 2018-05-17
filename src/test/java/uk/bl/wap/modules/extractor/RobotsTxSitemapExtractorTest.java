@@ -18,6 +18,8 @@ public class RobotsTxSitemapExtractorTest {
                 ROBOTS_WITH_SITEMAP.getBytes());
         List<String> links = extractor.parseRobotsTxt(input);
         Assert.assertEquals(1, links.size());
+        Assert.assertTrue(
+                links.contains("http://www.parliament.uk/sitemap.xml"));
     }
 
     @Test
