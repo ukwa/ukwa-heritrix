@@ -231,71 +231,8 @@ public class KafkaUrlReceiver
                                 logger.finer("Processing crawl request: "
                                         + decodedBody);
                                 JSONObject jo = new JSONObject(decodedBody);
+                                processCrawlRequest(jo);
 
-                                if ("GET".equals(jo.getString("method"))) {
-                                    try {
-                                        CrawlURI curi = makeCrawlUri(jo);
-                                        KeyedProperties
-                                                .clearAllOverrideContexts();
-                                        if (curi.isSeed()) {
-                                            logger.info("Adding seed to crawl: "
-                                                    + curi);
-                                            // Note that if we have already
-                                            // added a seed this does nothing:
-                                            candidates.getSeeds().addSeed(curi);
-                                            // Also clear any quotas if a seed
-                                            // is marked as forced:
-                                            if (curi.forceFetch()) {
-                                                logger.info(
-                                                        "Clearing down quota stats for "
-                                                                + curi);
-                                                // Group stats:
-                                                FrontierGroup group = candidates
-                                                        .getFrontier()
-                                                        .getGroup(curi);
-                                                group.getSubstats().clear();
-                                                group.makeDirty();
-                                                // By server:
-                                                final CrawlServer server = serverCache
-                                                        .getServerFor(
-                                                                curi.getUURI());
-                                                server.getSubstats().clear();
-                                                server.makeDirty();
-                                                // And by host:
-                                                final CrawlHost host = serverCache
-                                                        .getHostFor(
-                                                                curi.getUURI());
-                                                host.getSubstats().clear();
-                                                host.makeDirty();
-                                            }
-                                        } else {
-                                            logger.fine("Adding URI to crawl: "
-                                                    + curi);
-                                            candidates.runCandidateChain(curi,
-                                                    null);
-                                        }
-                                    } catch (URIException e) {
-                                        logger.log(Level.WARNING,
-                                                "problem creating CrawlURI from json received via Kafka "
-                                                        + decodedBody,
-                                                e);
-                                    } catch (JSONException e) {
-                                        logger.log(Level.SEVERE,
-                                                "problem creating CrawlURI from json received via Kafka "
-                                                        + decodedBody,
-                                                e);
-                                    } catch (Exception e) {
-                                        logger.log(Level.SEVERE,
-                                                "Unanticipated problem creating CrawlURI from json received via Kafka "
-                                                        + decodedBody,
-                                                e);
-                                    }
-
-                                } else {
-                                    logger.info(
-                                            "ignoring url with method other than GET - "
-                                                    + decodedBody);
-                                }
                             } catch (Exception e) {
                                 logger.log(Level.SEVERE,
                                         "problem creating JSON from String received via Kafka "
@@ -312,6 +249,88 @@ public class KafkaUrlReceiver
             } finally {
                 consumer.close();
             }
+
+        }
+
+        /**
+         * How we process crawl request messages.
+         * 
+         * @param jo
+         */
+        private void processCrawlRequest(JSONObject jo) {
+            if ("GET".equals(jo.getString("method"))) {
+                try {
+                    // Make the CrawlURI:
+                    CrawlURI curi = makeCrawlUri(jo);
+                    KeyedProperties.clearAllOverrideContexts();
+
+                    // Add a seed to the crawl:
+                    if (curi.isSeed()) {
+                        logger.info("Adding seed to crawl: " + curi);
+
+                        // Note that if we have already added a seed this does
+                        // nothing:
+                        candidates.getSeeds().addSeed(curi);
+
+                        // Also clear any quotas if a seeds marked as forced:
+                        if (curi.forceFetch()) {
+                            logger.info(
+                                    "Clearing down quota stats for " + curi);
+                            // Group stats:
+                            FrontierGroup group = candidates.getFrontier()
+                                    .getGroup(curi);
+                            group.getSubstats().clear();
+                            group.makeDirty();
+                            // By server:
+                            final CrawlServer server = serverCache
+                                    .getServerFor(curi.getUURI());
+                            server.getSubstats().clear();
+                            server.makeDirty();
+                            // And by host:
+                            final CrawlHost host = serverCache
+                                    .getHostFor(curi.getUURI());
+                            host.getSubstats().clear();
+                            host.makeDirty();
+                        }
+                    } else {
+
+                        // Attempt to add this URI to the crawl:
+                        logger.fine("Adding URI to crawl: " + curi);
+                        int statusAfterCandidateChain = candidates
+                                .runCandidateChain(curi, null);
+
+                        // Only >=0 status codes get scheduled, so we can use
+                        // that to log e.g.
+                        // org.archive.modules.fetcher.FetchStatusCodes.S_OUT_OF_SCOPE
+                        if (statusAfterCandidateChain < 0) {
+                            logger.finest("Discarding URI " + curi
+                                    + " with Status Code: "
+                                    + statusAfterCandidateChain);
+                            // TODO Post discarded URIs to a separate queue?
+                            // TODO OR do this in a candidates-chain processor?
+                        }
+                    }
+                } catch (URIException e) {
+                    logger.log(Level.WARNING,
+                            "problem creating CrawlURI from json received via Kafka "
+                                    + jo,
+                            e);
+                } catch (JSONException e) {
+                    logger.log(Level.SEVERE,
+                            "problem creating CrawlURI from json received via Kafka "
+                                    + jo,
+                            e);
+                } catch (Exception e) {
+                    logger.log(Level.SEVERE,
+                            "Unanticipated problem creating CrawlURI from json received via Kafka "
+                                    + jo,
+                            e);
+                }
+
+            } else {
+                logger.info("ignoring url with method other than GET - " + jo);
+            }
+
         }
 
         /**
