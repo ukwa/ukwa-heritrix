@@ -30,7 +30,7 @@
 		<!-- <property name="operatorFrom" value=""/> -->
 		<property name="organization" value="The British Library"/>
 		<!-- <property name="audience" value=""/> -->
-		<property name="userAgentTemplate" value="bl.uk_ldfc_bot/@VERSION@ (+@OPERATOR_CONTACT_URL@)"/>
+		<property name="userAgentTemplate" value="#{systemEnvironment['USER_AGENT_PREFIX'] ?: 'bl.uk_ldfc_bot'}/@VERSION@ (+@OPERATOR_CONTACT_URL@)"/>
 		<property name="robotsPolicyName" value="classic" />
 		<!-- <property name="robotsPolicyName" value="obey"/> -->
 		<!--
@@ -105,8 +105,9 @@
 					<property name="surtsDumpFile" value="exclude.dump" />
 					<property name="surtsSourceFile" value="exclude.txt" />
 				</bean>
+            
 				<!-- ...always ACCEPT content hosted on servers that appear to be located in the UK... -->
-		        <!-- This only makes sense in the broad/domain crawl:
+		        <!-- This only makes sense in the broad/domain crawl: -->
 		        <bean id="externalGeoLookupRule" class="uk.bl.wap.modules.deciderules.ExternalGeoLocationDecideRule">
 		          <property name="lookup">
 		            <ref bean="externalGeoLookup"/>
@@ -117,8 +118,9 @@
 		            </list>
 		          </property>
 		          <property name="lookupEveryUri" value="true"/>
+                  <property name="enabled" value="#{systemEnvironment['GEOIP_GB_ENABLED'] ?: false}" />
 		        </bean>
-	  		    -->
+	  		    
 				<!-- ...but always ACCEPT those marked as prerequisitee for another URI... -->
 				<bean class="org.archive.modules.deciderules.PrerequisiteAcceptDecideRule">
 				</bean>
@@ -129,7 +131,7 @@
     <bean id="surtPrefixSeedScope" class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
          <property name="seedsAsSurtPrefixes" value="true" /> 
          <property name="alsoCheckVia" value="false" />
-         <property name="surtsSourceFile" value="surts.txt" />
+         <property name="surtsSourceFile" value="#{systemEnvironment['SURTS_SOURCE_FILE'] ?: 'surts.txt'}" />
          <property name="surtsDumpFile" value="surts.dump" />
     </bean>
     <!-- ... ACCEPT those on the same Domain (enabled via sheet)... -->
@@ -150,12 +152,10 @@
     <import resource="excludes.xml"/>
     
 	<!-- GEO-LOOKUP: specifying location of external database. -->
-<!--
-  <bean id="externalGeoLookup" class="uk.bl.wap.modules.deciderules.ExternalGeoLookup">
-    <property name="database" value="#{ systemEnvironment['GEOLITE2_CITY_MMDB_LOCATION'] ?: '' }/GeoLite2-City.mmdb"/>
-  </bean>
--->
-
+    <bean id="externalGeoLookup" class="uk.bl.wap.modules.deciderules.ExternalGeoLookup">
+        <property name="database" value="#{ systemEnvironment['GEOLITE2_CITY_MMDB_LOCATION'] ?: '' }/GeoLite2-City.mmdb"/>
+    </bean>
+ 
 	<!-- 
 		PROCESSING CHAINS
 		Much of the crawler's work is specified by the sequential 
