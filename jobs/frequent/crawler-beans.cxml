@@ -91,6 +91,13 @@
 				<bean class="org.archive.modules.deciderules.TooManyPathSegmentsDecideRule">
 					<property name="maxPathDepth" value="15" />
 				</bean>
+                <!-- ...and REJECT highly compressible URIs... -->
+                <!-- 
+                <bean class="uk.bl.wap.modules.deciderules.CompressibilityDecideRule">
+                    <property name="min" value="0.28"/>
+                    <property name="max" value="1.6"/>
+                </bean>
+                 -->
 				<!-- ...but ACCEPT URL-shortening services -->
 				<bean class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
 					<property name="decision" value="ACCEPT" />
