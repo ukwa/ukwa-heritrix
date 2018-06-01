@@ -355,6 +355,11 @@ public class WrenderProcessor extends Processor implements
      * @param curi
      */
     private static void enqueueLink(String newUri, CrawlURI curi) {
+        // Do not enqueue 'data:' URIs:
+        if (newUri.startsWith("data:")) {
+            LOGGER.finest("Discarding data URI: " + newUri);
+            return;
+        }
         try {
             UURI dest = UURIFactory.getInstance(curi.getBaseURI(), newUri);
             CrawlURI link = curi.createCrawlURI(dest, LinkContext.NAVLINK_MISC,

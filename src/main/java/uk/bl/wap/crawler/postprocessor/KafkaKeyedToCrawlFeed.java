@@ -135,23 +135,30 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
         // Process all outlinks:
         Collection<CrawlURI> outLinks = curi.getOutLinks();
+        // Record the set of Strings in case the same URIs are extracted with
+        // different hop paths or contexts:
+        Collection<String> sentURIs = new LinkedHashSet<String>();
+        // Record what's been sent so then can be removed:
         Collection<CrawlURI> toRemove = new LinkedHashSet<CrawlURI>();
+
+        // Iterate through the outlinks:
         for (CrawlURI candidate : outLinks) {
-            // Route most via Kafka:
-            if (!candidate.isPrerequisite()) {
-                if (this.getScope().accepts(candidate)) {
-                    sendToKafka(getTopic(), curi, candidate);
-                } else {
-                    logger.fine("Discarding URI: " + candidate
-                            + " found via: " + candidate.getVia());
-                    // TODO Log discarded URLs for analysis:
-                    // sendToKafka("fc.out-of-scope", curi, candidate);
-                }
+            // Route most via Kafka, not prerequisites or 'data:' or 'mailto:'
+            // URIs, or URIs already sent:
+            if (!candidate.isPrerequisite()
+                    && !candidate.getURI().startsWith("data:")
+                    && !candidate.getURI().startsWith("mailto:")
+                    && !sentURIs.contains(candidate.getURI())) {
+                // Pass to Kafka queue:
+                sendToKafka(getTopic(), curi, candidate);
+                // Record this diverted URL string so it will only be sent once:
+                sentURIs.add(candidate.getURI());
                 // Record this diverted URL so it will not be queued
                 // directly:
                 toRemove.add(candidate);
             }
         }
+
         // And remove re-routed candidates from the candidates list:
         for (CrawlURI candidate : toRemove) {
             outLinks.remove(candidate);

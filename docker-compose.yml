@@ -8,17 +8,18 @@ services:
       - "8443:8443"
     environment:
        - "JAVA_OPTS=-Xmx2g"
-       - "JOB_NAME=frequent"
+       - "CRAWL_NAME=npld-fc"
        - "LAUNCH_AUTOMATICALLY=true"
        - "KAFKA_BOOTSTRAP_SERVERS=kafka:9092"
-       - "KAFKA_CRAWLED_TOPIC=frequent-crawl-log"
-       - "KAFKA_TOCRAWL_TOPIC=uris-to-crawl"
+       - "KAFKA_CRAWLED_TOPIC=uris.crawled.fc"
+       - "KAFKA_TOCRAWL_TOPIC=uris.tocrawl.fc"
        - "CDXSERVER_ENDPOINT=http://cdxserver:8080/fc"
        - "WEBRENDER_ENABLED=true"
        - "WEBRENDER_ENDPOINT=http://webrender:8010/render"
        - "CLAMD_ENABLED=true"
        - "CLAMD_HOST=clamd"
        - "SCOPE_LOG_ENABLED=false"
+       - "WARC_PREFIX=BL-NPLD-TEST"
     links:
       - clamd
       - kafka
@@ -31,7 +32,7 @@ services:
 
   # Crawl control console
   control:
-    image: ukwa/ukwa-manage:ingest-ng-phase-2
+    image: ukwa/ukwa-manage
     links:
       - heritrix
       - kafka
@@ -105,7 +106,7 @@ services:
       - "LC_ALL=en_US.utf8"
       - "TMP=/tmp/warcprox"
       - "KAFKA_BOOTSTRAP_SERVERS=kafka:9092"
-      - "KAFKA_CRAWLED_TOPIC=frequent-crawl-log"
+      - "KAFKA_CRAWLED_TOPIC=uris.crawled.fc"
       - "KAFKA_CRAWLED_ACKS=1"
       - "CDXSERVER_ENDPOINT=http://cdxserver:8080/fc"
     ports:
