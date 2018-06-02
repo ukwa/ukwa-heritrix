@@ -452,7 +452,7 @@
 		<property name="writeRevisitForIdenticalDigests" value="false" />
 		<property name="writeRevisitForNotModified" value="false" />
 	</bean>
-	<bean id="warcWriterDefault" class="org.archive.modules.writer.WARCWriterProcessor">
+	<bean id="warcWriterDefault" class="uk.bl.wap.modules.writer.ExtendedWARCWriterProcessor">
 		<property name="shouldProcessRule">
 			<bean class="org.archive.modules.deciderules.DecideRuleSequence">
 				<property name="rules">

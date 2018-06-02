@@ -151,7 +151,7 @@ public class KafkaUrlReceiver
         this.groupId = groupId;
     }
 
-    protected String topic = "uris-to-crawl";
+    protected String topic = "uris.tocrawl";
     public String getTopic() {
         return topic;
     }
@@ -247,9 +247,12 @@ public class KafkaUrlReceiver
                     }
                 }
             } finally {
+                logger.info("Closing consumer...");
                 consumer.close();
+                logger.info("Consumer closed.");
             }
-
+            logger.info("Exiting KafkaConsumer.run()...");
+            return;
         }
 
         /**
@@ -410,13 +413,17 @@ public class KafkaUrlReceiver
                 logger.info("Requesting shutdown of the KafkaURLReceiver...");
                 this.kafkaConsumer.shutdown();
                 try {
-                    this.executorService.awaitTermination(20, TimeUnit.SECONDS);
+                    logger.info(
+                            "Awaiting termination of the ExecutorService...");
+                    this.executorService.awaitTermination(4, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
                     logger.log(Level.SEVERE,
                             "Exception while terminating Kafka thread...", e);
                 }
+                logger.info("Forcing shutdown of the KafkaURLReceiver...");
                 this.executorService.shutdownNow();
                 isRunning = false;
+                logger.info("Shutdown of the KafkaURLReceiver complete.");
             }
         } finally {
             lock.unlock();
