@@ -131,7 +131,7 @@ services:
   #    - ./testing/cdx:/cdx-data
 
   # ----------
-  # Test sites
+  # Test sites and test runner
   # ----------
 
   # Local version of the Archival Acid Test: http://acid.matkelly.com
@@ -146,3 +146,14 @@ services:
     ports:
       - "280:80"
 
+  # This runs the integration tests
+  robot:
+    build: integration-test/robot
+    command: --outputdir /out /tests
+    volumes:
+      - ./integration-test/robot/tests:/tests:ro
+      - ./integration-test/results:/out:rw
+    depends_on:
+      - kafka
+      - cdxserver
+    
