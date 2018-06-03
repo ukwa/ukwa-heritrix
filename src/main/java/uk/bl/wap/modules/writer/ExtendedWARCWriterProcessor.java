@@ -47,7 +47,7 @@ public class ExtendedWARCWriterProcessor extends WARCWriterProcessor {
         super.updateMetadataAfterWrite(curi, writer, startPosition);
 
         // Also store the (compressed) record length:
-        curi.addExtraInfo("warc_length",
+        curi.addExtraInfo("warcFileRecordLength",
                 (writer.getPosition() - startPosition));
 
     }
