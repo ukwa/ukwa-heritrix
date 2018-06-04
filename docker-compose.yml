@@ -130,6 +130,37 @@ services:
   #  volumes:
   #    - ./testing/cdx:/cdx-data
 
+
+  # ----------------------------------------------
+  # Wayback Access
+  # ----------------------------------------------
+  warc-server:
+    image: ukwa/warc-server
+    ports:
+      - 8001:8000
+    environment:
+      - "WARC_PATHS=/heritrix/output,/heritrix/wren"
+    volumes_from:
+      - dvc:ro
+
+  # OpenWayback for playback
+  openwayback:
+    image: ukwa/waybacks
+    ports:
+      - "8080:8080"
+      - "8090:8090"
+    environment:
+      - "UKWA_OWB_VERSION=qa"
+      - "WAYBACK_URL_PORT=8080"
+      - "WAYBACK_PROXY_PORT=8090"
+      - "CDX_WHITELIST="
+      - "WAYBACK_EXCLUDE_FILE=/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/exclude.txt"
+      - "WAYBACK_EMBARGO=0"
+      - "WAYBACK_HTTPFS_PREFIX=http://warc-server:8000/by-filename/"
+      - "CDX_INDEX_SERVER=http://cdxserver:8080/fc"
+      - "WAYBACK_URL_PREFIX=http://localhost:8080"
+      - "WAYBACK_URL_HOST=localhost"
+
   # ----------
   # Test sites and test runner
   # ----------
