@@ -136,8 +136,7 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
             // Route most via Kafka, not prerequisites or 'data:' or 'mailto:'
             // URIs, or URIs already sent:
             if (!candidate.isPrerequisite()
-                    && !candidate.getURI().startsWith("data:")
-                    && !candidate.getURI().startsWith("mailto:")
+                    && this.shouldEmit(candidate)
                     && !sentURIs.contains(candidate.getURI())) {
                 // Pass to Kafka queue:
                 sendToKafka(getTopic(), curi, candidate);

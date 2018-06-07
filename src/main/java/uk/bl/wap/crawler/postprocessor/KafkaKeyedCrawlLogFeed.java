@@ -30,6 +30,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.logging.Logger;
 
 import org.apache.commons.collections.Closure;
+import org.apache.commons.httpclient.URIException;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -49,6 +50,7 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
+import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 
@@ -146,6 +148,7 @@ public class KafkaKeyedCrawlLogFeed extends Processor implements Lifecycle {
 
     @Override
     protected boolean shouldProcess(CrawlURI curi) {
+        // Check status:
         if (frontier instanceof AbstractFrontier) {
             return !((AbstractFrontier) frontier).needsReenqueuing(curi);
         } else {
@@ -262,15 +265,12 @@ public class KafkaKeyedCrawlLogFeed extends Processor implements Lifecycle {
     }
     protected StatsCallback stats = new StatsCallback();
 
-    // Hash function
-    HashFunction hf = Hashing.murmur3_32();
-
     /**
-     * Create a hashed key from the classKey, to distribute crawling
-     * consistently.
+     * Create a hashed key from the host, to distribute crawling consistently.
      * 
-     * We use the default 'SURT of the Authority' class key here, but this can
-     * be overridden in Crawler Beans.
+     * We could also use the default 'SURT of the Authority' class key here, but
+     * this can be overridden in Crawler Beans, and is not yet set at this
+     * point.
      * 
      * @see org.archive.crawler.frontier.SurtAuthorityQueueAssignmentPolicy
      * 
@@ -279,14 +279,39 @@ public class KafkaKeyedCrawlLogFeed extends Processor implements Lifecycle {
      */
     protected String getKeyForCrawlURI(CrawlURI curi) {
         // Hash the key to ensure uniform distribution:
-        return hf.hashBytes(curi.getClassKey().getBytes()).toString();
+        String queueKey;
+        try {
+            queueKey = curi.getUURI().getAuthority();
+        } catch (URIException e) {
+            queueKey = "unparseable_key";
+        }
+        if (queueKey == null) {
+            queueKey = "null_key";
+            logger.warning("NULLO FOR " + curi.getUURI());
+        }
+        // Hash it to make the key:
+        HashCode hash = hf.hashBytes(queueKey.getBytes());
+        return hash.toString();
+    }
+
+    // Hash function used to generate the partition key:
+    private HashFunction hf = Hashing.murmur3_32();
+
+    protected boolean shouldEmit(CrawlURI candidate) {
+        if (candidate.getURI().startsWith("data:")
+                || candidate.getURI().startsWith("mailto:")) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
-        byte[] message = buildMessage(curi);
-        ProducerRecord<String, byte[]> producerRecord = new ProducerRecord<String, byte[]>(
-                getTopic(), getKeyForCrawlURI(curi), message);
-        kafkaProducer().send(producerRecord, stats);
+        if (this.shouldEmit(curi)) {
+            byte[] message = buildMessage(curi);
+            ProducerRecord<String, byte[]> producerRecord = new ProducerRecord<String, byte[]>(
+                    getTopic(), getKeyForCrawlURI(curi), message);
+            kafkaProducer().send(producerRecord, stats);
+        }
     }
 }
