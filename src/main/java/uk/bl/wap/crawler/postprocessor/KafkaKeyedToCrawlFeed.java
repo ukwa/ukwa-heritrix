@@ -12,7 +12,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.httpclient.URIException;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideRule;
@@ -119,15 +118,6 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
                     topic, key, message);
             kafkaProducer().send(producerRecord, stats);
             recentlySentCache.put(candidate.getURI(), true);
-        }
-    }
-
-    @Override
-    protected String getKeyForCrawlURI(CrawlURI curi) {
-        try {
-            return curi.getUURI().getHost();
-        } catch (URIException ue) {
-            return "malformed-uri";
         }
     }
 

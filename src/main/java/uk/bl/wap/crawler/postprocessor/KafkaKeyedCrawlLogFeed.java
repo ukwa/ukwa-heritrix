@@ -49,6 +49,9 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
 
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
+
 /**
  * For Kafka > 0.8.x. Sends messages asynchronously but does request and
  * acknowledgment from Kafka (request.required.acks=1).
@@ -259,8 +262,24 @@ public class KafkaKeyedCrawlLogFeed extends Processor implements Lifecycle {
     }
     protected StatsCallback stats = new StatsCallback();
 
+    // Hash function
+    HashFunction hf = Hashing.murmur3_32();
+
+    /**
+     * Create a hashed key from the classKey, to distribute crawling
+     * consistently.
+     * 
+     * We use the default 'SURT of the Authority' class key here, but this can
+     * be overridden in Crawler Beans.
+     * 
+     * @see org.archive.crawler.frontier.SurtAuthorityQueueAssignmentPolicy
+     * 
+     * @param curi
+     * @return
+     */
     protected String getKeyForCrawlURI(CrawlURI curi) {
-        return curi.getClassKey();
+        // Hash the key to ensure uniform distribution:
+        return hf.hashBytes(curi.getClassKey().getBytes()).toString();
     }
 
     @Override
