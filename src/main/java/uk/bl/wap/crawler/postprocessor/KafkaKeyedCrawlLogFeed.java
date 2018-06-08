@@ -286,8 +286,12 @@ public class KafkaKeyedCrawlLogFeed extends Processor implements Lifecycle {
             queueKey = "unparseable_key";
         }
         if (queueKey == null) {
-            queueKey = "null_key";
-            logger.warning("NULLO FOR " + curi.getUURI());
+            // Mostly DNS records:
+            if (curi.getURI().startsWith("dns:")) {
+                queueKey = "dns";
+            } else {
+                queueKey = "null_key";
+            }
         }
         // Hash it to make the key:
         HashCode hash = hf.hashBytes(queueKey.getBytes());

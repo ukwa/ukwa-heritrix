@@ -44,7 +44,7 @@ services:
       - ./target/testing/heritrix/output:/heritrix/output
       - ./target/testing/heritrix/state:/heritrix/state
       - ./target/testing/heritrix/wren:/heritrix/wren
-      - ./target/testing/heritrix/scratch:/heritrix/scratch
+  #    - ./target/testing/heritrix/scratch:/heritrix/scratch
   #    - ./jobs:/jobs
 
   # Clamd virus scanning Service
@@ -66,7 +66,7 @@ services:
       LOG_RETENTION_HOURS: -1
       LOG_RETENTION_BYTES: -1
       NUM_PARTITIONS: 1
-      KAFKA_CREATE_TOPICS: "uris.tocrawl.fc:1024:1 --config=compression.type=snappy,uris.crawled.fc:128:1 --config=compression.type=snappy"
+      KAFKA_CREATE_TOPICS: "uris.tocrawl.fc:1024:1,uris.crawled.fc:128:1 --config=compression.type=snappy"
       LOG4J_LOGGER_KAFKA: WARN
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
