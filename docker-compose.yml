@@ -44,6 +44,7 @@ services:
       - ./target/testing/heritrix/output:/heritrix/output
       - ./target/testing/heritrix/state:/heritrix/state
       - ./target/testing/heritrix/wren:/heritrix/wren
+      - ./target/testing/heritrix/scratch:/heritrix/scratch
   #    - ./jobs:/jobs
 
   # Clamd virus scanning Service

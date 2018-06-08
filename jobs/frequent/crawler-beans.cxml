@@ -587,7 +587,7 @@
 		<property name="recorderInBufferBytes" value="524288" />
 		<property name="recorderOutBufferBytes" value="16384" />
 		<!-- property name="checkpointerPeriod" value="-1" / -->
-		<property name="scratchDir" value="/heritrix/scratch/#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/" />
+		<property name="scratchDir" value="/heritrix/scratch/#{systemEnvironment['HOSTNAME'] ?: 'host'}-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/" />
 	</bean>
 	
 	<!-- FRONTIER: Record of all URIs discovered and queued-for-collection -->
@@ -745,22 +745,22 @@
     
 	<!-- BDBMODULE: BDB-JE disk persistence manager -->
   <bean id="bdbFrontierBdb" class="org.archive.bdb.BdbModule">
-    <property name="dir" value="/heritrix/state/#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/frontier"/>
+    <property name="dir" value="/heritrix/state/#{systemEnvironment['HOSTNAME'] ?: 'host'}-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/frontier"/>
     <property name="cachePercent" value="30"/>
     <property name="expectedConcurrency" value="100"/>
   </bean>
   <bean id="bdbStatisticsBdb" class="org.archive.bdb.BdbModule">
-    <property name="dir" value="/heritrix/state/#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/statistics"/>
+    <property name="dir" value="/heritrix/state/#{systemEnvironment['HOSTNAME'] ?: 'host'}-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/statistics"/>
     <property name="cachePercent" value="30"/>
     <property name="expectedConcurrency" value="100"/>
   </bean>
   <bean id="bdbCookieStoreBdb" class="org.archive.bdb.BdbModule">
-    <property name="dir" value="/heritrix/state/#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/cookies"/>
+    <property name="dir" value="/heritrix/state/#{systemEnvironment['HOSTNAME'] ?: 'host'}-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/cookies"/>
     <property name="cachePercent" value="30"/>
     <property name="expectedConcurrency" value="100"/>
   </bean>
   <bean id="bdbServerCacheBdb" class="org.archive.bdb.BdbModule">
-    <property name="dir" value="/heritrix/state/#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/serverCache"/>
+    <property name="dir" value="/heritrix/state/#{systemEnvironment['HOSTNAME'] ?: 'host'}-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/serverCache"/>
     <property name="cachePercent" value="30"/>
     <property name="expectedConcurrency" value="100"/>
   </bean>
