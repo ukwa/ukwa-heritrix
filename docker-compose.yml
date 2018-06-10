@@ -65,8 +65,8 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       LOG_RETENTION_HOURS: -1
       LOG_RETENTION_BYTES: -1
-      NUM_PARTITIONS: 1
-      KAFKA_CREATE_TOPICS: "uris.tocrawl.fc:1024:1,uris.crawled.fc:128:1 --config=compression.type=snappy"
+      NUM_PARTITIONS: 128
+      KAFKA_CREATE_TOPICS: "uris.tocrawl.fc:128:1 --config=compression.type=snappy,uris.crawled.fc:64:1 --config=compression.type=snappy"
       LOG4J_LOGGER_KAFKA: WARN
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
