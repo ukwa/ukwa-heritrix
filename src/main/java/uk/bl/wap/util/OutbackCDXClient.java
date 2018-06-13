@@ -182,11 +182,20 @@ public class OutbackCDXClient {
 
     protected String buildURL(String url, int limit, boolean mostRecentFirst)
             throws URISyntaxException {
-        URIBuilder uriBuilder = new URIBuilder(this.endpoint)
-                .addParameter("url", url).addParameter("limit", "" + limit);
+        URIBuilder uriBuilder = new URIBuilder(this.endpoint);
+        uriBuilder.addParameter("limit", "" + limit);
+        uriBuilder.addParameter("matchType", "exact");
         if (mostRecentFirst) {
             uriBuilder.addParameter("sort", "reverse");
         }
+        // And the URI itself. Note that OutbackCDX treats URLs ending in * as
+        // prefix queries so we need to interfere here to stop that:
+        // See https://github.com/nla/outbackcdx/issues/14
+        if (url.endsWith("*")) {
+            url = url.replaceFirst("\\*$", "-asterisk");
+            logger.warning("Modified URL ending with `*`, now url=" + url);
+        }
+        uriBuilder.addParameter("url", url);
         return uriBuilder.build().toString();
     }
 
