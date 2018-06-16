@@ -4,6 +4,7 @@ services:
   # UKWA Heritrix
   heritrix:
     build: .
+    hostname: "h3w" # Set the hostname so the persistent files are in consistent locations
     ports:
       - "8443:8443"
     environment:

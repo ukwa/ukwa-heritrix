@@ -65,6 +65,9 @@
 				<!-- Begin by REJECTing all... -->
 				<bean class="org.archive.modules.deciderules.RejectDecideRule">
 				</bean>
+            
+                <!-- LIST MAIN ACCEPTANCE CRITERIA -->
+                
 				<!-- ...then ACCEPT those with +uk SURT prefixes... -->
                 <ref bean="surtPrefixSeedScope" />
 				<!-- ...and ACCEPT extensions likely to be associated/helper files... -->
@@ -78,7 +81,31 @@
 					<property name="regex" value="^.*[ER]+$" />
 				</bean>
 				<!-- ...  ACCEPT those on the same Domain (disabled by default)... -->
-				<ref bean="onDomainAccept" />
+				<ref bean="onDomainAccept" />            
+                <!-- ...always ACCEPT content hosted on servers that appear to be located in the UK... -->
+                <!-- This only makes sense in the broad/domain crawl (disabled by default)-->
+                <bean id="externalGeoLookupRule" class="uk.bl.wap.modules.deciderules.ExternalGeoLocationDecideRule">
+                  <property name="lookup">
+                    <ref bean="externalGeoLookup"/>
+                  </property>
+                  <property name="countryCodes">
+                    <list>
+                      <value>GB</value>
+                    </list>
+                  </property>
+                  <property name="lookupEveryUri" value="true"/>
+                    <property name="enabled" value="#{systemEnvironment['GEOIP_GB_ENABLED'] ?: false}" />
+                </bean>
+                <!-- ...ACCEPT known URL-shortening services -->
+                <bean class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
+                   <property name="decision" value="ACCEPT" />
+                   <property name="seedsAsSurtPrefixes" value="false" />
+                   <property name="surtsDumpFile" value="url.shorteners.dump" />
+                   <property name="surtsSourceFile" value="url.shorteners.txt" />
+                </bean>
+
+                <!-- LIST REJECTION/BAD-URI CRITERIA -->
+            
 				<!-- ...but REJECT those more than a configured link-hop-count from start... -->
 				<ref bean="hopsCountReject" />
 				<!-- ...and REJECT those from a configurable (initially empty) set of URI regexes... -->
@@ -98,13 +125,6 @@
                     <property name="max" value="1.6"/>
                 </bean>
                  -->
-				<!-- ...but ACCEPT URL-shortening services -->
-				<bean class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
-					<property name="decision" value="ACCEPT" />
-					<property name="seedsAsSurtPrefixes" value="false" />
-					<property name="surtsDumpFile" value="url.shorteners.dump" />
-					<property name="surtsSourceFile" value="url.shorteners.txt" />
-				</bean>
 				<!-- ...but REJECT those from a configurable set of REJECT SURTs... -->
 				<bean class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
 					<property name="decision" value="REJECT" />
@@ -113,21 +133,6 @@
 					<property name="surtsSourceFile" value="exclude.txt" />
 				</bean>
             
-				<!-- ...always ACCEPT content hosted on servers that appear to be located in the UK... -->
-		        <!-- This only makes sense in the broad/domain crawl: -->
-		        <bean id="externalGeoLookupRule" class="uk.bl.wap.modules.deciderules.ExternalGeoLocationDecideRule">
-		          <property name="lookup">
-		            <ref bean="externalGeoLookup"/>
-		          </property>
-		          <property name="countryCodes">
-		            <list>
-		              <value>GB</value>
-		            </list>
-		          </property>
-		          <property name="lookupEveryUri" value="true"/>
-                  <property name="enabled" value="#{systemEnvironment['GEOIP_GB_ENABLED'] ?: false}" />
-		        </bean>
-	  		    
 				<!-- ...but always ACCEPT those marked as prerequisitee for another URI... -->
 				<bean class="org.archive.modules.deciderules.PrerequisiteAcceptDecideRule">
 				</bean>
@@ -148,7 +153,7 @@
     </bean>
     <!-- ...but REJECT those more than a configured link-hop-count from start (modifiable via sheet)... -->
 	<bean id="hopsCountReject" class="org.archive.modules.deciderules.TooManyHopsDecideRule">
-		<property name="maxHops" value="20" />
+		<property name="maxHops" value="#{systemEnvironment['MAX_HOPS_DEFAULT'] ?: 20}" />
 	</bean>
 	<!-- ...and REJECT those from a configurable (initially empty) set of URI regexes... -->
 	<bean id="listRegexFilterOut" class="org.archive.modules.deciderules.MatchesListRegexDecideRule">
