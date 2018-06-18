@@ -82,7 +82,7 @@ services:
 
   # Kafka UI
   kafka-ui:
-    image: janschultecom/docker-trifecta
+    image: ukwa/docker-trifecta
     ports:
       - "9000:9000"
     environment:

@@ -218,6 +218,7 @@ public class KafkaUrlReceiver
                     "Running KafkaConsumer... :: group_id = " + getGroupId());
             // Until the end...
             try {
+                long count = 0;
                 // And now poll for records:
                 while (!closed.get()) {
                     try {
@@ -239,7 +240,13 @@ public class KafkaUrlReceiver
                                                 + record.value(),
                                         e);
                             }
-
+                            count += 1;
+                            if (count % 1000 == 0) {
+                                logger.info("Processed " + count
+                                        + " messages so far at offset "
+                                        + record.offset() + " of partition "
+                                        + record.partition());
+                            }
                         }
 
                     } catch (WakeupException e) {
