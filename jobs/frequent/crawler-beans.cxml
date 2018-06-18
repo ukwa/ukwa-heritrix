@@ -635,6 +635,7 @@
    <!-- Shared OutbackCDX client and configuration -->
     <bean id="outbackCDXClient" class="uk.bl.wap.util.OutbackCDXClient">
         <property name="endpoint" value="#{systemEnvironment['CDXSERVER_ENDPOINT'] ?: 'http://localhost:9090/fc'}"/>
+        <property name="socketTimeout" value="30000"/>
     </bean>
 	
 	<!-- 
