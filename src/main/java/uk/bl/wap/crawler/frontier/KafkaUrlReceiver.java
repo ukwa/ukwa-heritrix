@@ -169,6 +169,9 @@ public class KafkaUrlReceiver
         return isRunning;
     }
 
+    private long discardedCount = 0;
+    private long enqueuedCount = 0;
+
     /**
      * The maximum prefetch count to use, meaning the maximum number of messages
      * to be consumed without being acknowledged. Using 'null' would specify
@@ -243,9 +246,12 @@ public class KafkaUrlReceiver
                             count += 1;
                             if (count % 1000 == 0) {
                                 logger.info("Processed " + count
-                                        + " messages so far at offset "
-                                        + record.offset() + " of partition "
-                                        + record.partition());
+                                        + " messages so far. Last message offset="
+                                        + record.offset() + " partition="
+                                        + record.partition()
+                                        + ". Total enqueued="
+                                        + enqueuedCount + " discarded="
+                                        + discardedCount);
                             }
                         }
 
@@ -277,6 +283,7 @@ public class KafkaUrlReceiver
                     // Add a seed to the crawl:
                     if (curi.isSeed()) {
                         logger.info("Adding seed to crawl: " + curi);
+                        enqueuedCount++;
 
                         // Note that if we have already added a seed this does
                         // nothing:
@@ -316,8 +323,11 @@ public class KafkaUrlReceiver
                             logger.finest("Discarding URI " + curi
                                     + " with Status Code: "
                                     + statusAfterCandidateChain);
+                            discardedCount++;
                             // TODO Post discarded URIs to a separate queue?
                             // TODO OR do this in a candidates-chain processor?
+                        } else {
+                            enqueuedCount++;
                         }
                     }
                 } catch (URIException e) {
