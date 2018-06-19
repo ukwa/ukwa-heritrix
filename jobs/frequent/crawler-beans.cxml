@@ -108,6 +108,11 @@
             
 				<!-- ...but REJECT those more than a configured link-hop-count from start... -->
 				<ref bean="hopsCountReject" />
+                <!-- ...and REJECT those with 5 or more consequtive redirects... -->
+                <bean class="org.archive.modules.deciderules.HopsPathMatchesRegexDecideRule">
+                  <property name="decision" value="REJECT"/>
+                  <property name="regex" value=".*RRRRR$"/>
+                </bean>
 				<!-- ...and REJECT those from a configurable (initially empty) set of URI regexes... -->
 				<ref bean="listRegexFilterOut" />
 				<!-- ...and REJECT those with suspicious repeating path-segments... -->
