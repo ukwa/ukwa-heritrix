@@ -206,7 +206,8 @@
 		</property>
 	</bean>
 	<bean id="quotaEnforcer" class="org.archive.crawler.prefetch.QuotaEnforcer">
-		<property name="serverMaxSuccessKb" value="524288" />
+        <!-- Default quota of 500MiB (can be overridden in sheets too, use -1 for no quota): -->
+		<property name="serverMaxSuccessKb" value="#{systemEnvironment['QUOTA_SERVER_MAX_SUCCESS_KB'] ?: 524288}" />
 		<!-- This will log all out-of-quota URLs rather than just retiring the queue. -->
      	<property name="forceRetire" value="false"/>
 	</bean>
@@ -542,6 +543,7 @@
   -->
      <!-- This provides a crawl log feed to a queue - note that you'll need to set up a binding that matches these parameters to a queue -->
      <bean id="toCrawlFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedToCrawlFeed">
+       <property name="emitInScopeOnly" value="#{systemEnvironment['KAFKA_TOCRAWL_IN_SCOPE_ONLY'] ?: false"/>
        <property name="topic" value="#{systemEnvironment['KAFKA_TOCRAWL_TOPIC'] ?: 'uris.tocrawl'}" />
        <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
        <property name="extraFields">

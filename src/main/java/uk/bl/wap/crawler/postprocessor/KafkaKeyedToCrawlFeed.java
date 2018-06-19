@@ -33,6 +33,16 @@ import com.google.common.cache.CacheBuilder;
  */
 public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
     
+    private boolean emitInScopeOnly = false;
+
+    public boolean isEmitInScopeOnly() {
+        return emitInScopeOnly;
+    }
+
+    public void setEmitInScopeOnly(boolean emitInScopeOnly) {
+        this.emitInScopeOnly = emitInScopeOnly;
+    }
+
     protected DecideRule scope;
 
     public DecideRule getScope() {
@@ -137,8 +147,17 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
             // URIs, or URIs already sent:
             if (this.shouldEmit(candidate) && !candidate.isPrerequisite()
                     && !sentURIs.contains(candidate.getURI())) {
-                // Pass to Kafka queue:
-                sendToKafka(getTopic(), curi, candidate);
+
+                // Only emit URLs that are in scope, if configured to do so:
+                if (this.emitInScopeOnly
+                        && this.getScope().accepts(candidate)) {
+                    // Pass to Kafka queue:
+                    sendToKafka(getTopic(), curi, candidate);
+                } else {
+                    // TODO Log discarded URLs for analysis?:
+                    // sendToKafka("uris-outofscope", curi, candidate);
+                }
+
                 // Record this diverted URL string so it will only be sent once:
                 sentURIs.add(candidate.getURI());
                 // Record this diverted URL so it will not be queued
