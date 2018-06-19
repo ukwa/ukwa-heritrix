@@ -39,6 +39,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -193,6 +194,8 @@ public class KafkaUrlReceiver
             props.put("enable.auto.commit", "true");
             props.put("auto.commit.interval.ms", "1000");
             props.put("session.timeout.ms", "30000");
+            props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG,
+                    256 * 1024); // Default is 50MB
             props.put("max.poll.records", "1000");
             props.put("auto.offset.reset", "earliest");
             props.put("key.deserializer", StringDeserializer.class.getName());
@@ -327,7 +330,11 @@ public class KafkaUrlReceiver
                             // TODO Post discarded URIs to a separate queue?
                             // TODO OR do this in a candidates-chain processor?
                         } else {
+                            // Was successfully enqueued:
                             enqueuedCount++;
+                            if (enqueuedCount % 1000 == 0) {
+                                logger.info("Sampling enqueued URLs: " + curi);
+                            }
                         }
                     }
                 } catch (URIException e) {

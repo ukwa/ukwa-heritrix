@@ -70,6 +70,7 @@
    </bean>
    
    <!-- Unlimited Crawl -->
+   <!-- TO BE CONFIGURED DYNAMICALLY? -->
    <bean class="org.archive.crawler.spring.SurtPrefixesSheetAssociation">
       <property name="surtPrefixes">
          <list>
@@ -133,6 +134,7 @@
    </bean>
    
    <!-- Ignore robots.txt -->
+   <!-- TO BE CONFIGURED DYNAMICALLY:
    <bean class="org.archive.crawler.spring.SurtPrefixesSheetAssociation">
       <property name="surtPrefixes">
          <list>
@@ -147,6 +149,7 @@
          </list>
       </property>
    </bean>
+    -->
    
    <!-- Park Domains IP addresses (Extra Polite and Limited Crawl)-->
    <bean id="parkedDomains"
@@ -227,6 +230,7 @@
    </bean>
    
    <!-- Unlimited Hops -->
+   <!-- TO BE CONFIGURED DYNAMICALLY:
    <bean class="org.archive.crawler.spring.SurtPrefixesSheetAssociation">
       <property name="surtPrefixes">
          <list>
@@ -239,6 +243,7 @@
          </list>
       </property>
    </bean>
+    -->
    
    <!-- Not Javascript Extraction (TODO Deprecated anyway?) -->
    <bean class="org.archive.crawler.spring.SurtPrefixesSheetAssociation">
