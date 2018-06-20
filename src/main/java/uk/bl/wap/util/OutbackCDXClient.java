@@ -11,7 +11,6 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
@@ -28,6 +27,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.archive.format.cdx.CDXLine;
+import org.archive.format.cdx.StandardCDXLineFactory;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.recrawl.FetchHistoryHelper;
@@ -52,6 +53,9 @@ public class OutbackCDXClient {
 
     private String endpoint = "http://localhost:9090/fc";// ?url=";//
                                                          // "http://crawl-index/timeline?url=";
+
+    protected StandardCDXLineFactory cdxLineFactory = new StandardCDXLineFactory(
+            "cdx11");
 
     public String getEndpoint() {
         return endpoint;
@@ -199,7 +203,7 @@ public class OutbackCDXClient {
         return uriBuilder.build().toString();
     }
 
-    public InputStream getCDX(String qurl, int limit, boolean mostRecentFirst)
+    private InputStream getCDX(String qurl, int limit, boolean mostRecentFirst)
             throws InterruptedException, IOException, URISyntaxException {
         final String url = buildURL(qurl, limit, mostRecentFirst);
         logger.fine("GET " + url);
@@ -254,6 +258,9 @@ public class OutbackCDXClient {
      * content-digest=sha1:G7HRM7BGOKSKMSXZAHMUQTTV53QOFSMK,
      * fetch-began-time=1486853587000}
      * 
+     * FIXME This needs to pull more than one line and filter for an exact URL
+     * match.
+     * 
      * @param is
      * @return
      * @throws IOException
@@ -263,68 +270,44 @@ public class OutbackCDXClient {
     public HashMap<String, Object> getLastCrawl(String qurl)
             throws IOException, InterruptedException, URISyntaxException {
         // Perform the query:
-        InputStream is = this.getCDX(qurl, 1, true);
+        InputStream is = this.getCDX(qurl, 100, true);
         if (is == null) {
             return null;
         }
-        // read CDX lines, save most recent (at the end) hash.
-        ByteBuffer buffer = ByteBuffer.allocate(32);
-        ByteBuffer tsbuffer = ByteBuffer.allocate(14);
-        int field = 0;
-        int c;
-        do {
-            c = is.read();
-            if (field == 1) {
-                // 14-digits timestamp
-                tsbuffer.clear();
-                while (Character.isDigit(c) && tsbuffer.remaining() > 0) {
-                    tsbuffer.put((byte) c);
-                    c = is.read();
-                }
-                if (c != ' ' || tsbuffer.position() != 14) {
-                    tsbuffer.clear();
-                }
-                // fall through to skip the rest
-            } else if (field == 5) {
-                buffer.clear();
-                while ((c >= 'A' && c <= 'Z' || c >= '0' && c <= '9')
-                        && buffer.remaining() > 0) {
-                    buffer.put((byte) c);
-                    c = is.read();
-                }
-                if (c != ' ' || buffer.position() != 32) {
-                    buffer.clear();
-                }
-                // fall through to skip the rest
+        
+        // read CDX lines, recover the most recent (first) hash and timestamp:
+        // Only permit exact URL matches, skip revisit records.
+        String hash = null;
+        String timestamp = null;
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+        String cdxLine;
+        while ((cdxLine = br.readLine()) != null) {
+            CDXLine line = cdxLineFactory.createStandardCDXLine(cdxLine);
+            if (line.getMimeType().equals("warc/revisit")) {
+                continue;
             }
-            while (true) {
-                if (c == -1) {
-                    break;
-                } else if (c == '\n') {
-                    field = 0;
-                    break;
-                } else if (c == ' ') {
-                    field++;
-                    break;
-                }
-                c = is.read();
+            if (line.getOriginalUrl().equals(qurl)) {
+                timestamp = line.getTimestamp();
+                hash = line.getDigest();
+                break;
             }
-        } while (c != -1);
+        }
 
         // Shut down input stream
+        ArchiveUtils.closeQuietly(br);
         if (is != null)
             ArchiveUtils.closeQuietly(is);
 
         // Put into usable form:
         HashMap<String, Object> info = new HashMap<String, Object>();
-        if (buffer.remaining() == 0) {
+        if (hash != null) {
             info.put(RecrawlAttributeConstants.A_CONTENT_DIGEST,
-                    contentDigestScheme + new String(buffer.array()));
+                    contentDigestScheme + hash);
         }
-        if (tsbuffer.remaining() == 0) {
+        if (timestamp!= null) {
             try {
                 long ts = DateUtils
-                        .parse14DigitDate(new String(tsbuffer.array()))
+                        .parse14DigitDate(timestamp)
                         .getTime();
                 // A_TIMESTAMP has been used for sorting history long before
                 // A_FETCH_BEGAN_TIME
