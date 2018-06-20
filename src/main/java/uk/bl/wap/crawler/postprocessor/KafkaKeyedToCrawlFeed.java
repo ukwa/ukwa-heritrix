@@ -149,13 +149,17 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
                     && !sentURIs.contains(candidate.getURI())) {
 
                 // Only emit URLs that are in scope, if configured to do so:
-                if (this.emitInScopeOnly
-                        && this.getScope().accepts(candidate)) {
-                    // Pass to Kafka queue:
-                    sendToKafka(getTopic(), curi, candidate);
+                if (this.emitInScopeOnly) {
+                    if (this.getScope().accepts(candidate)) {
+                        // Pass to Kafka queue:
+                        sendToKafka(getTopic(), curi, candidate);
+                    } else {
+                        // TODO Log discarded URLs for analysis?:
+                        // sendToKafka("uris-outofscope", curi, candidate);
+                    }
                 } else {
-                    // TODO Log discarded URLs for analysis?:
-                    // sendToKafka("uris-outofscope", curi, candidate);
+                    // Ignore scope rules and emit all non-prerequisites:
+                    sendToKafka(getTopic(), curi, candidate);
                 }
 
                 // Record this diverted URL string so it will only be sent once:
