@@ -548,7 +548,7 @@
   -->
      <!-- This provides a crawl log feed to a queue - note that you'll need to set up a binding that matches these parameters to a queue -->
      <bean id="toCrawlFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedToCrawlFeed">
-       <property name="emitInScopeOnly" value="#{systemEnvironment['KAFKA_TOCRAWL_IN_SCOPE_ONLY'] ?: false"/>
+       <property name="emitInScopeOnly" value="#{systemEnvironment['KAFKA_TOCRAWL_IN_SCOPE_ONLY'] ?: false}"/>
        <property name="topic" value="#{systemEnvironment['KAFKA_TOCRAWL_TOPIC'] ?: 'uris.tocrawl'}" />
        <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
        <property name="extraFields">
