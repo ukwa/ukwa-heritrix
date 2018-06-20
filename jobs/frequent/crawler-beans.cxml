@@ -53,6 +53,7 @@
       <property name="bootstrapServers" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
       <property name="groupId" value="crawlers" />
       <property name="topic" value="#{systemEnvironment['KAFKA_TOCRAWL_TOPIC'] ?: 'uris.tocrawl'}" />
+      <property name="seekToBeginning" value="#{systemEnvironment['KAFKA_SEEK_TO_BEGINNING'] ?: true}"/>
     </bean>
    
 	

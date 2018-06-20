@@ -163,6 +163,14 @@ public class KafkaUrlReceiver
 
     private boolean seekToBeginning = true;
 
+    public boolean isSeekToBeginning() {
+        return seekToBeginning;
+    }
+
+    public void setSeekToBeginning(boolean seekToBeginning) {
+        this.seekToBeginning = seekToBeginning;
+    }
+
     protected boolean isRunning = false; 
 
     @Override
