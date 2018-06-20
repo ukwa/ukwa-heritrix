@@ -37,9 +37,13 @@ public class OutbackCDXPersistStoreProcessor
         // 2. Also, do not push this even to the CDX server if we are just
         // awaiting a prerequisite (-50:DEFERRED).
         //
+        // 3. Do not push this record if the condition is something we wish to
+        // treat as a transient within the overall recrawl time, for example we
+        // will allow a retry later if it's hit a quota:
 
         if (curi.getFetchStatus() != FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR
-                && curi.getFetchStatus() != FetchStatusCodes.S_DEFERRED) {
+                && curi.getFetchStatus() != FetchStatusCodes.S_DEFERRED
+                && curi.getFetchStatus() != FetchStatusCodes.S_BLOCKED_BY_QUOTA) {
             this.outbackCDXClient.putUri(curi);
         }
 
