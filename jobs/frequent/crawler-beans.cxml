@@ -595,7 +595,7 @@
 	<!-- CRAWLCONTROLLER: Control interface, unifying context -->
 	<bean id="crawlController" class="org.archive.crawler.framework.CrawlController">
 		<property name="maxToeThreads" value="#{systemEnvironment['MAX_TOE_THREADS'] ?: 200}" />
-		<property name="pauseAtStart" value="false" />
+		<property name="pauseAtStart" value="#{systemEnvironment['PAUSE_AT_START'] ?: false}" />
 		<property name="runWhileEmpty" value="true" />
 		<property name="recorderInBufferBytes" value="524288" />
 		<property name="recorderOutBufferBytes" value="16384" />
