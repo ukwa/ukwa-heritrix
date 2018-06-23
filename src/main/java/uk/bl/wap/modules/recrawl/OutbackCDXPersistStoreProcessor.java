@@ -39,10 +39,12 @@ public class OutbackCDXPersistStoreProcessor
         //
         // 3. Do not push this record if the condition is something we wish to
         // treat as a transient within the overall recrawl time, for example we
-        // will allow a retry later if it's hit a quota:
+        // will allow a retry later if it's hit a quota. Similarly, if the URL
+        // gets dropped from scope e.g. by the recentlySeen decide rule.
 
         if (curi.getFetchStatus() != FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR
                 && curi.getFetchStatus() != FetchStatusCodes.S_DEFERRED
+                && curi.getFetchStatus() != FetchStatusCodes.S_OUT_OF_SCOPE
                 && curi.getFetchStatus() != FetchStatusCodes.S_BLOCKED_BY_QUOTA) {
             this.outbackCDXClient.putUri(curi);
         }

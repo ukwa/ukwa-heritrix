@@ -139,6 +139,9 @@
 					<property name="surtsSourceFile" value="exclude.txt" />
 				</bean>
             
+                <!-- ...and REJECT those that we've crawled recently enough... -->
+                <ref bean="recentlySeen"/>
+            
 				<!-- ...but always ACCEPT those marked as prerequisitee for another URI... -->
 				<bean class="org.archive.modules.deciderules.PrerequisiteAcceptDecideRule">
 				</bean>
@@ -173,6 +176,16 @@
     <bean id="externalGeoLookup" class="uk.bl.wap.modules.deciderules.ExternalGeoLookup">
         <property name="database" value="#{ systemEnvironment['GEOLITE2_CITY_MMDB_LOCATION'] ?: '' }/GeoLite2-City.mmdb"/>
     </bean>
+    
+   <!-- RECENTLY SEEN: Used by frontier to remember already-included URIs --> 
+   <bean id="recentlySeen" class="uk.bl.wap.modules.deciderules.OutbackCDXRecentlySeenDecideRule">
+       <!--  If recently seen, REJECT -->
+       <property name="decision" value="REJECT" />
+       <!-- Time to elapse before re-crawling a URI is allowed (in seconds, defaults to 365 days): -->
+       <property name="recentlySeenTTLsecs" value="31536000"/>
+       <!-- reference to shared OutbackCDX configuration: -->
+       <property name="outbackCDXClient" ref="outbackCDXClient"/>
+   </bean>
  
 	<!-- 
 		PROCESSING CHAINS
@@ -232,7 +245,7 @@
 	<!-- FETCH CHAIN --> 
 	<!-- processors declared as named beans -->
 	<bean id="preselector" class="org.archive.crawler.prefetch.Preselector">
-		<property name="recheckScope" value="false" />
+		<property name="recheckScope" value="true" />
 		<property name="blockAll" value="false" />
 		<property name="blockByRegex" value="" />
 		<property name="allowByRegex" value="" />
@@ -363,7 +376,10 @@
 				<ref bean="preselector"/>
 				<!-- ...then verify or trigger prerequisite URIs fetched, allow crawling... -->
 				<ref bean="preconditions"/>
+                <!-- ...load hash of earlier download for de-duplication. -->
+                <!-- NOT required as the recentlySeen filter does this
 				<ref bean="persistLoadProcessor"/>
+                 -->
 				<!-- ...fetch if DNS URI... -->
 				<ref bean="fetchDns"/>
 				<!-- ...use web browser rendering service for some URIs - skips the rest of the chain if it works -->
@@ -634,13 +650,11 @@
 	</bean>
 	
 	<!-- URI UNIQ FILTER: Used by frontier to remember already-included URIs --> 
-	<bean id="uriUniqFilter" class="uk.bl.wap.modules.uriuniqfilters.OutbackCDXRecentlySeenUriUniqFilter">
-       <!-- Time to elapse before re-crawling a URI is allowed (in seconds, defaults to 365 days): -->
-       <property name="recentlySeenTTLsecs" value="31536000"/>
-       <!-- reference to shared OutbackCDX configuration: -->
-       <property name="outbackCDXClient" ref="outbackCDXClient"/>
+	<bean id="uriUniqFilter" class="org.archive.crawler.util.NoopUriUniqFilter">
+       <!-- We accept all URIs that get past the Decide Rules, which now handle the 'not recently seen' criteria. -->
 	</bean>
-   <!-- Shared OutbackCDX client and configuration -->
+   
+    <!-- Shared OutbackCDX client and configuration -->
     <bean id="outbackCDXClient" class="uk.bl.wap.util.OutbackCDXClient">
         <property name="endpoint" value="#{systemEnvironment['CDXSERVER_ENDPOINT'] ?: 'http://localhost:9090/fc'}"/>
         <property name="socketTimeout" value="30000"/>

@@ -105,12 +105,15 @@ public class OutbackCDXRecentlySeenUriUniqFilter
             long currentTime = System.currentTimeMillis() / 1000;
             // If we've never seen this before, or if enough time has elapsed
             // since we last saw it:
-            LOGGER.finest("Got elapsed: " + (currentTime - ts) + " versus TTL "
-                    + ttl_s);
             if (ts == 0l || currentTime - ts > ttl_s) {
                 this.times.put(uri, currentTime);
+                LOGGER.finest("Got elapsed: " + (currentTime - ts)
+                        + " versus TTL " + ttl_s + " HENCE ENQUEUE");
                 return true;
             } else {
+                LOGGER.finest("Got elapsed: " + (currentTime - ts)
+                        + " versus TTL " + ttl_s + " HENCE IGNORE");
+                new Exception().printStackTrace();
                 return false;
             }
         } catch (ExecutionException e) {

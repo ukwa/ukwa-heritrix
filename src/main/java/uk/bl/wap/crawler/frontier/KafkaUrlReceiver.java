@@ -323,7 +323,9 @@ public class KafkaUrlReceiver
                     } else {
 
                         // Attempt to add this URI to the crawl:
-                        logger.fine("Adding URI to crawl: " + curi);
+                        logger.fine("Adding URI to crawl: " + curi + " "
+                                + curi.getPathFromSeed() + " "
+                                + curi.forceFetch());
                         int statusAfterCandidateChain = candidates
                                 .runCandidateChain(curi, null);
 

@@ -38,6 +38,8 @@ import org.archive.util.DateUtils;
 import org.archive.util.MimetypeUtils;
 import org.json.JSONObject;
 
+import com.esotericsoftware.minlog.Log;
+
 import uk.bl.wap.modules.recrawl.OutbackCDXPersistLoadProcessor;
 
 /**
@@ -318,6 +320,8 @@ public class OutbackCDXClient {
                 info.put(FetchHistoryHelper.A_TIMESTAMP, ts);
                 info.put(CoreAttributeConstants.A_FETCH_BEGAN_TIME, ts);
             } catch (ParseException ex) {
+                Log.error(
+                        "Could not parse '" + timestamp + " as 14-digit date!");
             }
         }
         return info.isEmpty() ? null : info;
