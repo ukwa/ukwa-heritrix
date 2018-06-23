@@ -57,3 +57,12 @@ kafka-console-consumer --bootstrap-server kafka:9092 --topic frequent-crawl-log 
 
 
 https://webarchive.jira.com/wiki/spaces/Heritrix/pages/5735014/Heritrix+3.x+API+Guide
+
+Changes
+-------
+
+* 2.1.0:
+    * Recently Seen functionality moved to a DecideRule, allowing us to use Heritrix's `recheckScope` feature to prevent recrawling of URLs that have been crawled since the original request was enqueued.
+    * The OutbackCDXRecentlySeenDecideRule implementation also stores the last hash, so the `OutbackCDXPersistLoadProcessor` is no longer needed.
+* 2.0.0:
+    * Switched to Recently Seen unique URI filter, backed by OutbackCDX.
