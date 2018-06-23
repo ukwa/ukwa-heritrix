@@ -72,6 +72,8 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.Lifecycle;
 
+import uk.bl.wap.modules.deciderules.RecentlySeenDecideRule;
+
 /**
  * Based on
  * /heritrix-contrib/src/main/java/org/archive/crawler/frontier/AMQPUrlReceiver.java
@@ -524,6 +526,13 @@ public class KafkaUrlReceiver
                 sheetNames.add(jsn.getString(i));
             }
             this.setSheetAssociations(curi, sheetNames);
+        }
+
+        // Set up recrawl interval, if specified:
+        if (jo.has("recrawlInterval")) {
+            int recrawlInterval = jo.getInt("recrawlInterval");
+            curi.getData().put(RecentlySeenDecideRule.RECRAWL_INTERVAL,
+                    recrawlInterval);
         }
 
         /*

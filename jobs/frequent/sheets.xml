@@ -382,29 +382,28 @@
       </property>
    </bean>
 
-   <!-- Re-crawl Frequency Sheets: Recently Seen URI Filter TTL (Time To 
-      Live) in seconds. -->
+   <!-- Re-crawl Frequency Sheets: Recently-Seen Recrawl Interval in seconds. -->
       
    <bean id="recrawl-1hr" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
             <!-- This value of 3600 means any URLs in this sheet will be 
                re-crawled hourly. -->
-            <entry key="recentlySeen.recentlySeenTTLsecs" value="3600" />
+            <entry key="recentlySeen.recrawlInterval" value="3600" />
          </map>
       </property>
    </bean>
    <bean id="recrawl-1day" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-            <entry key="recentlySeen.recentlySeenTTLsecs" value="86400" />
+            <entry key="recentlySeen.recrawlInterval" value="86400" />
          </map>
       </property>
    </bean>
    <bean id="recrawl-1week" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-            <entry key="recentlySeen.recentlySeenTTLsecs" value="604800" />
+            <entry key="recentlySeen.recrawlInterval" value="604800" />
          </map>
       </property>
    </bean>
@@ -412,35 +411,35 @@
       <property name="map">
          <map>
             <!-- a 27 day re-crawl useful for monthly crawls -->
-            <entry key="recentlySeen.recentlySeenTTLsecs" value="2332800" />
+            <entry key="recentlySeen.recrawlInterval" value="2332800" />
          </map>
       </property>
    </bean>
    <bean id="recrawl-4weeks" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-            <entry key="recentlySeen.recentlySeenTTLsecs" value="2419200" />
+            <entry key="recentlySeen.recrawlInterval" value="2419200" />
          </map>
       </property>
    </bean>
    <bean id="recrawl-12weeks" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-            <entry key="recentlySeen.recentlySeenTTLsecs" value="7257600" />
+            <entry key="recentlySeen.recrawlInterval" value="7257600" />
          </map>
       </property>
    </bean>
    <bean id="recrawl-24weeks" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-            <entry key="recentlySeen.recentlySeenTTLsecs" value="14515200" />
+            <entry key="recentlySeen.recrawlInterval" value="14515200" />
          </map>
       </property>
    </bean>
    <bean id="recrawl-365days" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-            <entry key="recentlySeen.recentlySeenTTLsecs" value="31536000" />
+            <entry key="recentlySeen.recrawlInterval" value="31536000" />
          </map>
       </property>
    </bean>

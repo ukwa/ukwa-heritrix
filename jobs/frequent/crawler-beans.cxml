@@ -182,7 +182,7 @@
        <!--  If recently seen, REJECT -->
        <property name="decision" value="REJECT" />
        <!-- Time to elapse before re-crawling a URI is allowed (in seconds, defaults to 365 days): -->
-       <property name="recentlySeenTTLsecs" value="31536000"/>
+       <property name="recrawlInterval" value="31536000"/>
        <!-- reference to shared OutbackCDX configuration: -->
        <property name="outbackCDXClient" ref="outbackCDXClient"/>
    </bean>

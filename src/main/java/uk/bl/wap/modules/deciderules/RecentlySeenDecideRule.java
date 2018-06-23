@@ -29,6 +29,8 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
     public static final int DAY = HOUR * 24;
     public static final int WEEK = DAY * 7;
 
+    public static final String RECRAWL_INTERVAL = "recrawlInterval";
+
     // Hash function used for building keys:
     private HashFunction hf = Hashing.murmur3_128();
 
@@ -50,23 +52,23 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
     }
 
     {
-        setRecentlySeenTTLsecs(52 * WEEK);
+        setRecrawlInterval(52 * WEEK);
     }
 
     /**
      * @return the TTL (seconds)
      */
-    public int getRecentlySeenTTLsecs() {
-        return (Integer) kp.get("recentlySeenTTLsecs");
+    public int getRecrawlInterval() {
+        return (Integer) kp.get(RECRAWL_INTERVAL);
     }
 
     /**
      * @param recentlySeenTTLsecs
      *            the TTL (in seconds) to set
      */
-    public void setRecentlySeenTTLsecs(int recentlySeenTTLsecs) {
+    public void setRecrawlInterval(int recentlySeenTTLsecs) {
         LOGGER.warning("Setting TTL to " + recentlySeenTTLsecs);
-        kp.put("recentlySeenTTLsecs", recentlySeenTTLsecs);
+        kp.put(RECRAWL_INTERVAL, recentlySeenTTLsecs);
     }
 
     /**
@@ -92,7 +94,7 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
      * @return TTL (in seconds)
      */
     private Integer getTTLForUrl(String url) {
-        int ttl = this.getRecentlySeenTTLsecs();
+        int ttl = this.getRecrawlInterval();
         LOGGER.fine("For " + url + " got TTL(s) " + ttl);
         return ttl;
     }
@@ -109,12 +111,13 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
         } else {
             key = uri;
         }
-        int ttl_s = getTTLForUrl(uri);
-        //
-        // Long ttl = (Long) curi.getData().get("TTL");
-        //
         // Allow entries to expire after a while, defaults, ranges, etc,
         // surt-prefixed.
+        int ttl_s = getTTLForUrl(uri);
+        // Allow per-curi override:
+        if (curi.getData().containsKey(RECRAWL_INTERVAL)) {
+            ttl_s = (int) curi.getData().get(RECRAWL_INTERVAL);
+        }
         return evaluateWithTTL(key, curi, ttl_s);
     }
 
