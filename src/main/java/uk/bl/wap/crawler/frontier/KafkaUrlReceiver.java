@@ -20,7 +20,10 @@
 package uk.bl.wap.crawler.frontier;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -62,6 +65,8 @@ import org.archive.modules.net.ServerCache;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.spring.KeyedProperties;
+import org.archive.util.ArchiveUtils;
+import org.archive.util.Reporter;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -72,6 +77,7 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.Lifecycle;
 
+import uk.bl.wap.crawler.postprocessor.KafkaKeyedDiscardedFeed;
 import uk.bl.wap.modules.deciderules.RecentlySeenDecideRule;
 
 /**
@@ -85,7 +91,7 @@ import uk.bl.wap.modules.deciderules.RecentlySeenDecideRule;
  */
 public class KafkaUrlReceiver
         implements Lifecycle, ApplicationContextAware,
-        ApplicationListener<CrawlStateEvent>, Checkpointable {
+        ApplicationListener<CrawlStateEvent>, Checkpointable, Reporter {
 
     @SuppressWarnings("unused")
     private static final long serialVersionUID = 2423423423894L;
@@ -136,6 +142,27 @@ public class KafkaUrlReceiver
         this.serverCache = serverCache;
     }
 
+    protected KafkaKeyedDiscardedFeed discardedUriFeed;
+
+    public KafkaKeyedDiscardedFeed getDiscardedUriFeed() {
+        return discardedUriFeed;
+    }
+
+    @Autowired
+    public void setDiscardedUriFeed(KafkaKeyedDiscardedFeed discardedUriFeed) {
+        this.discardedUriFeed = discardedUriFeed;
+    }
+
+    private boolean discardedUriFeedEnabled = false;
+
+    public boolean isDiscardedUriFeedEnabled() {
+        return discardedUriFeedEnabled;
+    }
+
+    public void setDiscardedUriFeedEnabled(boolean discardedUriFeedEnabled) {
+        this.discardedUriFeedEnabled = discardedUriFeedEnabled;
+    }
+
     protected String bootstrapServers = "localhost:9092";
     public String getBootstrapServers() {
         return this.bootstrapServers;
@@ -182,6 +209,9 @@ public class KafkaUrlReceiver
 
     private long discardedCount = 0;
     private long enqueuedCount = 0;
+
+    // For reporting on last-known position on different partitions:
+    private Map<Integer, Long> currentOffsets = new HashMap<Integer, Long>();
 
     /**
      * The maximum prefetch count to use, meaning the maximum number of messages
@@ -257,6 +287,8 @@ public class KafkaUrlReceiver
                                         e);
                             }
                             count += 1;
+                            currentOffsets.put(record.partition(),
+                                    record.offset());
                             if (count % 1000 == 0) {
                                 logger.info("Processed " + count
                                         + " messages so far. Last message offset="
@@ -339,8 +371,10 @@ public class KafkaUrlReceiver
                                     + " with Status Code: "
                                     + statusAfterCandidateChain);
                             discardedCount++;
-                            // TODO Post discarded URIs to a separate queue?
-                            // TODO OR do this in a candidates-chain processor?
+                            // n.b. The discarded URIs streamed out here:
+                            if (discardedUriFeedEnabled) {
+                                discardedUriFeed.doInnerProcess(curi);
+                            }
                         } else {
                             // Was successfully enqueued:
                             enqueuedCount++;
@@ -643,4 +677,40 @@ public class KafkaUrlReceiver
         this.seekToBeginning = false;
 
     }
+
+    /* Reporter support */
+
+    @Override
+    public void reportTo(PrintWriter writer) throws IOException {
+        writer.print("Kafka URL Receiver report - "
+                + ArchiveUtils.get12DigitDate() + "\n");
+        writer.println(" enqueued: " + this.enqueuedCount);
+        writer.println(" discarded: " + this.discardedCount);
+        writer.println("\n Partition Offsets:");
+        List<Integer> keys = new ArrayList<Integer>(currentOffsets.keySet());
+        Collections.sort(keys);
+        for (Integer partition : keys) {
+            writer.println(
+                    "  partition: " + partition + ", offset: "
+                            + currentOffsets.get(partition));
+        }
+        writer.println();
+    }
+
+    @Override
+    public void shortReportLineTo(PrintWriter pw) throws IOException {
+        pw.println("Kafka URL Receiver Report Line");
+
+    }
+
+    @Override
+    public Map<String, Object> shortReportMap() {
+        return null;
+    }
+
+    @Override
+    public String shortReportLegend() {
+        return "Kafka URL Receiver Report Legend";
+    }
+
 }

@@ -49,12 +49,19 @@
 	</bean>
    
     <!-- a 'top-level' bean that listens for URLs from Kafka -->
-    <bean class="uk.bl.wap.crawler.frontier.KafkaUrlReceiver">
+    <bean id="kafkaUrlReceiver" class="uk.bl.wap.crawler.frontier.KafkaUrlReceiver">
       <property name="bootstrapServers" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
       <property name="groupId" value="crawlers" />
       <property name="topic" value="#{systemEnvironment['KAFKA_TOCRAWL_TOPIC'] ?: 'uris.tocrawl'}" />
       <property name="seekToBeginning" value="#{systemEnvironment['KAFKA_SEEK_TO_BEGINNING'] ?: true}"/>
+      <property name="discardedUriFeedEnabled" value="#{systemEnvironment['KAFKA_DISCARDED_FEED_ENABLED'] ?: false}"/>
     </bean>
+    <!-- This allows the collection of a separate crawl-log of the out-of-scope URIs. It is called from kafkaUrlReceiver -->
+    <bean id="discardedUriFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedDiscardedFeed">
+        <property name="topic" value="#{systemEnvironment['KAFKA_DISCARDED_TOPIC'] ?: 'uris.discarded'}" />
+        <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
+    </bean>
+    
    
 	
 	<!-- SCOPE: rules for which discovered URIs to crawl; order is very 
@@ -177,7 +184,7 @@
         <property name="database" value="#{ systemEnvironment['GEOLITE2_CITY_MMDB_LOCATION'] ?: '' }/GeoLite2-City.mmdb"/>
     </bean>
     
-   <!-- RECENTLY SEEN: Used by frontier to remember already-included URIs --> 
+   <!-- RECENTLY SEEN: Used to de-scope already-crawled URIs --> 
    <bean id="recentlySeen" class="uk.bl.wap.modules.deciderules.OutbackCDXRecentlySeenDecideRule">
        <!--  If recently seen, REJECT -->
        <property name="decision" value="REJECT" />
@@ -236,7 +243,6 @@
 			<list>
 				<!-- apply scoping rules to each individual candidate URI... -->
 				<ref bean="candidateScoper"/>
-				<!-- ...then prepare those ACCEPTed for enqueuing to frontier. -->
 				<ref bean="preparer"/>
 			</list>
 		</property>
@@ -517,16 +523,17 @@
 		<property name="writeRevisitForIdenticalDigests" value="true" />
 		<property name="writeRevisitForNotModified" value="false" />
 	</bean>
-  <!-- This provides a crawl log feed to a queue - note that you'll need to set up a binding that matches these parameters to a queue -->
-  <bean id="crawlLogFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedCrawlLogFeed">
-    <property name="topic" value="#{systemEnvironment['KAFKA_CRAWLED_TOPIC'] ?: 'uris.crawled'}" />
-    <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
-    <property name="extraFields">
-        <map>
-          <entry key="CRAWL_NAME" value="#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}"/>
-        </map>
-    </property>
-  </bean>
+    <!-- This provides a crawl log feed to a queue - note that you'll need to set up a binding that matches these parameters to a queue -->
+    <bean id="crawlLogFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedCrawlLogFeed">
+      <property name="topic" value="#{systemEnvironment['KAFKA_CRAWLED_TOPIC'] ?: 'uris.crawled'}" />
+      <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
+      <property name="extraFields">
+          <map>
+            <entry key="CRAWL_NAME" value="#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}"/>
+          </map>
+      </property>
+    </bean>
+  
   <!-- This spots documents (e.g. PDFs) in the crawl log feed and posts them to a dedicated queue.
   <bean id="crawlLogDocumentFeed" class="uk.bl.wap.crawler.processor.AMQPIndexableCrawlLogFeed">
     <property name="celeryMessageFormat" value="true"/>
@@ -743,6 +750,7 @@
       <bean class="org.archive.crawler.reporting.ProcessorsReport"/>
       <bean class="org.archive.crawler.reporting.FrontierSummaryReport"/>
       <bean class="org.archive.crawler.reporting.ToeThreadsReport"/>
+      <bean class="uk.bl.wap.crawler.reporting.KafkaUrlReceiverReport"/>
     </list>
   </property>
   <!-- <property name="reportsDir" value="reports" /> -->

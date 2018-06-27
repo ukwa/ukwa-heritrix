@@ -19,6 +19,7 @@
 package uk.bl.wap.crawler.postprocessor;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
@@ -89,7 +90,7 @@ public class KafkaKeyedCrawlLogFeed extends Processor implements Lifecycle {
         this.serverCache = serverCache;
     }
 
-    protected Map<String,String> extraFields;
+    protected Map<String, String> extraFields = new HashMap<String, String>();
     public Map<String, String> getExtraFields() {
         return extraFields;
     }

@@ -14,6 +14,8 @@ services:
        - "KAFKA_BOOTSTRAP_SERVERS=kafka:9092"
        - "KAFKA_CRAWLED_TOPIC=uris.crawled.fc"
        - "KAFKA_TOCRAWL_TOPIC=uris.tocrawl.fc"
+       - "KAFKA_DISCARDED_FEED_ENABLED=true"
+       - "KAFKA_DISCARDED_TOPIC=uris.discarded.fc"
        - "CDXSERVER_ENDPOINT=http://cdxserver:8080/fc"
        - "WEBRENDER_ENABLED=true"
        - "WEBRENDER_ENDPOINT=http://webrender:8010/render"
@@ -68,8 +70,8 @@ services:
       LOG_RETENTION_HOURS: -1
       LOG_RETENTION_BYTES: -1
       NUM_PARTITIONS: 128
-      KAFKA_CREATE_TOPICS: "uris.tocrawl.fc:128:1 --config=compression.type=snappy,uris.crawled.fc:64:1 --config=compression.type=snappy"
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+      KAFKA_CREATE_TOPICS: "uris.tocrawl.fc:128:1 --config=compression.type=snappy,uris.crawled.fc:64:1 --config=compression.type=snappy,uris.discarded.fc:64:1 --config=compression.type=snappy"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
       LOG4J_LOGGER_KAFKA: WARN
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

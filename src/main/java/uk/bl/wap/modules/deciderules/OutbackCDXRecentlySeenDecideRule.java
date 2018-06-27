@@ -3,6 +3,8 @@
  */
 package uk.bl.wap.modules.deciderules;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -11,6 +13,7 @@ import java.util.logging.Logger;
 import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.recrawl.FetchHistoryHelper;
+import org.archive.util.Reporter;
 
 import uk.bl.wap.util.OutbackCDXClient;
 
@@ -18,7 +21,8 @@ import uk.bl.wap.util.OutbackCDXClient;
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
-public class OutbackCDXRecentlySeenDecideRule extends RecentlySeenDecideRule {
+public class OutbackCDXRecentlySeenDecideRule
+        extends RecentlySeenDecideRule implements Reporter {
 
     private static final long serialVersionUID = 361526253773091309L;
 
@@ -37,6 +41,10 @@ public class OutbackCDXRecentlySeenDecideRule extends RecentlySeenDecideRule {
 
     public OutbackCDXRecentlySeenDecideRule() {
     }
+
+    private long errors = 0;
+    private long hits = 0;
+    private long misses = 0;
 
     private HashMap<String, Object> getInfo(String url) {
         int tries = 3;
@@ -60,6 +68,7 @@ public class OutbackCDXRecentlySeenDecideRule extends RecentlySeenDecideRule {
                 }
             }
         }
+        errors++;
         return null;
     }
 
@@ -75,8 +84,10 @@ public class OutbackCDXRecentlySeenDecideRule extends RecentlySeenDecideRule {
         Long ts;
         if (info == null || !info
                 .containsKey(CoreAttributeConstants.A_FETCH_BEGAN_TIME)) {
+            misses++;
             ts = 0l;
         } else {
+            hits++;
             long ms_ts = (long) info
                     .get(CoreAttributeConstants.A_FETCH_BEGAN_TIME);
             ts = ms_ts / 1000;
@@ -101,6 +112,29 @@ public class OutbackCDXRecentlySeenDecideRule extends RecentlySeenDecideRule {
                     + ttl_s + " hence recently seen.");
             return true;
         }
+    }
+
+    /* Reporter */
+
+    @Override
+    public void reportTo(PrintWriter writer) throws IOException {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void shortReportLineTo(PrintWriter pw) throws IOException {
+        pw.println("OutbackCDX Recently Seen Decide Rule Report Line");
+    }
+
+    @Override
+    public Map<String, Object> shortReportMap() {
+        return null;
+    }
+
+    @Override
+    public String shortReportLegend() {
+        return "OutbackCDX Recently Seen Decide Rule Report Legend";
     }
 
 }
