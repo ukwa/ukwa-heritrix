@@ -289,7 +289,8 @@ public class KafkaKeyedCrawlLogFeed extends Processor implements Lifecycle {
         if (queueKey == null) {
             // Mostly DNS records:
             if (curi.getURI().startsWith("dns:")) {
-                queueKey = "dns";
+                // return the hostname without the 'dns:' prefix:
+                queueKey = curi.getURI().substring(4);
             } else {
                 queueKey = "null_key";
             }
