@@ -66,7 +66,7 @@
 	
 	<!-- SCOPE: rules for which discovered URIs to crawl; order is very 
 		 important because last decision returned other than 'NONE' wins. -->
-	<bean id="scope" class="org.archive.modules.deciderules.DecideRuleSequence">
+	<bean id="scope" class="uk.bl.wap.modules.deciderules.AccountableDecideRuleSequence">
         <property name="logToFile" value="#{systemEnvironment['SCOPE_LOG_ENABLED'] ?: false}" />
 		<property name="rules">
 			<list>
