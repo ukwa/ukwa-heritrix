@@ -67,6 +67,7 @@
 	<!-- SCOPE: rules for which discovered URIs to crawl; order is very 
 		 important because last decision returned other than 'NONE' wins. -->
 	<bean id="scope" class="uk.bl.wap.modules.deciderules.AccountableDecideRuleSequence">
+        <property name="recordDecidingRule" value="#{systemEnvironment['RECORD_DECIDING_RULE'] ?: false}" />
         <property name="logToFile" value="#{systemEnvironment['SCOPE_LOG_ENABLED'] ?: false}" />
 		<property name="rules">
 			<list>
@@ -529,7 +530,7 @@
       <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
       <property name="extraFields">
           <map>
-            <entry key="CRAWL_NAME" value="#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}"/>
+            <entry key="crawl_name" value="#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}"/>
           </map>
       </property>
     </bean>
@@ -543,7 +544,7 @@
     <property name="amqpUri" value="amqp://guest:guest@#{systemEnvironment['AMQP_HOST'] ?: localhost}:5672/%2f" />
     <property name="extraFields">
         <map>
-          <entry key="CRAWL_NAME" value="#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}"/>
+          <entry key="crawl_name" value="#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}"/>
         </map>
     </property>
     <property name="shouldProcessRule">
