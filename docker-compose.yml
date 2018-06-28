@@ -36,8 +36,16 @@ services:
 
   # Crawl control console
   control:
-    image: ukwa/ukwa-manage
-    links:
+    image: ukwa/hapy
+    ports:
+      - 9118:8000
+    environment:
+      - "HERITRIX_USERNAME=heritrix"
+      - "HERITRIX_PASSWORD=heritrix"
+      - "CRAWL_JOBS_FILE=/crawl-jobs.json"
+    volumes:
+      - ./integration-test/crawl-jobs.json:/crawl-jobs.json
+    depends_on:
       - heritrix
       - kafka
 

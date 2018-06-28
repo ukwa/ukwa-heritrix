@@ -439,16 +439,6 @@ public class KafkaUrlReceiver
 
     @Override
     public void start() {
-        kafkaProducerThreads = new ThreadGroup(
-                Thread.currentThread().getThreadGroup().getParent(),
-                "KafkaProducerThreads");
-        ThreadFactory threadFactory = new ThreadFactory() {
-            public Thread newThread(Runnable r) {
-                return new Thread(kafkaProducerThreads, r);
-            }
-        };
-        executorService = Executors.newFixedThreadPool(1, threadFactory);
-
     }
 
     @Override
@@ -461,6 +451,17 @@ public class KafkaUrlReceiver
         lock.lock();
         try {
             if (!this.isRunning) {
+                kafkaProducerThreads = new ThreadGroup(
+                        Thread.currentThread().getThreadGroup().getParent(),
+                        "KafkaProducerThreads");
+                ThreadFactory threadFactory = new ThreadFactory() {
+                    public Thread newThread(Runnable r) {
+                        return new Thread(kafkaProducerThreads, r);
+                    }
+                };
+                executorService = Executors.newFixedThreadPool(1,
+                        threadFactory);
+
                 logger.info("Requesting launch of the KafkaURLReceiver...");
                 kafkaConsumer = new KafkaConsumerRunner(seekToBeginning);
                 executorService.execute(kafkaConsumer);
