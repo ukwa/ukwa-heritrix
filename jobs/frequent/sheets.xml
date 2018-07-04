@@ -110,10 +110,10 @@
          <list>
             <value>http://(uk,gov,nationalarchives,webarchive,</value>
             <value>http://(uk,bl,intranet,</value>
+            <value>http://(uk,bl,ad,</value>
             <value>http://(com,bsigroup,bsol,</value>
             <value>http://(uk,ac,canterbury,libportal,</value>
-            <value>http://(com,galegroup,infotrac,)/itweb/blibrary
-            </value>
+            <value>http://(com,galegroup,infotrac,)/itweb/blibrary</value>
             <value>http://(com,oxforddnb,</value>
             <value>http://(com,oup,global,</value>
             <value>http://(uk,org,brereton,</value>
