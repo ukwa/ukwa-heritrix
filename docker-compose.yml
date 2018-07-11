@@ -10,7 +10,7 @@ services:
     environment:
        - "JAVA_OPTS=-Xmx2g"
        - "CRAWL_NAME=npld-fc"
-       - "LAUNCH_AUTOMATICALLY=false"
+       - "LAUNCH_AUTOMATICALLY=true"
        - "SCOPE_LOG_ENABLED=false"
        - "RECORD_DECIDING_RULE=true"
        - "WARC_PREFIX=BL-NPLD-TEST"

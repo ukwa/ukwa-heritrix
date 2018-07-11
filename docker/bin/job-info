@@ -1,0 +1,4 @@
+#!/bin/sh
+
+curl -s -k -u $HERITRIX_USER:$HERITRIX_PASSWORD --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/${JOB_NAME}/status
+

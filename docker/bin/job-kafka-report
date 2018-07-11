@@ -1,0 +1,4 @@
+#!/bin/sh
+
+curl -s -k -u $HERITRIX_USER:$HERITRIX_PASSWORD --anyauth --location https://localhost:8443/engine/job/${JOB_NAME}/report/KafkaUrlReceiverReport
+
