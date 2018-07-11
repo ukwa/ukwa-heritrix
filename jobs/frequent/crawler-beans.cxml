@@ -105,7 +105,7 @@
                   <!-- if false, we will only run this rule if it could change the current decision, 
                   i.e. if it could ACCEPT a URI that is not already ACCEPTED. GeoIP lookup is expensive 
                   so lets skip it but note that this means .uk URIs will not be tagged with a geo-location. -->
-                  <property name="lookupEveryUri" value="false"/>
+                  <property name="lookupEveryUri" value="#{systemEnvironment['GEOIP_LOOKUP_EVERY_URI'] ?: false}"/>
                   <property name="enabled" value="#{systemEnvironment['GEOIP_GB_ENABLED'] ?: false}" />
                 </bean>
                 <!-- ...ACCEPT known URL-shortening services -->
