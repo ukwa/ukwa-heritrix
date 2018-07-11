@@ -252,6 +252,15 @@ public class KafkaUrlReceiver
             props.put("value.deserializer",
                     ByteArrayDeserializer.class.getName());
             consumer = new KafkaConsumer<String, byte[]>(props);
+        }
+
+        public void run() {
+            logger.info("Running KafkaConsumer... :: bootstrapServers = "
+                    + getBootstrapServers());
+            logger.info("Running KafkaConsumer... :: topic = " + getTopic());
+            logger.info(
+                    "Running KafkaConsumer... :: group_id = " + getGroupId());
+
             // Subscribe:
             consumer.subscribe(Arrays.asList(getTopic()));
             // Rewind if requested:
@@ -264,14 +273,6 @@ public class KafkaUrlReceiver
                         + " URL queue.");
             }
 
-        }
-
-        public void run() {
-            logger.info("Running KafkaConsumer... :: bootstrapServers = "
-                    + getBootstrapServers());
-            logger.info("Running KafkaConsumer... :: topic = " + getTopic());
-            logger.info(
-                    "Running KafkaConsumer... :: group_id = " + getGroupId());
             // Until the end...
             try {
                 long count = 0;
@@ -426,7 +427,7 @@ public class KafkaUrlReceiver
                         "Seeking to the beginning... (this can take a while)");
                 // Ensure partitions have been assigned by running a .poll():
                 logger.info("Do a poll...");
-                consumer.poll(0);
+                consumer.poll(pollTimeout);
                 // Reset to the start:
                 logger.info("Now seek...");
                 consumer.seekToBeginning(consumer.assignment());
