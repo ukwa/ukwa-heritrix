@@ -270,9 +270,10 @@
          See https://github.com/internetarchive/heritrix3/blob/master/modules/src/main/java/org/archive/modules/fetcher/FetchDNS.java#L74-L78
              http://www.dnsjava.org/doc/org/xbill/DNS/ResolverConfig.html 
          (i.e. /etc/hosts does not override domain names for H3 -->
-		<property name="acceptNonDnsResolves" value="true" />
+		<property name="acceptNonDnsResolves" value="false" />
 		<property name="digestContent" value="true" />
 		<property name="digestAlgorithm" value="sha1" />
+        <!-- AFAICT /etc/resolv.conf is only read once at startup. -->
 	</bean>
 	<bean id="wrenderHttp" class="uk.bl.wap.crawler.processor.WrenderProcessor">
         <property name="enabled" value="#{systemEnvironment['WEBRENDER_ENABLED'] ?: false}"/>

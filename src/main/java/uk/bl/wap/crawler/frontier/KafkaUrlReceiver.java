@@ -200,6 +200,16 @@ public class KafkaUrlReceiver
         this.seekToBeginning = seekToBeginning;
     }
 
+    private int maxPollRecords = 100;
+
+    public int getMaxPollRecords() {
+        return maxPollRecords;
+    }
+
+    public void setMaxPollRecords(int maxPollRecords) {
+        this.maxPollRecords = maxPollRecords;
+    }
+
     protected boolean isRunning = false; 
 
     @Override
@@ -233,10 +243,10 @@ public class KafkaUrlReceiver
             props.put("group.id", getGroupId());
             props.put("enable.auto.commit", "true");
             props.put("auto.commit.interval.ms", "1000");
-            props.put("session.timeout.ms", "30000");
+            props.put("session.timeout.ms", "60000");
             props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG,
                     256 * 1024); // Default is 50MB
-            props.put("max.poll.records", "1000");
+            props.put("max.poll.records", "" + maxPollRecords);
             props.put("auto.offset.reset", "earliest");
             props.put("key.deserializer", StringDeserializer.class.getName());
             props.put("value.deserializer",
