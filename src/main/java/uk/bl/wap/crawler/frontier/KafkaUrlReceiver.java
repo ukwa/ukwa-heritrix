@@ -432,6 +432,8 @@ public class KafkaUrlReceiver
                 logger.info("Now seek...");
                 consumer.seekToBeginning(consumer.assignment());
                 logger.info("Seek-to-beginning has finished.");
+                // Only seek to the beginning once in any job:
+                seekToBeginning = false;
             }
         }
 
@@ -478,10 +480,6 @@ public class KafkaUrlReceiver
                 executorService.execute(kafkaConsumer);
                 this.isRunning = true;
 
-                // Only seek to the beginning at the start of the crawl:
-                if (seekToBeginning) {
-                    seekToBeginning = false;
-                }
             }
         } finally {
             lock.unlock();
