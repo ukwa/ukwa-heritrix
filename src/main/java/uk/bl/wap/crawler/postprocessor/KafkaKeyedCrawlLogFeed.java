@@ -19,7 +19,6 @@
 package uk.bl.wap.crawler.postprocessor;
 
 import java.io.UnsupportedEncodingException;
-import java.net.IDN;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -308,17 +307,6 @@ public class KafkaKeyedCrawlLogFeed extends Processor implements Lifecycle {
         // Drop data/mailto URIs
         if (candidate.getURI().startsWith("data:")
                 || candidate.getURI().startsWith("mailto:")) {
-            return false;
-        }
-        // Drop URIs that appear to be malformed:
-        try {
-            String idn_host = IDN.toASCII(candidate.getUURI().getHost());
-            logger.finest("Parsed URI and host successfully: " + idn_host);
-        } catch (URIException e) {
-            logger.warning("Could not parse URI: " + candidate.getURI());
-            return false;
-        } catch (IllegalArgumentException e) {
-            logger.warning("Could not parse host from: " + candidate.getURI());
             return false;
         }
         return true;

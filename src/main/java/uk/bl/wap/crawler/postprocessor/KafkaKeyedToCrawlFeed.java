@@ -6,12 +6,14 @@ package uk.bl.wap.crawler.postprocessor;
 import static org.archive.modules.CoreAttributeConstants.A_HERITABLE_KEYS;
 
 import java.io.UnsupportedEncodingException;
+import java.net.IDN;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.httpclient.URIException;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideRule;
@@ -129,6 +131,26 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
             kafkaProducer().send(producerRecord, stats);
             recentlySentCache.put(candidate.getURI(), true);
         }
+    }
+
+    @Override
+    protected boolean shouldEmit(CrawlURI candidate) {
+        // Drop HTTP URIs that appear to be malformed:
+        if (candidate.getURI().startsWith("http")) {
+            try {
+                String idn_host = IDN.toASCII(candidate.getUURI().getHost());
+                logger.finest("Parsed URI and host successfully: " + idn_host);
+            } catch (URIException e) {
+                logger.warning("Could not parse URI: " + candidate.getURI());
+                return false;
+            } catch (IllegalArgumentException e) {
+                logger.warning(
+                        "Could not parse host from: " + candidate.getURI());
+                return false;
+            }
+        }
+        // Otherwise, the usual rules:
+        return super.shouldEmit(candidate);
     }
 
     @Override

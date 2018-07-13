@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.IDN;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.ParseException;
@@ -18,6 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.httpclient.URIException;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
@@ -33,6 +35,7 @@ import org.archive.modules.CoreAttributeConstants;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.recrawl.FetchHistoryHelper;
 import org.archive.modules.recrawl.RecrawlAttributeConstants;
+import org.archive.net.UURIFactory;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.DateUtils;
 import org.archive.util.MimetypeUtils;
@@ -271,6 +274,10 @@ public class OutbackCDXClient {
      */
     public HashMap<String, Object> getLastCrawl(String qurl)
             throws IOException, InterruptedException, URISyntaxException {
+        // Check valid:
+        if (!checkValid(qurl)) {
+            return null;
+        }
         // Perform the query:
         InputStream is = this.getCDX(qurl, 100, true);
         if (is == null) {
@@ -328,11 +335,39 @@ public class OutbackCDXClient {
     }
 
     /**
+     * 
+     * @param uri
+     * @return
+     */
+    private boolean checkValid(String uri) {
+        if (uri.startsWith("http")) {
+            try {
+                CrawlURI candidate = new CrawlURI(UURIFactory.getInstance(uri));
+                String idn_host = IDN.toASCII(candidate.getUURI().getHost());
+                logger.finest("Parsed URI and host successfully: " + idn_host);
+            } catch (URIException e) {
+                logger.warning("Could not parse URI: " + uri);
+                return false;
+            } catch (IllegalArgumentException e) {
+                logger.warning(
+                        "Could not parse host from: " + uri);
+                return false;
+            }
+        }        
+        return true;
+    }
+
+    /**
      * Put this URI into OutbackCDX
      * 
      * @param curi
      */
     public void putUri(CrawlURI curi) {
+        // Check valid:
+        if (!checkValid(curi.getURI())) {
+            return;
+        }
+
         // Re-format as CDX-11 string:
         String cdx11 = toCDXLine(curi);
         logger.fine("POSTING: " + cdx11);
