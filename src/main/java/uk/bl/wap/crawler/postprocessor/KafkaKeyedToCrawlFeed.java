@@ -143,36 +143,57 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
 
         // Iterate through the outlinks:
         for (CrawlURI candidate : outLinks) {
-            // Route most via Kafka, not prerequisites or 'data:' or 'mailto:'
-            // URIs, or URIs already sent:
-            if (this.shouldEmit(candidate) && !candidate.isPrerequisite()) {
-                // Avoid re-sending the same URI a lot:
-                if (!sentURIs.contains(candidate.getURI())) {
-                    // Only emit URLs that are in scope, if configured to do so:
-                    if (this.emitInScopeOnly) {
-                        if (this.getScope().accepts(candidate)) {
-                            // Pass to Kafka queue:
-                            sendToKafka(getTopic(), curi, candidate);
+
+            // Route most via Kafka, not prerequisites
+            if (!candidate.isPrerequisite()) {
+
+                // Discard malformed or 'data:' or 'mailto:' URLs
+                if (this.shouldEmit(candidate)) {
+
+                    // Avoid re-sending the same URI a lot:
+                    if (!sentURIs.contains(candidate.getURI())) {
+
+                        // Only emit URLs that are in scope, if configured to do
+                        // so:
+                        if (this.emitInScopeOnly) {
+                            if (this.getScope().accepts(candidate)) {
+                                // Pass to Kafka queue:
+                                sendToKafka(getTopic(), curi, candidate);
+                            } else {
+                                // TODO Log discarded URLs for analysis?:
+                                // sendToKafka("uris.discarded", curi,
+                                // candidate);
+                            }
                         } else {
-                            // TODO Log discarded URLs for analysis?:
-                            // sendToKafka("uris.discarded", curi, candidate);
+                            // Ignore scope rules and emit all
+                            // non-prerequisites:
+                            sendToKafka(getTopic(), curi, candidate);
                         }
+
+                        // Record this diverted URL string so it will only be
+                        // sent
+                        // once:
+                        sentURIs.add(candidate.getURI());
+
                     } else {
-                        // Ignore scope rules and emit all non-prerequisites:
-                        sendToKafka(getTopic(), curi, candidate);
+                        logger.finest(
+                                "Not emitting CrawlURI (appears to have been sent already): "
+                                        + candidate.getURI());
                     }
 
-                    // Record this diverted URL string so it will only be sent
-                    // once:
-                    sentURIs.add(candidate.getURI());
+                } else {
+                    logger.finest(
+                            "Not emitting CrawlURI (appears to be invalid): "
+                                    + candidate.getURI());
                 }
-                // Record this diverted URL so it will not be queued
-                // directly:
+
+                // Remove all Crawl URIs except pre-requisites so only they
+                // will be queued directly:
                 toRemove.add(candidate);
             } else {
-                logger.finest("Not emitting CrawlURI (may be a duplicate): "
-                        + candidate.getURI()
-                        + " pre-requisite=" + candidate.isPrerequisite());
+                logger.finest(
+                        "Not emitting pre-requisite CrawlURI (will be enqueued locally): "
+                        + candidate.getURI());
             }
         }
 
