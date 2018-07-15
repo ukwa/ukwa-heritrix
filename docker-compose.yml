@@ -24,6 +24,7 @@ services:
        - "WEBRENDER_ENDPOINT=http://webrender:8010/render"
        - "CLAMD_ENABLED=true"
        - "CLAMD_HOST=clamd"
+       #- "SURTS_SOURCE_FILE=domain-surts.txt" # Use the domain SURT scope     
     links:
       - clamd
       - kafka

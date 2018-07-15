@@ -339,11 +339,15 @@ public class OutbackCDXClient {
      * @param uri
      * @return
      */
-    private boolean checkValid(String uri) {
+    protected boolean checkValid(String uri) {
         if (uri.startsWith("http")) {
             try {
                 CrawlURI candidate = new CrawlURI(UURIFactory.getInstance(uri));
-                String idn_host = IDN.toASCII(candidate.getUURI().getHost());
+                String host = candidate.getUURI().getHost();
+                if (host == null) {
+                    return false;
+                }
+                String idn_host = IDN.toASCII(host);
                 logger.finest("Parsed URI and host successfully: " + idn_host);
             } catch (URIException e) {
                 logger.warning("Could not parse URI: " + uri);
