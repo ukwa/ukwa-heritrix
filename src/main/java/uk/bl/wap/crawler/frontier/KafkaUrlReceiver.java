@@ -281,38 +281,52 @@ public class KafkaUrlReceiver
                     try {
                         ConsumerRecords<String, byte[]> records = consumer
                                 .poll(pollTimeout);
-                        // Handle new records
-                        for (ConsumerRecord<String, byte[]> record : records) {
-                            try {
-                                String decodedBody = new String(record.value(),
-                                        "UTF-8");
-                                logger.finer("Processing crawl request: "
-                                        + decodedBody);
-                                JSONObject jo = new JSONObject(decodedBody);
-                                processCrawlRequest(jo);
+                        if (records.count() > 0) {
+                            // Threads for processing:
+                            ExecutorService messageHandlerPool = Executors
+                                    .newFixedThreadPool(records.count());
 
-                            } catch (Exception e) {
-                                logger.log(Level.SEVERE,
-                                        "problem creating JSON from String received via Kafka "
-                                                + record.value(),
-                                        e);
+                            // Handle new records
+                            for (ConsumerRecord<String, byte[]> record : records) {
+                                try {
+                                    String decodedBody = new String(
+                                            record.value(), "UTF-8");
+                                    logger.finer("Processing crawl request: "
+                                            + decodedBody);
+                                    JSONObject jo = new JSONObject(decodedBody);
+                                    messageHandlerPool.execute(
+                                            new CrawlMessageHandler(jo));
+                                } catch (Exception e) {
+                                    logger.log(Level.SEVERE,
+                                            "problem creating JSON from String received via Kafka "
+                                                    + record.value(),
+                                            e);
+                                }
+                                count += 1;
+                                currentOffsets.put(record.partition(),
+                                        record.offset());
+                                if (count % 1000 == 0) {
+                                    logger.info("Processed " + count
+                                            + " messages so far. Last message offset="
+                                            + record.offset() + " partition="
+                                            + record.partition()
+                                            + ". Total enqueued="
+                                            + enqueuedCount + " discarded="
+                                            + discardedCount);
+                                }
                             }
-                            count += 1;
-                            currentOffsets.put(record.partition(),
-                                    record.offset());
-                            if (count % 1000 == 0) {
-                                logger.info("Processed " + count
-                                        + " messages so far. Last message offset="
-                                        + record.offset() + " partition="
-                                        + record.partition()
-                                        + ". Total enqueued="
-                                        + enqueuedCount + " discarded="
-                                        + discardedCount);
-                            }
+                            // Wait for this batch to finish:
+                            logger.info("AWAITING TERMINATION...");
+                            messageHandlerPool.shutdown();
+                            messageHandlerPool.awaitTermination(10,
+                                    TimeUnit.MINUTES);
                         }
-
                     } catch (WakeupException e) {
                         logger.info("Poll routine awoken for shutdown...");
+                    } catch (InterruptedException e) {
+                        logger.log(Level.SEVERE,
+                                "Problem while awaiting processing of the batch!",
+                                e);
                     }
                 }
             } finally {
@@ -325,11 +339,50 @@ public class KafkaUrlReceiver
         }
 
         /**
-         * How we process crawl request messages.
-         * 
-         * @param jo
+         * This can be used to seek to the start of the Kafka feed after
+         * subscribing:
          */
-        private void processCrawlRequest(JSONObject jo) {
+        public void seekToBeginning() {
+            if (consumer.subscription().size() > 0) {
+                logger.info(
+                        "Seeking to the beginning... (this can take a while)");
+                // Ensure partitions have been assigned by running a .poll():
+                logger.info("Do a poll...");
+                consumer.poll(pollTimeout);
+                // Reset to the start:
+                logger.info("Now seek...");
+                consumer.seekToBeginning(consumer.assignment());
+                logger.info("Seek-to-beginning has finished.");
+                // Only seek to the beginning once in any job:
+                seekToBeginning = false;
+            }
+        }
+
+        // Shutdown hook which can be called from a separate thread
+        public void shutdown() {
+            closed.set(true);
+            // Break out of poll() so we can shut down...
+            consumer.wakeup();
+        }
+
+    }
+
+    /**
+     * How we process crawl request messages.
+     * 
+     * @param jo
+     */
+    public class CrawlMessageHandler implements Runnable {
+
+        private JSONObject jo;
+
+        public CrawlMessageHandler(JSONObject jo) {
+            this.jo = jo;
+        }
+
+        @Override
+        public void run() {
+            // Process the messages:
             if ("GET".equals(jo.getString("method"))) {
                 try {
                     // Make the CrawlURI:
@@ -414,38 +467,12 @@ public class KafkaUrlReceiver
             } else {
                 logger.info("ignoring url with method other than GET - " + jo);
             }
-
         }
 
-        /**
-         * This can be used to seek to the start of the Kafka feed after
-         * subscribing:
-         */
-        public void seekToBeginning() {
-            if (consumer.subscription().size() > 0) {
-                logger.info(
-                        "Seeking to the beginning... (this can take a while)");
-                // Ensure partitions have been assigned by running a .poll():
-                logger.info("Do a poll...");
-                consumer.poll(pollTimeout);
-                // Reset to the start:
-                logger.info("Now seek...");
-                consumer.seekToBeginning(consumer.assignment());
-                logger.info("Seek-to-beginning has finished.");
-                // Only seek to the beginning once in any job:
-                seekToBeginning = false;
-            }
-        }
-
-        // Shutdown hook which can be called from a separate thread
-        public void shutdown() {
-            closed.set(true);
-            // Break out of poll() so we can shut down...
-            consumer.wakeup();
-        }
-        
     }
 
+
+    // Thread for the Kafka client:
     transient private KafkaConsumerRunner kafkaConsumer;
     transient private ThreadGroup kafkaProducerThreads;
     transient private ExecutorService executorService;
@@ -474,7 +501,6 @@ public class KafkaUrlReceiver
                 };
                 executorService = Executors.newFixedThreadPool(1,
                         threadFactory);
-
                 logger.info("Requesting launch of the KafkaURLReceiver...");
                 kafkaConsumer = new KafkaConsumerRunner(seekToBeginning);
                 executorService.execute(kafkaConsumer);

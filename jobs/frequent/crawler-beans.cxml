@@ -42,8 +42,7 @@
   	</bean>
   	-->	
 	
-	<!-- SEEDS ALTERNATE APPROACH: specifying external seeds.txt file
-		 Use either the above, or this, but not both. -->
+	<!-- SEEDS FILE: Disabled in this case, as we control seeding with Kafka (below_ -->
 	<bean id="seeds" class="uk.bl.wap.crawler.modules.seeds.NoOpSeedsModule">
 		<property name="sourceTagSeeds" value="true" />
 	</bean>
