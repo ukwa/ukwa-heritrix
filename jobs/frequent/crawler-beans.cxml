@@ -54,6 +54,7 @@
       <property name="topic" value="#{systemEnvironment['KAFKA_TOCRAWL_TOPIC'] ?: 'uris.tocrawl'}" />
       <property name="seekToBeginning" value="#{systemEnvironment['KAFKA_SEEK_TO_BEGINNING'] ?: true}"/>
       <property name="discardedUriFeedEnabled" value="#{systemEnvironment['KAFKA_DISCARDED_FEED_ENABLED'] ?: false}"/>
+      <property name="numMessageHandlerThreads" value="#{systemEnvironment['KAFKA_NUM_MESSAGE_THREADS'] ?: 16}"/>
     </bean>
     <!-- This allows the collection of a separate crawl-log of the out-of-scope URIs. It is called from kafkaUrlReceiver -->
     <bean id="discardedUriFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedDiscardedFeed">

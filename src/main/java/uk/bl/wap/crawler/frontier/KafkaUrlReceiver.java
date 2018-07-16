@@ -200,7 +200,7 @@ public class KafkaUrlReceiver
         this.seekToBeginning = seekToBeginning;
     }
 
-    private int maxPollRecords = 100;
+    private int maxPollRecords = 500;
 
     public int getMaxPollRecords() {
         return maxPollRecords;
@@ -208,6 +208,16 @@ public class KafkaUrlReceiver
 
     public void setMaxPollRecords(int maxPollRecords) {
         this.maxPollRecords = maxPollRecords;
+    }
+
+    private int numMessageHandlerThreads = 16;
+
+    public int getNumMessageHandlerThreads() {
+        return numMessageHandlerThreads;
+    }
+
+    public void setNumMessageHandlerThreads(int numMessageHandlerThreads) {
+        this.numMessageHandlerThreads = numMessageHandlerThreads;
     }
 
     protected boolean isRunning = false; 
@@ -284,7 +294,8 @@ public class KafkaUrlReceiver
                         if (records.count() > 0) {
                             // Threads for processing:
                             ExecutorService messageHandlerPool = Executors
-                                    .newFixedThreadPool(records.count());
+                                    .newFixedThreadPool(
+                                            numMessageHandlerThreads);
 
                             // Handle new records
                             for (ConsumerRecord<String, byte[]> record : records) {
