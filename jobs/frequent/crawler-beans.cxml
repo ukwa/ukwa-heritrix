@@ -434,9 +434,9 @@
 	</bean>
 	<!-- DISPOSITION CHAIN -->
 	<!-- processors declared as named beans -->
-	<bean id="diskSpaceMonitor" class="org.archive.crawler.monitor.DiskSpaceMonitor">
-		<!-- property name="pauseThresholdMiB" value="1048576" / --> <!-- 1TiB -->
-		<property name="pauseThresholdMiB" value="1024" /> <!-- 1GiB -->
+      <!-- property name="pauseThresholdMiB" value="1048576" / --> <!-- 1TiB -->
+   	<bean id="diskSpaceMonitor" class="org.archive.crawler.monitor.DiskSpaceMonitor">
+		<property name="pauseThresholdMiB" value="1024" />   <!-- 1GiB -->
 		<property name="monitorConfigPaths" value="false" />
 		<property name="monitorPaths">
 			<list>
@@ -445,6 +445,8 @@
 			</list>
 		</property>
 	</bean>
+   <!-- This appeared to cause problems when checking a specific file (uri-errors.log) on Gluster,
+   so I'm taking it out for now. 
 	<bean id="rootDiskSpaceMonitor" class="org.archive.crawler.monitor.DiskSpaceMonitor">
 		<property name="pauseThresholdMiB" value="2048" />
 		<property name="monitorConfigPaths" value="true" />
@@ -454,6 +456,7 @@
 			</list>
 		</property>
 	</bean>
+   -->
 	<bean id="warcWriterViral" class="uk.bl.wap.modules.writer.WARCViralWriterProcessor">
 		<property name="shouldProcessRule">
 			<bean class="org.archive.modules.deciderules.DecideRuleSequence">
