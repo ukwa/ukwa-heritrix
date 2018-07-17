@@ -75,7 +75,7 @@ public class RobotsTxtSitemapExtractor extends ContentExtractor {
             // Accrue links:
             for (String link : links) {
                 try {
-                    LOGGER.info("Found site map: " + link);
+                    LOGGER.fine("Found site map: " + link);
                     // Add links but using the cloned CrawlURI as the crawl
                     // context.
                     addRelativeToBase(curiClone, max, link,

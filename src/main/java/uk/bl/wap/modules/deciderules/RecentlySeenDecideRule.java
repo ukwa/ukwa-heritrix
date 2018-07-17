@@ -6,6 +6,7 @@ package uk.bl.wap.modules.deciderules;
 import java.util.logging.Logger;
 
 import org.archive.modules.CrawlURI;
+import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.PredicatedDecideRule;
 import org.archive.spring.KeyedProperties;
 
@@ -97,6 +98,38 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
         int ttl = this.getRecrawlInterval();
         LOGGER.fine("For " + url + " got TTL(s) " + ttl);
         return ttl;
+    }
+
+    /**
+     * Used to determine whether this rule can change the current decision and
+     * if not, skip the rule; if 'lookupEveryUri' is true, this rule will never
+     * be skipped.
+     * 
+     * These rules can have useful side-effects (getting the previous hash) but
+     * we only need to do that when the URL may be included.
+     */
+    @Override
+    public DecideResult onlyDecision(CrawlURI uri) {
+        if (getLookupEveryUri()) {
+            return null;
+        } else {
+            return this.getDecision();
+        }
+    }
+
+    /**
+     * Whether to perform a lookup on every URI; default is true.
+     */
+    {
+        setLookupEveryUri(true);
+    }
+
+    public void setLookupEveryUri(boolean lookupEveryUri) {
+        kp.put("lookupEveryUri", lookupEveryUri);
+    }
+
+    public boolean getLookupEveryUri() {
+        return (Boolean) kp.get("lookupEveryUri");
     }
 
     /* (non-Javadoc)

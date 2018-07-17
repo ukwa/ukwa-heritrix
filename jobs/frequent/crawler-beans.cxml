@@ -196,6 +196,10 @@
        <property name="recrawlInterval" value="31536000"/>
        <!-- reference to shared OutbackCDX configuration: -->
        <property name="outbackCDXClient" ref="outbackCDXClient"/>
+       <!-- if false, we will only run this rule if it could change the current decision, 
+         i.e. if it could REJECT a URI that is not already REJECTED. CDX lookup is expensive 
+         so lets skip it. Note that this will prevent de-duplication of otherwise out-of-scope pre-requisites (if there are any). -->
+       <property name="lookupEveryUri" value="#{systemEnvironment['RECENTLY_SEEN_LOOKUP_EVERY_URI'] ?: false}"/>       
    </bean>
  
 	<!-- 

@@ -327,7 +327,6 @@ public class KafkaUrlReceiver
                                 }
                             }
                             // Wait for this batch to finish:
-                            logger.info("AWAITING TERMINATION...");
                             messageHandlerPool.shutdown();
                             messageHandlerPool.awaitTermination(10,
                                     TimeUnit.MINUTES);
