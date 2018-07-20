@@ -7,8 +7,9 @@ services:
     hostname: "h3w" # Set the hostname so the persistent files are in consistent locations
     ports:
       - "8443:8443"
+      - "9101:9101"
     environment:
-       - "JAVA_OPTS=-Xmx2g"
+       - "JAVA_OPTS=-Xmx2g -javaagent:/jmx_prometheus_javaagent-0.3.1.jar=9101:/jmx-config.yml"
        - "CRAWL_NAME=npld-fc"
        - "LAUNCH_AUTOMATICALLY=true"
        - "SCOPE_LOG_ENABLED=false"
@@ -33,6 +34,9 @@ services:
       - cdxserver
       - acid.matkelly.com
       - crawl-test-site.webarchive.org.uk
+    volumes:
+      - ./docker/jmx_prometheus_javaagent-0.3.1.jar:/jmx_prometheus_javaagent-0.3.1.jar
+      - ./docker/heritrix-jmx-config.yml:/jmx-config.yml
     volumes_from:
       - dvc:rw  
 
