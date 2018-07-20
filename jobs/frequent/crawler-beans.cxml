@@ -53,8 +53,9 @@
       <property name="groupId" value="crawlers" />
       <property name="topic" value="#{systemEnvironment['KAFKA_TOCRAWL_TOPIC'] ?: 'uris.tocrawl'}" />
       <property name="seekToBeginning" value="#{systemEnvironment['KAFKA_SEEK_TO_BEGINNING'] ?: true}"/>
-      <property name="discardedUriFeedEnabled" value="#{systemEnvironment['KAFKA_DISCARDED_FEED_ENABLED'] ?: false}"/>
+      <property name="maxPollRecords" value="#{systemEnvironment['KAFKA_MAX_POLL_RECORDS'] ?: 500}"/>
       <property name="numMessageHandlerThreads" value="#{systemEnvironment['KAFKA_NUM_MESSAGE_THREADS'] ?: 16}"/>
+      <property name="discardedUriFeedEnabled" value="#{systemEnvironment['KAFKA_DISCARDED_FEED_ENABLED'] ?: false}"/>
     </bean>
     <!-- This allows the collection of a separate crawl-log of the out-of-scope URIs. It is called from kafkaUrlReceiver -->
     <bean id="discardedUriFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedDiscardedFeed">
@@ -62,7 +63,6 @@
         <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
     </bean>
     
-   
 	
 	<!-- SCOPE: rules for which discovered URIs to crawl; order is very 
 		 important because last decision returned other than 'NONE' wins. -->
