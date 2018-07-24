@@ -795,22 +795,22 @@
     
 	<!-- BDBMODULE: BDB-JE disk persistence manager -->
   <bean id="bdbFrontierBdb" class="org.archive.bdb.BdbModule">
-    <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.launch-${launchId}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/frontier"/>
+    <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/frontier"/>
     <property name="cachePercent" value="30"/>
     <property name="expectedConcurrency" value="100"/>
   </bean>
   <bean id="bdbStatisticsBdb" class="org.archive.bdb.BdbModule">
-    <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.launch-${launchId}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/statistics"/>
+    <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/statistics"/>
     <property name="cachePercent" value="30"/>
     <property name="expectedConcurrency" value="100"/>
   </bean>
   <bean id="bdbCookieStoreBdb" class="org.archive.bdb.BdbModule">
-    <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.launch-${launchId}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/cookies"/>
+    <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/cookies"/>
     <property name="cachePercent" value="30"/>
     <property name="expectedConcurrency" value="100"/>
   </bean>
   <bean id="bdbServerCacheBdb" class="org.archive.bdb.BdbModule">
-    <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.launch-${launchId}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/serverCache"/>
+    <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/serverCache"/>
     <property name="cachePercent" value="30"/>
     <property name="expectedConcurrency" value="100"/>
   </bean>
