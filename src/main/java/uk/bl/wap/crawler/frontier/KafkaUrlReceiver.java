@@ -296,8 +296,8 @@ public class KafkaUrlReceiver
             int range = numPartitions / getConsumerGroupSize();
             int lo = (getConsumerId() - 1) * range;
             int hi = getConsumerId() * range;
-            logger.info("Assigning partitions " + lo + " to " + (hi - 1)
-                    + " to consumer " + getConsumerId() + " of "
+            logger.info("Assigning partitions " + lo + "-" + (hi - 1) + "/"
+                    + numPartitions + " to consumer " + getConsumerId() + "/"
                     + getConsumerGroupSize());
             for (int p = lo; p < hi; p++) {
                 parts.add(new TopicPartition(getTopic(), p));
