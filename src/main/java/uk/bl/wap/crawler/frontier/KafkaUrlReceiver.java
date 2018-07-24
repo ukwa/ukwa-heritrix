@@ -46,6 +46,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -190,6 +191,29 @@ public class KafkaUrlReceiver
         this.topic = topic;
     }
 
+    // This is the total number of consumers, used to assign partitions:
+    private int consumerGroupSize = 1;
+
+    public int getConsumerGroupSize() {
+        return consumerGroupSize;
+    }
+
+    public void setConsumerGroupSize(int consumerGroupSize) {
+        this.consumerGroupSize = consumerGroupSize;
+    }
+
+    // This is the numeric ID for this consumer (1 to consumerGroupSize), used
+    // to assign partitions:
+    private int consumerId = 1;
+
+    public int getConsumerId() {
+        return consumerId;
+    }
+
+    public void setConsumerId(int consumerId) {
+        this.consumerId = consumerId;
+    }
+
     private boolean seekToBeginning = true;
 
     public boolean isSeekToBeginning() {
@@ -233,11 +257,6 @@ public class KafkaUrlReceiver
     // For reporting on last-known position on different partitions:
     private Map<Integer, Long> currentOffsets = new HashMap<Integer, Long>();
 
-    /**
-     * The maximum prefetch count to use, meaning the maximum number of messages
-     * to be consumed without being acknowledged. Using 'null' would specify
-     * there should be no upper limit (the default).
-     */
     private Integer pollTimeout = 1000;
 
     private transient Lock lock = new ReentrantLock(true);
@@ -271,8 +290,19 @@ public class KafkaUrlReceiver
             logger.info(
                     "Running KafkaConsumer... :: group_id = " + getGroupId());
 
-            // Subscribe:
-            consumer.subscribe(Arrays.asList(getTopic()));
+            // Assign the partitions:
+            int numPartitions = consumer.partitionsFor(getTopic()).size();
+            List<TopicPartition> parts = new ArrayList<TopicPartition>();
+            int range = numPartitions / getConsumerGroupSize();
+            int lo = (getConsumerId() - 1) * range;
+            int hi = getConsumerId() * range;
+            logger.info("Assigning partitions " + lo + " to " + (hi - 1)
+                    + " to consumer " + getConsumerId() + " of "
+                    + getConsumerGroupSize());
+            for (int p = lo; p < hi; p++) {
+                parts.add(new TopicPartition(getTopic(), p));
+            }
+            consumer.assign(parts);
             // Rewind if requested:
             if (seekToBeginning) {
                 logger.warning("Rewinding to the beginning of the " + getTopic()
