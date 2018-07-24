@@ -383,7 +383,7 @@ public class KafkaUrlReceiver
          * subscribing:
          */
         public void seekToBeginning() {
-            if (consumer.subscription().size() > 0) {
+            if (consumer.assignment().size() > 0) {
                 logger.info(
                         "Seeking to the beginning... (this can take a while)");
                 // Ensure partitions have been assigned by running a .poll():
