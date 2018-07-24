@@ -50,7 +50,7 @@
     <!-- a 'top-level' bean that listens for URLs from Kafka -->
     <bean id="kafkaUrlReceiver" class="uk.bl.wap.crawler.frontier.KafkaUrlReceiver">
       <property name="bootstrapServers" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
-      <property name="groupId" value="crawlers" />
+      <property name="groupId" value="#{systemEnvironment['KAFKA_GROUP_ID'] ?: 'crawlers'}" />
       <property name="topic" value="#{systemEnvironment['KAFKA_TOCRAWL_TOPIC'] ?: 'uris.tocrawl'}" />
       <property name="consumerId" value="#{systemEnvironment['KAFKA_CONSUMER_ID'] ?: 1}"/>
       <property name="consumerGroupSize" value="#{systemEnvironment['KAFKA_CONSUMER_GROUP_SIZE'] ?: 1}"/>
