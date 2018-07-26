@@ -30,11 +30,14 @@ public class OutbackCDXClientTest {
             throws IOException, InterruptedException, URISyntaxException {
         OutbackCDXClient ocdx = new OutbackCDXClient();
 
+        // None of these should even attempt to be queried because they are
+        // invalid:
         String[] qurls = {
                 "httpss:uk.linkedin.com/pub/michael-lenny/10/a32/a30/",
                 "http://allprintjerseyyourlocalembroideryandvinylprintspecialisthomepage/",
                 "http://development-social-marketing-strategy-promote-ebola-treatment-seeking-behaviour-sierra-leone/" };
 
+        // i.e. no successful lookups expected:
         for (String qurl : qurls) {
             HashMap<String, Object> result = ocdx.getLastCrawl(qurl);
             assertNull(result);
