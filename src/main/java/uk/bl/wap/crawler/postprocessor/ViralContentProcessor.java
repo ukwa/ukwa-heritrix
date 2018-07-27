@@ -94,10 +94,12 @@ public class ViralContentProcessor extends Processor {
                     virusCount++;
                 }
             } else {
-                LOGGER.log(Level.WARNING, "Invalid ClamAV response: " + result);
+                LOGGER.log(Level.WARNING, "Invalid ClamAV response: " + result
+                        + " when processing " + curi);
             }
         } catch (Throwable e) {
-            LOGGER.log(Level.WARNING, "innerProcess(): " + e.toString(), e);
+            LOGGER.log(Level.WARNING, "innerProcess(): " + e.toString()
+                    + " when processing " + curi, e);
         } finally {
             try {
                 if (in != null)
