@@ -428,15 +428,20 @@ public class KafkaUrlReceiver
                     // Make the CrawlURI:
                     CrawlURI curi = makeCrawlUri(jo);
                     KeyedProperties.clearAllOverrideContexts();
-
+                    
                     // Add a seed to the crawl:
                     if (curi.isSeed()) {
                         logger.info("Adding seed to crawl: " + curi);
                         enqueuedCount++;
 
+                        // Lock the frontier for this operation, to avoid
+                        // conflict with other operations:
+                        candidates.getFrontier().beginDisposition(curi);
                         // Note that if we have already added a seed this does
                         // nothing:
                         candidates.getSeeds().addSeed(curi);
+                        // And release the lock:
+                        candidates.getFrontier().endDisposition();
 
                         // Also clear any quotas if a seeds marked as forced:
                         if (curi.forceFetch()) {
@@ -445,27 +450,38 @@ public class KafkaUrlReceiver
                             // Group stats:
                             FrontierGroup group = candidates.getFrontier()
                                     .getGroup(curi);
-                            group.getSubstats().clear();
-                            group.makeDirty();
+                            if (group != null) {
+                                group.getSubstats().clear();
+                                group.makeDirty();
+                            }
                             // By server:
                             final CrawlServer server = serverCache
                                     .getServerFor(curi.getUURI());
-                            server.getSubstats().clear();
-                            server.makeDirty();
+                            if (server != null) {
+                                server.getSubstats().clear();
+                                server.makeDirty();
+                            }
                             // And by host:
                             final CrawlHost host = serverCache
                                     .getHostFor(curi.getUURI());
-                            host.getSubstats().clear();
-                            host.makeDirty();
+                            // Host can be null if lookup fails:
+                            if (host != null) {
+                                host.getSubstats().clear();
+                                host.makeDirty();
+                            }
                         }
                     } else {
-
+                        // Lock the frontier for this operation, to avoid
+                        // conflict with other operations:
+                        candidates.getFrontier().beginDisposition(curi);
                         // Attempt to add this URI to the crawl:
                         logger.fine("Adding URI to crawl: " + curi + " "
                                 + curi.getPathFromSeed() + " "
                                 + curi.forceFetch());
                         int statusAfterCandidateChain = candidates
                                 .runCandidateChain(curi, null);
+                        // And release the lock:
+                        candidates.getFrontier().endDisposition();
 
                         // Only >=0 status codes get scheduled, so we can use
                         // that to log e.g.
@@ -502,6 +518,9 @@ public class KafkaUrlReceiver
                             "Unanticipated problem creating CrawlURI from json received via Kafka "
                                     + jo,
                             e);
+                } finally {
+                    // Make sure any lock is released:
+                    candidates.getFrontier().endDisposition();
                 }
 
             } else {
