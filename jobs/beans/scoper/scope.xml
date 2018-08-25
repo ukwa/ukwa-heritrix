@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+   HERITRIX 3 CRAWL JOB CONFIGURATION FILE
+  
+   This is a relatively minimal configuration suitable for many crawls.
+   
+   Commented-out beans and properties are provided as an example; values
+   shown in comments reflect the actual defaults which are in effect
+   if not otherwise specified specification. (To change from the default 
+   behavior, uncomment AND alter the shown values.)   
+ -->
+<beans xmlns="http://www.springframework.org/schema/beans" 
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+       xmlns:aop="http://www.springframework.org/schema/aop" 
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:context="http://www.springframework.org/schema/context" 
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+                           http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.2.xsd
+                           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd            
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd">
+   <context:annotation-config/>
+
+       
+   <!-- SCOPE: rules for which discovered URIs to crawl; order is very 
+       important because last decision returned other than 'NONE' wins. -->
+
+   <bean id="scope" class="uk.bl.wap.modules.deciderules.AccountableDecideRuleSequence">
+      <property name="recordDecidingRule" value="#{systemEnvironment['RECORD_DECIDING_RULE'] ?: false}" />
+      <property name="logToFile" value="#{systemEnvironment['SCOPE_LOG_ENABLED'] ?: false}" />
+      <property name="rules">
+         <list>
+            <!-- Begin by REJECTing all... -->
+            <bean class="org.archive.modules.deciderules.RejectDecideRule">
+            </bean>
+            
+            <!-- LIST MAIN ACCEPTANCE CRITERIA -->
+                
+            <!-- ...then ACCEPT those with +uk SURT prefixes... -->
+                <ref bean="surtPrefixSeedScope" />
+            <!-- ...and ACCEPT extensions likely to be associated/helper files... -->
+            <bean class="org.archive.modules.deciderules.MatchesRegexDecideRule">
+               <property name="regex" value="^https?://[^/]+/.+(?i)(\.(js|css|bmp|gif|jpe?g|[pm]ng|svg|tiff?|ico|web[pm]|aac|aiff?|m3u|m4[av]|midi?|mp[1234acu]|og[agm]|ra?m?|cda|alac|ac3|flac|wav|wm[av]|as[fx]|avi|flv|mov|mpe?g|qt|smil|swf|woff|eot|ttf))\b.*$"/>
+               <property name="decision" value="ACCEPT" />
+            </bean>
+                <!-- always chase down Embeds and Redirects... -->
+            <bean class="org.archive.modules.deciderules.HopsPathMatchesRegexDecideRule">
+               <property name="decision" value="ACCEPT" />
+               <property name="regex" value="^.*[ER]+$" />
+            </bean>
+            <!-- ...  ACCEPT those on the same Domain (disabled by default)... -->
+            <ref bean="onDomainAccept" /> 
+                <!-- ...always ACCEPT content hosted on servers that appear to be located in the UK... -->
+                <!-- This only makes sense in the broad/domain crawl (disabled by default)-->
+                <bean id="externalGeoLookupRule" class="uk.bl.wap.modules.deciderules.ExternalGeoLocationDecideRule">
+                  <property name="lookup">
+                    <ref bean="externalGeoLookup"/>
+                  </property>
+                  <property name="countryCodes">
+                    <list>
+                      <value>GB</value>
+                    </list>
+                  </property>
+                  <!-- if false, we will only run this rule if it could change the current decision, 
+                  i.e. if it could ACCEPT a URI that is not already ACCEPTED. GeoIP lookup is expensive 
+                  so lets skip it but note that this means .uk URIs will not be tagged with a geo-location. -->
+                  <property name="lookupEveryUri" value="#{systemEnvironment['GEOIP_LOOKUP_EVERY_URI'] ?: false}"/>
+                  <property name="enabled" value="#{systemEnvironment['GEOIP_GB_ENABLED'] ?: false}" />
+                </bean>
+                <!-- ...ACCEPT known URL-shortening services -->
+                <bean class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
+                   <property name="decision" value="ACCEPT" />
+                   <property name="seedsAsSurtPrefixes" value="false" />
+                   <property name="surtsDumpFile" value="url.shorteners.dump" />
+                   <property name="surtsSourceFile" value="url.shorteners.txt" />
+                </bean>
+
+                <!-- LIST REJECTION/BAD-URI CRITERIA -->
+            
+            <!-- ...but REJECT those more than a configured link-hop-count from start... -->
+            <ref bean="hopsCountReject" />
+                <!-- ...and REJECT those with 5 or more consecutive redirects... -->
+                <bean class="org.archive.modules.deciderules.HopsPathMatchesRegexDecideRule">
+                  <property name="decision" value="REJECT"/>
+                  <property name="regex" value=".*RRRRR$"/>
+                </bean>
+            <!-- ...and REJECT those from a configurable (initially empty) set of URI regexes... -->
+            <ref bean="listRegexFilterOut" />
+            <!-- ...and REJECT those with suspicious repeating path-segments... -->
+            <bean class="org.archive.modules.deciderules.PathologicalPathDecideRule">
+               <property name="maxRepetitions" value="3" />
+            </bean>
+            <!-- ...and REJECT those with more than threshold number of path-segments... -->
+            <bean class="org.archive.modules.deciderules.TooManyPathSegmentsDecideRule">
+               <property name="maxPathDepth" value="15" />
+            </bean>
+                <!-- ...and REJECT highly compressible URIs... -->
+                <!-- 
+                <bean class="uk.bl.wap.modules.deciderules.CompressibilityDecideRule">
+                    <property name="min" value="0.28"/>
+                    <property name="max" value="1.6"/>
+                </bean>
+                 -->
+            <!-- ...but REJECT those from a configurable set of REJECT SURTs... -->
+            <bean class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
+               <property name="decision" value="REJECT" />
+               <property name="seedsAsSurtPrefixes" value="false" />
+               <property name="surtsDumpFile" value="exclude.dump" />
+               <property name="surtsSourceFile" value="exclude.txt" />
+            </bean>
+            
+            <!-- ...and REJECT those that we've crawled recently enough... -->
+            <ref bean="recentlySeen"/>
+
+            <!-- Allow REJECTing all via sheets... -->
+            <ref bean="block"/>
+            
+            <!-- ...but always ACCEPT those marked as prerequisitee for another URI... -->
+            <bean class="org.archive.modules.deciderules.PrerequisiteAcceptDecideRule">
+            </bean>
+         </list>
+      </property>
+   </bean>
+    <!-- Top-level bean for managing SURT scope (alsoCheckVia enabled via sheet) -->
+    <bean id="surtPrefixSeedScope" class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
+         <property name="seedsAsSurtPrefixes" value="true" /> 
+         <property name="alsoCheckVia" value="false" />
+         <property name="surtsSourceFile" value="#{systemEnvironment['SURTS_SOURCE_FILE'] ?: 'surts.txt'}" />
+         <property name="surtsDumpFile" value="surts.dump" />
+    </bean>
+    <!-- ... ACCEPT those on the same Domain (enabled via sheet)... -->
+    <bean id="onDomainAccept" class="org.archive.modules.deciderules.surt.OnDomainsDecideRule">
+         <property name="decision" value="ACCEPT" />
+         <property name="enabled" value="false" />
+         <property name="surtsDumpFile" value="" />
+    </bean>
+    <!-- ...but REJECT those more than a configured link-hop-count from start (modifiable via sheet)... -->
+   <bean id="hopsCountReject" class="org.archive.modules.deciderules.TooManyHopsDecideRule">
+      <property name="maxHops" value="#{systemEnvironment['MAX_HOPS_DEFAULT'] ?: 20}" />
+   </bean>
+   <!-- ...and REJECT those from a configurable (initially empty) set of URI regexes... -->
+   <bean id="listRegexFilterOut" class="org.archive.modules.deciderules.MatchesListRegexDecideRule">
+      <property name="decision" value="REJECT" />
+      <property name="listLogicalOr" value="true" />
+        <property name="regexList" ref="scopeExcludesList"/>
+    </bean>
+    <import resource="excludes.xml"/>
+    
+   <!-- RECENTLY SEEN: Used to de-scope already-crawled URIs --> 
+   <bean id="recentlySeen" class="uk.bl.wap.modules.deciderules.OutbackCDXRecentlySeenDecideRule">
+       <!--  If recently seen, REJECT -->
+       <property name="decision" value="REJECT" />
+       <!-- Time to elapse before re-crawling a URI is allowed (in seconds, defaults to 365 days): -->
+       <property name="recrawlInterval" value="31536000"/>
+       <!-- reference to shared OutbackCDX configuration: -->
+       <property name="outbackCDXClient" ref="outbackCDXClient"/>
+       <!-- if false, we will only run this rule if it could change the current decision, 
+         i.e. if it could REJECT a URI that is not already REJECTED. CDX lookup is expensive 
+         so lets skip it. Note that this will prevent de-duplication of otherwise out-of-scope pre-requisites (if there are any). -->
+       <property name="lookupEveryUri" value="#{systemEnvironment['RECENTLY_SEEN_LOOKUP_EVERY_URI'] ?: false}"/>       
+   </bean>
+ 
+    <!-- Allow REJECTing all, via sheets ... -->
+    <bean id="block" class="org.archive.modules.deciderules.RejectDecideRule">
+       <property name="enabled" value="false" />
+    </bean>
+    
+    <!-- ADDITIONAL SCOPE SUPPORT BEANS -->
+   
+   <!-- GEO-LOOKUP: specifying location of external database. -->
+    <bean id="externalGeoLookup" class="uk.bl.wap.modules.deciderules.ExternalGeoLookup">
+        <property name="database" value="#{ systemEnvironment['GEOLITE2_CITY_MMDB_LOCATION'] ?: '' }/GeoLite2-Country.mmdb"/>
+    </bean>
+    
+    <!-- Shared OutbackCDX client and configuration -->
+    <bean id="outbackCDXClient" class="uk.bl.wap.util.OutbackCDXClient">
+        <property name="endpoint" value="#{systemEnvironment['CDXSERVER_ENDPOINT'] ?: 'http://localhost:9090/fc'}"/>
+        <property name="socketTimeout" value="30000"/>
+    </bean>
+ 
+   <!-- SHEETOVERLAYMANAGER: manager of sheets of contextual overlays
+       Autowired to include any SheetForSurtPrefix or 
+       SheetForDecideRuled beans -->
+   <bean id="sheetOverlaysManager" autowire="byType" class="org.archive.crawler.spring.SheetOverlaysManager">
+   </bean>
+   <import resource="sheets.xml"/>
+
+  <!-- The cache of IP addresses -->
+  <bean id="serverCache" class="org.archive.modules.fetcher.DefaultServerCache">
+  </bean>
+   
+   <!-- SEEDS FILE: Disabled in this case, as we control seeding with Kafka (below_ -->
+   <bean id="seeds" class="uk.bl.wap.crawler.modules.seeds.NoOpSeedsModule">
+      <property name="sourceTagSeeds" value="true" />
+   </bean>
+   
+   <!-- BASICLOGGERMODULE: shared logging facility -->
+   <bean id="loggerModule" class="uk.bl.wap.util.BasicLoggerModule">
+   </bean>  
+
+
+   <!-- KAFKA BEANS -->
+   
+       <!-- a 'top-level' bean that listens for URLs from Kafka -->
+    <bean id="kafkaUrlReceiver" class="uk.bl.wap.scoper.KafkaStreamHandler">
+      <property name="bootstrapServers" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
+      <property name="groupId" value="#{systemEnvironment['KAFKA_GROUP_ID'] ?: 'scoper'}" />
+      <property name="topic" value="#{systemEnvironment['KAFKA_CANDIDATES_TOPIC'] ?: 'uris.candidates'}" />
+      <property name="consumerId" value="#{systemEnvironment['KAFKA_CONSUMER_ID'] ?: 1}"/>
+      <property name="consumerGroupSize" value="#{systemEnvironment['KAFKA_CONSUMER_GROUP_SIZE'] ?: 1}"/>
+      <property name="seekToBeginning" value="#{systemEnvironment['KAFKA_SEEK_TO_BEGINNING'] ?: false}"/>
+      <property name="maxPollRecords" value="#{systemEnvironment['KAFKA_MAX_POLL_RECORDS'] ?: 500}"/>
+      <property name="numMessageHandlerThreads" value="#{systemEnvironment['KAFKA_NUM_MESSAGE_THREADS'] ?: 16}"/>
+      <property name="discardedUriFeedEnabled" value="#{systemEnvironment['KAFKA_DISCARDED_FEED_ENABLED'] ?: true}"/>
+    </bean>
+    
+    <!-- This allows the collection of a separate crawl-log of the out-of-scope URIs. It is called from kafkaUrlReceiver -->
+    <bean id="discardedUriFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedDiscardedFeed">
+        <property name="topic" value="#{systemEnvironment['KAFKA_DISCARDED_TOPIC'] ?: 'uris.discarded'}" />
+        <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
+    </bean>
+    
+     <!-- This provides a crawl log feed to a queue - note that you'll need to set up a binding that matches these parameters to a queue -->
+     <bean id="toCrawlFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedToCrawlFeed">
+       <property name="emitInScopeOnly" value="#{systemEnvironment['KAFKA_TOCRAWL_IN_SCOPE_ONLY'] ?: false}"/>
+       <property name="topic" value="#{systemEnvironment['KAFKA_TOCRAWL_TOPIC'] ?: 'uris.tocrawl'}" />
+       <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
+       <property name="emitOutlinks" value="false"/>
+       <property name="extraFields">
+           <map>
+             <entry key="CRAWL_NAME" value="#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}"/>
+           </map>
+       </property>
+     </bean>
+     
+</beans>

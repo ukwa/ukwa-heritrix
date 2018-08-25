@@ -6,11 +6,15 @@ package uk.bl.wap.modules.deciderules;
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.io.IOUtils;
 import org.archive.io.ReadSource;
+import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.surt.SurtPrefixedDecideRule;
 import org.archive.spring.ConfigFile;
 import org.archive.spring.ConfigPathConfigurer;
@@ -144,6 +148,28 @@ public class WatchedFileSurtPrefixedDecideRule extends SurtPrefixedDecideRule
     @Override
     public void afterPropertiesSet() throws Exception {
         this.watchSurtFile.init();
+    }
+
+    @Override
+    public void addedSeed(CrawlURI curi) {
+        // If enabled, add new seeds to the SURT scope:
+        if(getSeedsAsSurtPrefixes()) {
+            String prefix = prefixFrom(curi.getURI());
+            boolean added = surtPrefixes.add(prefix);
+            // If this is new, append it to the surts file:
+            if (added) {
+                try {
+                    Path sourceFile = this.watchSurtFile.getSourceFile()
+                            .toPath();
+                    // Add the seed URL:
+                    Files.write(sourceFile, curi.getURI().getBytes("UTF-8"),
+                            StandardOpenOption.APPEND);
+                } catch (IOException e) {
+                    logger.log(Level.SEVERE,
+                            "IOException while attempting to append to ", e);
+                }
+            }
+        }
     }
 
 }

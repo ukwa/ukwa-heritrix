@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+   xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+   xmlns:context="http://www.springframework.org/schema/context"
+   xmlns:util="http://www.springframework.org/schema/util"
+   xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+                           http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.2.xsd
+                           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd            
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd">
+
+   <!-- Sheet associations -->
+
+   <!-- Block Altogether -->
+   <bean class="org.archive.crawler.spring.SurtPrefixesSheetAssociation">
+      <property name="surtPrefixes">
+         <list>
+            <value>http://(uk,gov,nationalarchives,webarchive,</value>
+            <value>http://(uk,bl,intranet,</value>
+            <value>http://(uk,bl,ad,</value>
+            <value>http://(com,bsigroup,bsol,</value>
+            <value>http://(uk,ac,canterbury,libportal,</value>
+            <value>http://(com,galegroup,infotrac,)/itweb/blibrary</value>
+            <value>http://(com,oxforddnb,</value>
+            <value>http://(com,oup,global,</value>
+            <value>http://(uk,org,brereton,</value>
+            <value>http://(uk,org,webarchive,www,)/wayback/</value>
+            <value>http://(uk,org,webarchive,beta,)/wayback/</value>
+            <value>http://(uk,org,webarchive,alpha,)/wayback/</value>
+            <value>http://(uk,co,cdssl,</value>
+            <value>http://(uk,co,yeomanryhouse,www,</value>
+            <value>http://(uk,co,car-specs-features,</value>
+            <value>http://(uk,org,grettonvillage,www,</value>
+         </list>
+      </property>
+      <property name="targetSheetNames">
+         <list>
+            <value>blockAll</value>
+         </list>
+      </property>
+   </bean>
+   
+   <!-- Sheets -->
+
+   <!-- unlimited hops -->
+   <bean id="noMaxHops" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="hopsCountReject.enabled" value="false" />
+         </map>
+      </property>
+   </bean>
+   
+   <!-- block everything -->
+   <bean id="blockAll" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="block.enabled" value="true" />
+         </map>
+      </property>
+   </bean>
+   
+   <!-- Sheets implementing various Scoping rules -->
+   
+   <!-- Just this resource: -->
+   <bean id="resourceScope" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="hopsCountReject.maxHops" value="1" />
+         </map>
+      </property>
+   </bean>
+   <!-- This resource and any within one hop of the seeds scope -->
+   <bean id="plus1Scope" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="surtPrefixSeedScope.alsoCheckVia" value="true" />
+         </map>
+      </property>
+   </bean>
+   <!-- Anything on the same subdomain -->
+   <bean id="subdomainsScope" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="onDomainAccept.enabled" value="true" />
+         </map>
+      </property>
+   </bean>
+
+   <!-- Re-crawl Frequency Sheets: Recently-Seen Recrawl Interval in seconds. -->
+      
+   <bean id="recrawl-1hr" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <!-- This value of 3600 means any URLs in this sheet will be 
+               re-crawled hourly. -->
+            <entry key="recentlySeen.recrawlInterval" value="3600" />
+         </map>
+      </property>
+   </bean>
+   <bean id="recrawl-1day" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="recentlySeen.recrawlInterval" value="86400" />
+         </map>
+      </property>
+   </bean>
+   <bean id="recrawl-1week" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="recentlySeen.recrawlInterval" value="604800" />
+         </map>
+      </property>
+   </bean>
+   <bean id="recrawl-27days" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <!-- a 27 day re-crawl useful for monthly crawls -->
+            <entry key="recentlySeen.recrawlInterval" value="2332800" />
+         </map>
+      </property>
+   </bean>
+   <bean id="recrawl-4weeks" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="recentlySeen.recrawlInterval" value="2419200" />
+         </map>
+      </property>
+   </bean>
+   <bean id="recrawl-12weeks" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="recentlySeen.recrawlInterval" value="7257600" />
+         </map>
+      </property>
+   </bean>
+   <bean id="recrawl-24weeks" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="recentlySeen.recrawlInterval" value="14515200" />
+         </map>
+      </property>
+   </bean>
+   <bean id="recrawl-365days" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="recentlySeen.recrawlInterval" value="31536000" />
+         </map>
+      </property>
+   </bean>
+
+</beans>

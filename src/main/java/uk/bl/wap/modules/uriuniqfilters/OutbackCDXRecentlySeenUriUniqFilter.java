@@ -9,7 +9,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CoreAttributeConstants;
+import org.archive.modules.CrawlURI;
+import org.archive.net.UURIFactory;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -107,6 +110,9 @@ public class OutbackCDXRecentlySeenUriUniqFilter
             // since we last saw it:
             if (ts == 0l || currentTime - ts > ttl_s) {
                 this.times.put(uri, currentTime);
+                CrawlURI curi = new CrawlURI(UURIFactory.getInstance(uri));
+                curi.setFetchBeginTime(currentTime);
+                outbackCDXClient.putUri(curi);
                 LOGGER.finest("Got elapsed: " + (currentTime - ts)
                         + " versus TTL " + ttl_s + " HENCE ENQUEUE");
                 return true;
@@ -119,6 +125,11 @@ public class OutbackCDXRecentlySeenUriUniqFilter
         } catch (ExecutionException e) {
             LOGGER.log(Level.SEVERE,
                     "ExecutionException while running setAddWithTT!", e);
+        } catch (URIException e) {
+            LOGGER.log(Level.SEVERE,
+                    "ExecutionException while running setAddWithTT!", e);
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
         return true;
     }
