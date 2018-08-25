@@ -163,7 +163,7 @@
 	</bean>
     <!-- Top-level bean for managing SURT scope (alsoCheckVia enabled via sheet) -->
     <bean id="surtPrefixSeedScope" class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
-         <property name="seedsAsSurtPrefixes" value="true" /> 
+         <property name="seedsAsSurtPrefixes" value="true" />
          <property name="alsoCheckVia" value="false" />
          <property name="surtsSourceFile" value="#{systemEnvironment['SURTS_SOURCE_FILE'] ?: 'surts.txt'}" />
          <property name="surtsDumpFile" value="surts.dump" />
@@ -586,8 +586,8 @@
   -->
      <!-- This provides a crawl log feed to a queue - note that you'll need to set up a binding that matches these parameters to a queue -->
      <bean id="toCrawlFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedToCrawlFeed">
-       <property name="emitInScopeOnly" value="#{systemEnvironment['KAFKA_TOCRAWL_IN_SCOPE_ONLY'] ?: false}"/>
-       <property name="topic" value="#{systemEnvironment['KAFKA_TOCRAWL_TOPIC'] ?: 'uris.tocrawl'}" />
+       <property name="emitInScopeOnly" value="#{systemEnvironment['KAFKA_CANDIDATES_IN_SCOPE_ONLY'] ?: false}"/>
+       <property name="topic" value="#{systemEnvironment['KAFKA_CANDIDATES_TOPIC'] ?: 'uris.candidates'}" />
        <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
        <property name="extraFields">
            <map>
@@ -836,5 +836,10 @@
 		 to crawler-beans.cxml file, and tracking crawl files for web UI -->
 	<bean id="configPathConfigurer" class="org.archive.spring.ConfigPathConfigurer">
 	</bean>
+   
+   <!-- Metrics Endpoint for Monitoring with Prometheus -->
+   <bean class="uk.bl.wap.util.MetricsExporterBean">
+      <property name="metricsPort" value="#{systemEnvironment['PROMETHEUS_METRICS_PORT'] ?: 9118}"/>
+   </bean>
 </beans>
 
