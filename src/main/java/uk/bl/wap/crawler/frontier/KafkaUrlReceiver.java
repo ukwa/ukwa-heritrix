@@ -78,7 +78,10 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.Lifecycle;
 
+import io.prometheus.client.Counter;
+import io.prometheus.client.Gauge;
 import uk.bl.wap.crawler.postprocessor.KafkaKeyedDiscardedFeed;
+import uk.bl.wap.crawler.postprocessor.KafkaKeyedToCrawlFeed;
 import uk.bl.wap.modules.deciderules.RecentlySeenDecideRule;
 
 /**
@@ -162,6 +165,27 @@ public class KafkaUrlReceiver
 
     public void setDiscardedUriFeedEnabled(boolean discardedUriFeedEnabled) {
         this.discardedUriFeedEnabled = discardedUriFeedEnabled;
+    }
+
+    protected KafkaKeyedToCrawlFeed toCrawlFeed;
+
+    public KafkaKeyedToCrawlFeed getToCrawlFeed() {
+        return toCrawlFeed;
+    }
+
+    @Autowired
+    public void setToCrawlFeed(KafkaKeyedToCrawlFeed toCrawlFeed) {
+        this.toCrawlFeed = toCrawlFeed;
+    }
+
+    private boolean emitInScopeCrawlFeed = false;
+
+    public boolean isEmitInScopeCrawlFeed() {
+        return emitInScopeCrawlFeed;
+    }
+
+    public void setEmitInScopeCrawlFeed(boolean emitInScopeCrawlFeed) {
+        this.emitInScopeCrawlFeed = emitInScopeCrawlFeed;
     }
 
     protected String bootstrapServers = "localhost:9092";
@@ -257,6 +281,16 @@ public class KafkaUrlReceiver
     // For reporting on last-known position on different partitions:
     private Map<Integer, Long> currentOffsets = new HashMap<Integer, Long>();
 
+    private static final Counter messageCounter = Counter.build()
+            .name("kafka_crawl_messages_total").labelNames("topic", "outcome")
+            .help("Total crawl messages handled.").register();
+
+    // For reporting on last-known position on different partitions:
+
+    private static final Gauge partitionOffsets = Gauge.build()
+            .name("kafka_partition_offsets").labelNames("topic", "partition")
+            .help("Total crawl messages handled.").register();
+
     private Integer pollTimeout = 1000;
 
     private transient Lock lock = new ReentrantLock(true);
@@ -335,8 +369,17 @@ public class KafkaUrlReceiver
                                     logger.finer("Processing crawl request: "
                                             + decodedBody);
                                     JSONObject jo = new JSONObject(decodedBody);
-                                    messageHandlerPool.execute(
-                                            new CrawlMessageHandler(jo));
+                                    if (emitInScopeCrawlFeed) {
+                                        // Send the in-scope URLs on to a Kafka
+                                        // topic...
+                                        messageHandlerPool.execute(
+                                                new CrawlMessageToKafkaTopic(jo));
+                                    } else {
+                                        // Enqueue them locally:
+                                        messageHandlerPool.execute(
+                                            new CrawlMessageFrontierScheduler(jo));
+                                    }
+                                    
                                 } catch (Exception e) {
                                     logger.log(Level.SEVERE,
                                             "problem creating JSON from String received via Kafka "
@@ -344,6 +387,10 @@ public class KafkaUrlReceiver
                                             e);
                                 }
                                 count += 1;
+                                partitionOffsets
+                                        .labels(getTopic(),
+                                                "" + record.partition())
+                                        .set(record.offset());
                                 currentOffsets.put(record.partition(),
                                         record.offset());
                                 if (count % 1000 == 0) {
@@ -407,16 +454,17 @@ public class KafkaUrlReceiver
 
     }
 
+
     /**
-     * How we process crawl request messages.
+     * How we process crawl request messages, when handling locally:
      * 
      * @param jo
      */
-    public class CrawlMessageHandler implements Runnable {
+    public class CrawlMessageFrontierScheduler implements Runnable {
 
         private JSONObject jo;
 
-        public CrawlMessageHandler(JSONObject jo) {
+        public CrawlMessageFrontierScheduler(JSONObject jo) {
             this.jo = jo;
         }
 
@@ -497,6 +545,7 @@ public class KafkaUrlReceiver
                             }
                         } else {
                             // Was successfully enqueued:
+                            messageCounter.labels(getTopic(), "enqueued").inc();
                             enqueuedCount++;
                             if (enqueuedCount % 1000 == 0) {
                                 logger.info("Sampling enqueued URLs: " + curi);
@@ -530,6 +579,55 @@ public class KafkaUrlReceiver
 
     }
 
+    /**
+     * How we process crawl request messages, when handling locally:
+     * 
+     * @param jo
+     */
+    public class CrawlMessageToKafkaTopic implements Runnable {
+
+        private JSONObject jo;
+
+        public CrawlMessageToKafkaTopic(JSONObject jo) {
+            this.jo = jo;
+        }
+
+        @Override
+        public void run() {
+            // Process the messages:
+            if ("GET".equals(jo.getString("method"))) {
+                try {
+                    // Make the CrawlURI:
+                    CrawlURI curi = makeCrawlUri(jo);
+                    toCrawlFeed.process(curi);
+                
+                    // Was successfully enqueued:
+                    enqueuedCount++;
+                    if (enqueuedCount % 1000 == 0) {
+                        logger.info("Sampling enqueued URLs: " + curi);
+                    }
+                } catch (URIException e) {
+                    logger.log(Level.WARNING,
+                            "problem creating CrawlURI from json received via Kafka "
+                                    + jo,
+                            e);
+                } catch (JSONException e) {
+                    logger.log(Level.SEVERE,
+                            "problem creating CrawlURI from json received via Kafka "
+                                    + jo,
+                            e);
+                } catch (Exception e) {
+                    logger.log(Level.SEVERE,
+                            "Unanticipated problem creating CrawlURI from json received via Kafka "
+                                    + jo,
+                            e);
+                }
+            } else {
+                logger.info("ignoring url with method other than GET - " + jo);
+            }
+        }
+
+    }
 
     // Thread for the Kafka client:
     transient private KafkaConsumerRunner kafkaConsumer;
@@ -671,7 +769,7 @@ public class KafkaUrlReceiver
          * https://webarchive.jira.com/wiki/display/Heritrix/Precedence+
          * Feature+Notes
          */
-        if (Hop.INFERRED.getHopString().equals(curi.getLastHop())) {
+        if (Hop.EMBED.getHopString().equals(curi.getLastHop())) {
             curi.setSchedulingDirective(SchedulingConstants.HIGH);
             curi.setPrecedence(1);
         }
