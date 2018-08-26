@@ -162,11 +162,13 @@
 		</property>
 	</bean>
     <!-- Top-level bean for managing SURT scope (alsoCheckVia enabled via sheet) -->
-    <bean id="surtPrefixSeedScope" class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
+    <bean id="surtPrefixSeedScope" class="uk.bl.wap.modules.deciderules.WatchedFileSurtPrefixedDecideRule">
          <property name="seedsAsSurtPrefixes" value="true" />
          <property name="alsoCheckVia" value="false" />
          <property name="surtsSourceFile" value="#{systemEnvironment['SURTS_SOURCE_FILE'] ?: 'surts.txt'}" />
          <property name="surtsDumpFile" value="surts.dump" />
+         <!-- How often to re-read the scope file (seconds) -->
+         <property name="sourceCheckInterval" value="#{systemEnvironment['SCOPE_FILE_RELOAD_INTERVAL'] ?: 5}"/>
     </bean>
     <!-- ... ACCEPT those on the same Domain (enabled via sheet)... -->
     <bean id="onDomainAccept" class="org.archive.modules.deciderules.surt.OnDomainsDecideRule">
@@ -594,6 +596,7 @@
              <entry key="CRAWL_NAME" value="#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}"/>
            </map>
        </property>
+       <property name="discardedUriFeedEnabled" value="#{systemEnvironment['KAFKA_DISCARDED_FEED_ENABLED'] ?: false}"/>
      </bean>
   
 	<bean id="candidates" class="org.archive.crawler.postprocessor.CandidatesProcessor">

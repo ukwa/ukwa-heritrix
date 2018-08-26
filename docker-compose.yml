@@ -16,6 +16,7 @@ services:
        - "LAUNCH_AUTOMATICALLY=true"
        - "PAUSE_AT_START=false"
        - "SCOPE_LOG_ENABLED=false"
+       - "SCOPE_FILE_RELOAD_INTERVAL=5"
        - "RECORD_DECIDING_RULE=true"
        - "WARC_PREFIX=BL-NPLD-TEST"
        - "KAFKA_BOOTSTRAP_SERVERS=kafka:9092"
@@ -32,7 +33,8 @@ services:
        - "WEBRENDER_ENDPOINT=http://webrender:8010/render"
        - "CLAMD_ENABLED=true"
        - "CLAMD_HOST=clamd"
-       #- "SURTS_SOURCE_FILE=domain-surts.txt" # Use the domain SURT scope     
+       #- "SURTS_SOURCE_FILE=domain-surts.txt" # Use the domain SURT scope
+       - "SURTS_SOURCE_FILE=/shared/surts.txt"
     links:
       - clamd
       - kafka
@@ -43,6 +45,7 @@ services:
     volumes:
       - ./docker/jmx_prometheus_javaagent-0.3.1.jar:/jmx_prometheus_javaagent-0.3.1.jar
       - ./docker/heritrix-jmx-config.yml:/jmx-config.yml
+      - ./docker/shared:/shared
     volumes_from:
       - dvc:rw  
 

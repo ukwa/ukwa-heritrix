@@ -95,7 +95,7 @@ public abstract class WatchedFileSource {
         try {
             loadFile();
             lastUpdated = currentMod;
-            LOGGER.info("Reload " + file.getAbsolutePath() + " OK");
+            LOGGER.info("Reloaded " + file.getAbsolutePath() + " OK");
         } catch (Exception e) {
             lastUpdated = -1;
             e.printStackTrace();

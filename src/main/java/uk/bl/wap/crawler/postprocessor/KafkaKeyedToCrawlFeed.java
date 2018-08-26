@@ -66,6 +66,27 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
         this.scope = scope;
     }
 
+    protected KafkaKeyedDiscardedFeed discardedUriFeed;
+
+    public KafkaKeyedDiscardedFeed getDiscardedUriFeed() {
+        return discardedUriFeed;
+    }
+
+    @Autowired
+    public void setDiscardedUriFeed(KafkaKeyedDiscardedFeed discardedUriFeed) {
+        this.discardedUriFeed = discardedUriFeed;
+    }
+
+    private boolean discardedUriFeedEnabled = false;
+
+    public boolean isDiscardedUriFeedEnabled() {
+        return discardedUriFeedEnabled;
+    }
+
+    public void setDiscardedUriFeedEnabled(boolean discardedUriFeedEnabled) {
+        this.discardedUriFeedEnabled = discardedUriFeedEnabled;
+    }
+
     /**
      * Constructs the json to send.
      * 
@@ -195,9 +216,12 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
                                     // Pass to Kafka queue:
                                     sendToKafka(getTopic(), curi, candidate);
                                 } else {
-                                    // TODO Log discarded URLs for analysis?:
-                                    // sendToKafka("uris.discarded", curi,
-                                    // candidate);
+                                    // (optionally) log discarded URLs for
+                                    // analysis:
+                                    if (discardedUriFeedEnabled) {
+                                        discardedUriFeed
+                                                .doInnerProcess(candidate);
+                                    }
                                 }
                             } else {
                                 // Ignore scope rules and emit all

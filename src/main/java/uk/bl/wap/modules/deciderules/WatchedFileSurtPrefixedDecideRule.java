@@ -80,7 +80,7 @@ public class WatchedFileSurtPrefixedDecideRule extends SurtPrefixedDecideRule
                 }
                 // Log current surt prefixes (for debugging):
                 for (String s : surtPrefixes) {
-                    logger.info("SURT: " + s);
+                    logger.fine("SURT: " + s);
                 }
             }
         }
@@ -158,15 +158,18 @@ public class WatchedFileSurtPrefixedDecideRule extends SurtPrefixedDecideRule
             boolean added = surtPrefixes.add(prefix);
             // If this is new, append it to the surts file:
             if (added) {
-                try {
-                    Path sourceFile = this.watchSurtFile.getSourceFile()
-                            .toPath();
-                    // Add the seed URL:
-                    Files.write(sourceFile, curi.getURI().getBytes("UTF-8"),
-                            StandardOpenOption.APPEND);
-                } catch (IOException e) {
-                    logger.log(Level.SEVERE,
-                            "IOException while attempting to append to ", e);
+                synchronized (this) {
+                    try {
+                        Path sourceFile = this.watchSurtFile.getSourceFile()
+                                .toPath();
+                        // Add the seed URL:
+                        Files.write(sourceFile, curi.getURI().getBytes("UTF-8"),
+                                StandardOpenOption.APPEND);
+                    } catch (IOException e) {
+                        logger.log(Level.SEVERE,
+                                "IOException while attempting to append to ",
+                                e);
+                    }
                 }
             }
         }

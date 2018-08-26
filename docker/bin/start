@@ -12,6 +12,12 @@ else
 	echo STARTER: Monitrix crawl logging disabled
 fi
 
+# Ensure the scope file exists, if it's an absolute path:
+if [[ "${SURTS_SOURCE_FILE:0:1}" == / ]]; then
+    echo Touching $SURTS_SOURCE_FILE...
+    touch $SURTS_SOURCE_FILE
+fi
+
 #
 # Trapping the TERM signal and shutting down cleanly only works
 # if we use `wait` to await H3 rather than running it in the 
