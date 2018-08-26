@@ -230,9 +230,7 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
                             }
 
                             // Record this diverted URL string so it will only
-                            // be
-                            // sent
-                            // once:
+                            // be sent once:
                             sentURIs.add(candidate.getURI());
 
                         } else {

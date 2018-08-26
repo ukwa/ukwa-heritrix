@@ -4,11 +4,12 @@
 package uk.bl.wap.modules.deciderules;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Reader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -158,13 +159,22 @@ public class WatchedFileSurtPrefixedDecideRule extends SurtPrefixedDecideRule
             boolean added = surtPrefixes.add(prefix);
             // If this is new, append it to the surts file:
             if (added) {
+                // One thread at a time, please:
                 synchronized (this) {
+                    // Append, using a FileLock to attempt to ensure
+                    // consistency:
+                    File sourceFile = this.watchSurtFile.getSourceFile();
                     try {
-                        Path sourceFile = this.watchSurtFile.getSourceFile()
-                                .toPath();
-                        // Add the seed URL:
-                        Files.write(sourceFile, curi.getURI().getBytes("UTF-8"),
-                                StandardOpenOption.APPEND);
+                        // Append the seed URL:
+                        final FileOutputStream fos = new FileOutputStream(
+                                sourceFile, true);
+                        final FileChannel chan = fos.getChannel();
+                        FileLock lock = chan.lock();
+                        chan.write(ByteBuffer
+                                .wrap(curi.getURI().getBytes("UTF-8")));
+                        lock.release();
+                        chan.close();
+                        fos.close();
                     } catch (IOException e) {
                         logger.log(Level.SEVERE,
                                 "IOException while attempting to append to ",

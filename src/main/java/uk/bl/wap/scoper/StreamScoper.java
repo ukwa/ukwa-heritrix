@@ -8,9 +8,6 @@ import java.io.IOException;
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
-import io.prometheus.client.exporter.HTTPServer;
-import io.prometheus.client.hotspot.DefaultExports;
-
 /**
  * This class takes a Heritrix3 scope configuration file and runs it as a
  * standalone application. This allows scope processing to be handled outside of
@@ -76,11 +73,6 @@ public class StreamScoper {
                 "scope.xml");
         springContext.start();
 
-        // Set up the default exports:
-        DefaultExports.initialize();
-
-        // Spin up a HTTP server to make the metrics available:
-        HTTPServer server = new HTTPServer(9118);
         while (true) {
 
         }

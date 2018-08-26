@@ -480,6 +480,8 @@ public class KafkaUrlReceiver
                     // Add a seed to the crawl:
                     if (curi.isSeed()) {
                         logger.info("Adding seed to crawl: " + curi);
+                        messageCounter.labels(getTopic(), "enqueued").inc();
+                        messageCounter.labels(getTopic(), "seeds").inc();
                         enqueuedCount++;
 
                         // Lock the frontier for this operation, to avoid
@@ -538,6 +540,8 @@ public class KafkaUrlReceiver
                             logger.finest("Discarding URI " + curi
                                     + " with Status Code: "
                                     + statusAfterCandidateChain);
+                            messageCounter.labels(getTopic(), "discarded")
+                                    .inc();
                             discardedCount++;
                             // n.b. The discarded URIs streamed out here:
                             if (discardedUriFeedEnabled) {
@@ -552,6 +556,8 @@ public class KafkaUrlReceiver
                             }
                         }
                     }
+                    // Also count total processed:
+                    messageCounter.labels(getTopic(), "processed").inc();
                 } catch (URIException e) {
                     logger.log(Level.WARNING,
                             "problem creating CrawlURI from json received via Kafka "

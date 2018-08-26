@@ -3,7 +3,12 @@
  */
 package uk.bl.wap.crawler.postprocessor;
 
+import java.util.concurrent.TimeUnit;
+
 import org.archive.modules.CrawlURI;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 /**
  * 
@@ -30,13 +35,31 @@ public class KafkaKeyedDiscardedFeed extends KafkaKeyedCrawlLogFeed {
     }
 
     /**
+     * Use a cache to avoid re-sending the same discarded URLs multiple times
+     * over short periods of time.
+     */
+    private Cache<String, Boolean> recentlySentCache = CacheBuilder.newBuilder()
+            .expireAfterWrite(5, TimeUnit.MINUTES).softValues()
+            .maximumSize(2000).build();
+
+    /**
      * Allow this to be used outside of a Processor chain context:
      * 
      * @param curi
      * @throws InterruptedException
      */
     public void doInnerProcess(CrawlURI curi) throws InterruptedException {
-        this.innerProcess(curi);
+        // Check if this URL has been sent recently:
+        Boolean recentlySent = recentlySentCache.getIfPresent(curi.getURI());
+        if (recentlySent == null) {
+            this.innerProcess(curi);
+            logger.finest("Sending discarded URL: " + curi + " via "
+                    + curi.flattenVia());
+            recentlySentCache.put(curi.getURI(), true);
+        } else {
+            logger.finest("Ignoring recently-sent discarded URL: " + curi
+                    + " via " + curi.flattenVia());
+        }
     }
 
 }
