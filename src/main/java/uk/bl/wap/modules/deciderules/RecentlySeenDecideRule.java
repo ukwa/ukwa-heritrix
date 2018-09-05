@@ -30,6 +30,7 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
     public static final int DAY = HOUR * 24;
     public static final int WEEK = DAY * 7;
 
+    /** Recrawl-interval key if set in CrawlURI, in seconds */
     public static final String RECRAWL_INTERVAL = "recrawlInterval";
 
     // Hash function used for building keys:

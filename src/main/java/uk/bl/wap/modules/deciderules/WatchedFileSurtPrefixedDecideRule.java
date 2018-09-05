@@ -166,12 +166,13 @@ public class WatchedFileSurtPrefixedDecideRule extends SurtPrefixedDecideRule
                     File sourceFile = this.watchSurtFile.getSourceFile();
                     try {
                         // Append the seed URL:
+                        String line = curi.getURI() + "\n";
                         final FileOutputStream fos = new FileOutputStream(
                                 sourceFile, true);
                         final FileChannel chan = fos.getChannel();
                         FileLock lock = chan.lock();
                         chan.write(ByteBuffer
-                                .wrap(curi.getURI().getBytes("UTF-8")));
+                                .wrap(line.getBytes("UTF-8")));
                         lock.release();
                         chan.close();
                         fos.close();
