@@ -90,7 +90,27 @@ import uk.bl.wap.modules.deciderules.RecentlySeenDecideRule;
  * 
  * Example:
  * 
- * {"parentUrl": "http://crawl-test-site:4000/crawl-test-site/", "url": "http://crawl-test-site:4000/crawl-test-site/", "parentUrlMetadata": {"pathFromSeed": "", "heritableData": {"source": "", "heritable": ["source", "heritable"]}}, "headers": {}, "hop": "", "isSeed": true, "method": "GET"}
+ * <pre>
+ * { 
+ *     "url": "http://crawl-test-site:4000/crawl-test-site/",
+ *     "parentUrl": "http://crawl-test-site:4000/crawl-test-site/", 
+ *     "parentUrlMetadata": {"pathFromSeed": "", "heritableData": {"source": "", "heritable": ["source", "heritable"]}}, 
+ *     "headers": {}, 
+ *     "hop": "", 
+ *     "isSeed": true, 
+ *     "forceFetch": false,
+ *     "method": "GET",
+ *     "sheets": [], 
+ *     "recrawlInterval": "300"
+ * }
+ * </pre>
+ * 
+ * The sheets parameter updates which sheets are associated with the SURT
+ * generated from this URL.
+ * 
+ * The recrawlInterval allows the default or sheet-defined recrawl interval to
+ * be overridden for individual CrawlURIs.
+ * 
  * @contributor anjackson
  */
 public class KafkaUrlReceiver
@@ -490,8 +510,6 @@ public class KafkaUrlReceiver
                         // Note that if we have already added a seed this does
                         // nothing:
                         candidates.getSeeds().addSeed(curi);
-                        // And release the lock:
-                        candidates.getFrontier().endDisposition();
 
                         // Also clear any quotas if a seeds marked as forced:
                         if (curi.forceFetch()) {
@@ -520,6 +538,8 @@ public class KafkaUrlReceiver
                                 host.makeDirty();
                             }
                         }
+                        // And release the lock:
+                        candidates.getFrontier().endDisposition();
                     } else {
                         // Lock the frontier for this operation, to avoid
                         // conflict with other operations:
