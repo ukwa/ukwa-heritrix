@@ -302,21 +302,25 @@ public class WrenderProcessor extends Processor implements
             JSONObject entry = entries.getJSONObject(i);
             // Turn string from HAR into a URI before comparison, to
             // compensate for escaped characters etc.:
+            String url = entry.getJSONObject("request").getString("url");
             try {
-                UURI requestUri = UURIFactory.getInstance(
-                        entry.getJSONObject("request").getString("url"));
-                if (curi.getUURI().equals(requestUri)) {
-                    // Record that this worked so the rest of the Fetch Chain
-                    // can be skipped:
-                    curi.setFetchStatus(
-                            FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR);
-                    // Extract status code:
-                    curi.getAnnotations().add("WrenderedStatus:"
-                            + entry.getJSONObject("response").getInt("status"));
+                if (!url.startsWith("data:")) {
+                    UURI requestUri = UURIFactory.getInstance(url);
+                    if (curi.getUURI().equals(requestUri)) {
+                        // Record that this worked so the rest of the Fetch
+                        // Chain
+                        // can be skipped:
+                        curi.setFetchStatus(
+                                FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR);
+                        // Extract status code:
+                        curi.getAnnotations().add("WrenderedStatus:" + entry
+                                .getJSONObject("response").getInt("status"));
+                    }
+                } else {
+                    LOGGER.fine("Skipping data: URI embedded in " + curi);
                 }
             } catch (URIException e) {
-                LOGGER.warning("Could not parse as UURI: "
-                        + entry.getJSONObject("request").getString("url"));
+                LOGGER.warning("Could not parse as UURI: " + url);
             }
         }
         
