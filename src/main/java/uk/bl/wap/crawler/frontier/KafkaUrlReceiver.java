@@ -511,33 +511,12 @@ public class KafkaUrlReceiver
                         // nothing:
                         candidates.getSeeds().addSeed(curi);
 
-                        // Also clear any quotas if a seeds marked as forced:
-                        if (curi.forceFetch()) {
-                            logger.info(
-                                    "Clearing down quota stats for " + curi);
-                            // Group stats:
-                            FrontierGroup group = candidates.getFrontier()
-                                    .getGroup(curi);
-                            if (group != null) {
-                                group.getSubstats().clear();
-                                group.makeDirty();
-                            }
-                            // By server:
-                            final CrawlServer server = serverCache
-                                    .getServerFor(curi.getUURI());
-                            if (server != null) {
-                                server.getSubstats().clear();
-                                server.makeDirty();
-                            }
-                            // And by host:
-                            final CrawlHost host = serverCache
-                                    .getHostFor(curi.getUURI());
-                            // Host can be null if lookup fails:
-                            if (host != null) {
-                                host.getSubstats().clear();
-                                host.makeDirty();
-                            }
-                        }
+                        // classKey now set, so we can reset quotas, which we
+                        // infer from Seeds marked forceFetch (because seeds are
+                        // always fetched):
+                        if (curi.forceFetch())
+                            resetQuotas(curi);
+
                         // And release the lock:
                         candidates.getFrontier().endDisposition();
                     } else {
@@ -600,6 +579,29 @@ public class KafkaUrlReceiver
 
             } else {
                 logger.info("ignoring url with method other than GET - " + jo);
+            }
+        }
+
+        private void resetQuotas(CrawlURI curi) {
+            logger.info("Clearing down quota stats for " + curi);
+            // Group stats:
+            FrontierGroup group = candidates.getFrontier().getGroup(curi);
+            if (group != null) {
+                group.getSubstats().clear();
+                group.makeDirty();
+            }
+            // By server:
+            final CrawlServer server = serverCache.getServerFor(curi.getUURI());
+            if (server != null) {
+                server.getSubstats().clear();
+                server.makeDirty();
+            }
+            // And by host:
+            final CrawlHost host = serverCache.getHostFor(curi.getUURI());
+            // Host can be null if lookup fails:
+            if (host != null) {
+                host.getSubstats().clear();
+                host.makeDirty();
             }
         }
 
@@ -800,8 +802,16 @@ public class KafkaUrlReceiver
             curi.setPrecedence(1);
         }
 
+        // Set seed and forceFetch status:
         curi.setForceFetch(jo.optBoolean("forceFetch"));
         curi.setSeed(jo.optBoolean("isSeed"));
+
+        // Reset quotas if requested (seeds only):
+        if (jo.has("resetQuotas") && curi.isSeed()) {
+            // Use the forceFetch flag to indicated that quotas should be reset
+            // for this seed (seeds are always scheduled):
+            curi.setForceFetch(true);
+        }
 
         return curi;
     }

@@ -29,12 +29,13 @@ services:
        - "KAFKA_NUM_MESSAGE_THREADS=2"
        - "KAFKA_SEEK_TO_BEGINNING=true"
        - "CDXSERVER_ENDPOINT=http://cdxserver:8080/fc"
-       - "WEBRENDER_ENABLED=false"
+       - "WEBRENDER_ENABLED=true"
        - "WEBRENDER_ENDPOINT=http://webrender:8010/render"
        - "CLAMD_ENABLED=true"
        - "CLAMD_HOST=clamd"
        #- "SURTS_SOURCE_FILE=domain-surts.txt" # Use the domain SURT scope
        - "SURTS_SOURCE_FILE=/shared/surts.txt"
+       #- "QUOTA_SERVER_MAX_SUCCESS_KB=1"
     links:
       - clamd
       - kafka
@@ -52,17 +53,25 @@ services:
   # Crawl control console
   control:
     image: ukwa/ukwa-manage
+    #build: ../ukwa-manage
     ports:
       - 9118:8000
     environment:
       - "HERITRIX_USERNAME=heritrix"
       - "HERITRIX_PASSWORD=heritrix"
       - "CRAWL_JOBS_FILE=/crawl-jobs.json"
+      - "WEBHDFS_PREFIX=http://warc-server:8000/by-filename/"
+      - "CDX_SERVER=http://cdxserver:8080/fc"
+      - "KAFKA_BOOTSTRAP_SERVERS=kafka:9092"
+      - "KAFKA_CRAWLED_TOPIC=uris.crawled.fc"
+      - "KAFKA_SEEK_TO_BEGINNING=true"
     volumes:
       - ./integration-test/crawl-jobs.json:/crawl-jobs.json
     depends_on:
       - heritrix
       - kafka
+      - cdxserver
+      - warc-server
 
   # Data Volume Container for crawler job definitions and outputs
   dvc:
@@ -93,8 +102,8 @@ services:
       KAFKA_NUM_RECOVERY_THREADS_PER_DATA_DIR: 10
       LOG_RETENTION_HOURS: -1
       LOG_RETENTION_BYTES: -1
-      NUM_PARTITIONS: 128
-      KAFKA_CREATE_TOPICS: "uris.candidates.fc:128:1 --config=compression.type=snappy,uris.tocrawl.fc:128:1 --config=compression.type=snappy,uris.crawled.fc:64:1 --config=compression.type=snappy,uris.discarded.fc:64:1 --config=compression.type=snappy"
+      NUM_PARTITIONS: 16
+      KAFKA_CREATE_TOPICS: "uris.candidates.fc:16:1 --config=compression.type=snappy,uris.tocrawl.fc:16:1 --config=compression.type=snappy,uris.crawled.fc:16:1 --config=compression.type=snappy,uris.discarded.fc:16:1 --config=compression.type=snappy"
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
       LOG4J_LOGGER_KAFKA: WARN
     volumes:
