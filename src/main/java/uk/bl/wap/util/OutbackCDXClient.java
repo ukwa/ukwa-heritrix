@@ -115,7 +115,7 @@ public class OutbackCDXClient {
         return connectionTimeout;
     }
 
-    private int maxConnections = 10;
+    private int maxConnections = 100;
 
     public int getMaxConnections() {
         return maxConnections;
