@@ -60,6 +60,7 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.SchedulingConstants;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
+import org.archive.modules.fetcher.FetchStats;
 import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
@@ -586,22 +587,30 @@ public class KafkaUrlReceiver
             logger.info("Clearing down quota stats for " + curi);
             // Group stats:
             FrontierGroup group = candidates.getFrontier().getGroup(curi);
-            if (group != null) {
-                group.getSubstats().clear();
-                group.makeDirty();
+            synchronized(group) {
+                if (group != null) {
+                    resetFetchStats(group.getSubstats());
+                    group.makeDirty();
+                }
             }
             // By server:
             final CrawlServer server = serverCache.getServerFor(curi.getUURI());
             if (server != null) {
-                server.getSubstats().clear();
+                resetFetchStats(server.getSubstats());
                 server.makeDirty();
             }
             // And by host:
             final CrawlHost host = serverCache.getHostFor(curi.getUURI());
             // Host can be null if lookup fails:
             if (host != null) {
-                host.getSubstats().clear();
+                resetFetchStats(host.getSubstats());
                 host.makeDirty();
+            }
+        }
+
+        private void resetFetchStats(FetchStats fs) {
+            for (String k : fs.keySet()) {
+                fs.put(k, 0l);
             }
         }
 

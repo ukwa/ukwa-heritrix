@@ -128,7 +128,7 @@ services:
 
   # PhantomJS web page rendering service
   webrender:
-    image: ukwa/webrender-phantomjs:2.0.10
+    image: ukwa/webrender-phantomjs:2.0.11
     environment:
       - "WARCPROX=warcprox:8000"
       - "LC_ALL=en_US.utf8"
