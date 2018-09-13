@@ -7,6 +7,8 @@
    <properties>
       <jdk.version>1.6</jdk.version>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <heritrix.version>3.3.0-SNAPSHOT</heritrix.version>
+      <!-- 3.3.0-LBS-2016-02 -->
    </properties>
    <build>
       <plugins>
@@ -69,25 +71,25 @@
       <dependency>
          <groupId>org.archive.heritrix</groupId>
          <artifactId>heritrix-commons</artifactId>
-         <version>3.3.0-LBS-2016-02</version>
+         <version>${heritrix.version}</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
          <groupId>org.archive.heritrix</groupId>
          <artifactId>heritrix-modules</artifactId>
-         <version>3.3.0-LBS-2016-02</version>
+         <version>${heritrix.version}</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
          <groupId>org.archive.heritrix</groupId>
          <artifactId>heritrix-engine</artifactId>
-         <version>3.3.0-LBS-2016-02</version>
+         <version>${heritrix.version}</version>
          <scope>provided</scope>
       </dependency>
       <dependency>
          <groupId>org.archive.heritrix</groupId>
          <artifactId>heritrix-contrib</artifactId>
-         <version>3.3.0-LBS-2016-02</version>
+         <version>${heritrix.version}</version>
          <exclusions>
             <exclusion>
                <artifactId>guava</artifactId>
