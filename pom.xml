@@ -91,6 +91,18 @@
          <artifactId>heritrix-contrib</artifactId>
          <version>${heritrix.version}</version>
          <exclusions>
+            <exclusion> <!-- Excluding here to avoid these transitive dependencies getting packed -->
+               <groupId>org.archive.heritrix</groupId>
+               <artifactId>heritrix-common</artifactId>
+            </exclusion>
+            <exclusion>
+               <groupId>org.archive.heritrix</groupId>
+               <artifactId>heritrix-modules</artifactId>
+            </exclusion>
+            <exclusion>
+               <groupId>org.archive.heritrix</groupId>
+               <artifactId>heritrix-engine</artifactId>
+            </exclusion>
             <exclusion>
                <artifactId>guava</artifactId>
                <groupId>com.google.guava</groupId>
