@@ -18,7 +18,7 @@ RUN \
 # Build the latest UKWA H3:
 COPY docker/build-ukwa-h3.sh /
 RUN /build-ukwa-h3.sh && \
-    ln -s /heritrix-3.3.0-SNAPSHOT /h3-bin
+    ln -s heritrix-3.3.0-SNAPSHOT /h3-bin
 
 # Add in the UKWA modules.
 #
