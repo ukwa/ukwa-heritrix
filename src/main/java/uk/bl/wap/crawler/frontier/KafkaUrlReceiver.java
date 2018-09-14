@@ -61,6 +61,8 @@ import org.archive.modules.SchedulingConstants;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
 import org.archive.modules.fetcher.FetchStats;
+import org.archive.modules.net.CrawlHost;
+import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
@@ -585,12 +587,39 @@ public class KafkaUrlReceiver
             logger.info("Clearing down quota stats for " + curi);
             // Group stats:
             FrontierGroup group = candidates.getFrontier().getGroup(curi);
-            synchronized(group) {
+            synchronized (group) {
                 if (group != null) {
-                    group.getSubstats().tally(FetchStats.SUCCESS_BYTES, 0);
+                    resetFetchStats(group.getSubstats());
                     group.makeDirty();
                 }
             }
+            // By server:
+            final CrawlServer server = serverCache.getServerFor(curi.getUURI());
+            if (server != null) {
+                synchronized (server) {
+                    resetFetchStats(server.getSubstats());
+                    server.makeDirty();
+                }
+            }
+            // And by host:
+            final CrawlHost host = serverCache.getHostFor(curi.getUURI());
+            // Host can be null if lookup fails:
+            if (host != null) {
+                synchronized (host) {
+                    resetFetchStats(host.getSubstats());
+                    host.makeDirty();
+                }
+            }
+        }
+
+        private void resetFetchStats(FetchStats fs) {
+            // Resets all tallies that can be used by QuotaEnforcer:
+            fs.tally(FetchStats.FETCH_SUCCESSES, 0);
+            fs.tally(FetchStats.SUCCESS_BYTES, 0);
+            fs.tally(FetchStats.FETCH_RESPONSES, 0);
+            fs.tally(FetchStats.TOTAL_BYTES, 0);
+            fs.tally(FetchStats.NOVEL, 0);
+            fs.tally(FetchStats.NOVELCOUNT, 0);
         }
 
     }
