@@ -87,7 +87,7 @@ public abstract class WatchedFileSource {
         }
 
         if (file.length() == 0) {
-            LOGGER.severe("File at " + file.getAbsolutePath() + " is empty!");
+            LOGGER.fine("File at " + file.getAbsolutePath() + " is empty.");
             return;
         }
 
