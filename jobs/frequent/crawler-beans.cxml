@@ -79,7 +79,7 @@
             
                 <!-- LIST MAIN ACCEPTANCE CRITERIA -->
                 
-				<!-- ...then ACCEPT those with +uk SURT prefixes... -->
+				<!-- ...then ACCEPT those with appropriate SURT prefixes... -->
                 <ref bean="surtPrefixSeedScope" />
 				<!-- ...and ACCEPT extensions likely to be associated/helper files... -->
 				<bean class="org.archive.modules.deciderules.MatchesRegexDecideRule">
@@ -137,6 +137,7 @@
 				<bean class="org.archive.modules.deciderules.TooManyPathSegmentsDecideRule">
 					<property name="maxPathDepth" value="15" />
 				</bean>
+            
                 <!-- ...and REJECT highly compressible URIs... -->
                 <!-- 
                 <bean class="uk.bl.wap.modules.deciderules.CompressibilityDecideRule">
@@ -144,13 +145,9 @@
                     <property name="max" value="1.6"/>
                 </bean>
                  -->
+                 
 				<!-- ...but REJECT those from a configurable set of REJECT SURTs... -->
-				<bean class="org.archive.modules.deciderules.surt.SurtPrefixedDecideRule">
-					<property name="decision" value="REJECT" />
-					<property name="seedsAsSurtPrefixes" value="false" />
-					<property name="surtsDumpFile" value="exclude.dump" />
-					<property name="surtsSourceFile" value="exclude.txt" />
-				</bean>
+                <ref bean="surtPrefixScopeExclusion" />
             
                 <!-- ...and REJECT those that we've crawled recently enough... -->
                 <ref bean="recentlySeen"/>
@@ -167,6 +164,16 @@
          <property name="alsoCheckVia" value="false" />
          <property name="surtsSourceFile" value="#{systemEnvironment['SURTS_SOURCE_FILE'] ?: 'surts.txt'}" />
          <property name="surtsDumpFile" value="surts.dump" />
+         <!-- How often to re-read the scope file (seconds) -->
+         <property name="sourceCheckInterval" value="#{systemEnvironment['SCOPE_FILE_RELOAD_INTERVAL'] ?: 5}"/>
+    </bean>
+    <!-- Top-level bean for managing SURT excludes/REJECT -->
+    <bean id="surtPrefixScopeExclusion" class="uk.bl.wap.modules.deciderules.WatchedFileSurtPrefixedDecideRule">
+         <property name="decision" value="REJECT" />
+         <property name="seedsAsSurtPrefixes" value="false" />
+         <property name="alsoCheckVia" value="false" />
+         <property name="surtsSourceFile" value="#{systemEnvironment['SURTS_EXCLUDE_SOURCE_FILE'] ?: 'exclude.txt'}" />
+         <property name="surtsDumpFile" value="exclude.dump" />
          <!-- How often to re-read the scope file (seconds) -->
          <property name="sourceCheckInterval" value="#{systemEnvironment['SCOPE_FILE_RELOAD_INTERVAL'] ?: 5}"/>
     </bean>
