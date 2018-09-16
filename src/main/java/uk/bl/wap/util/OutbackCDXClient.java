@@ -292,9 +292,8 @@ public class OutbackCDXClient {
         String cdxLine;
         while ((cdxLine = br.readLine()) != null) {
             CDXLine line = cdxLineFactory.createStandardCDXLine(cdxLine);
-            if (line.getMimeType().equals("warc/revisit")) {
-                continue;
-            }
+            // This could be a revisit record, but the hash should always be the
+            // original payload hash, so use it:
             if (line.getOriginalUrl().equals(qurl)) {
                 timestamp = line.getTimestamp();
                 hash = line.getDigest();
