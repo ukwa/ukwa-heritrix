@@ -124,6 +124,8 @@ public class KafkaUrlReceiver
     private static final Logger logger = 
             Logger.getLogger(KafkaUrlReceiver.class.getName());
 
+    public static final String RESET_QUOTAS = "resetQuotas";
+
     protected ApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext appCtx) throws BeansException {
         this.appCtx = appCtx;
@@ -512,24 +514,30 @@ public class KafkaUrlReceiver
                         // nothing:
                         candidates.getSeeds().addSeed(curi);
 
-                        // classKey now set, so we can reset quotas, which we
-                        // infer from Seeds marked forceFetch (because seeds are
-                        // always fetched):
-                        if (curi.forceFetch())
+                        // classKey now set, so we can reset quotas:
+                        if (curi.getData().containsKey(RESET_QUOTAS))
                             resetQuotas(curi);
 
                         // And release the lock:
                         candidates.getFrontier().endDisposition();
+
                     } else {
+
                         // Lock the frontier for this operation, to avoid
                         // conflict with other operations:
                         candidates.getFrontier().beginDisposition(curi);
+
                         // Attempt to add this URI to the crawl:
                         logger.fine("Adding URI to crawl: " + curi + " "
                                 + curi.getPathFromSeed() + " "
                                 + curi.forceFetch());
                         int statusAfterCandidateChain = candidates
                                 .runCandidateChain(curi, null);
+
+                        // classKey now set, so we can reset quotas:
+                        if (curi.getData().containsKey(RESET_QUOTAS))
+                            resetQuotas(curi);
+
                         // And release the lock:
                         candidates.getFrontier().endDisposition();
 
@@ -824,10 +832,9 @@ public class KafkaUrlReceiver
         curi.setSeed(jo.optBoolean("isSeed"));
 
         // Reset quotas if requested (seeds only):
-        if (jo.has("resetQuotas") && curi.isSeed()) {
-            // Use the forceFetch flag to indicated that quotas should be reset
-            // for this seed (seeds are always scheduled):
-            curi.setForceFetch(true);
+        if (jo.has("resetQuotas")) {
+            // Store the request in the CrawlURI data:
+            curi.getData().put(RESET_QUOTAS, jo.get("resetQuotas"));
         }
 
         return curi;
