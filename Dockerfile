@@ -59,7 +59,7 @@ EXPOSE 8443
 #VOLUME /jobs
 VOLUME /output
 
-STOPSIGNAL TERM
+#STOPSIGNAL TERM # Which is the default
 
 # Hook in H3 runner script:
 CMD [ "/h3-bin/bin/start" ]
