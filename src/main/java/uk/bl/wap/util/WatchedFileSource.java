@@ -149,6 +149,7 @@ public abstract class WatchedFileSource {
             super.setDaemon(true);
             this.service = service;
             this.runInterval = runInterval;
+            this.setDaemon(true);
             LOGGER.info("CacheUpdaterThread is alive.");
         }
 
