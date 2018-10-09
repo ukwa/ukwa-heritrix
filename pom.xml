@@ -47,7 +47,7 @@
             <enabled>true</enabled>
          </releases>
          <snapshots>
-            <enabled>true</enabled>
+            <enabled>false</enabled>
          </snapshots>
       </repository>
       <repository>
@@ -57,7 +57,7 @@
             <checksumPolicy>warn</checksumPolicy>
          </releases>
          <snapshots>
-            <enabled>true</enabled>
+            <enabled>false</enabled>
             <updatePolicy>daily</updatePolicy>
             <checksumPolicy>fail</checksumPolicy>
          </snapshots>
