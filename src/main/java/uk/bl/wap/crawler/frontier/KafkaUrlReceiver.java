@@ -507,9 +507,6 @@ public class KafkaUrlReceiver
                         messageCounter.labels(getTopic(), "seeds").inc();
                         enqueuedCount++;
 
-                        // Lock the frontier for this operation, to avoid
-                        // conflict with other operations:
-                        candidates.getFrontier().beginDisposition(curi);
                         // Note that if we have already added a seed this does
                         // nothing:
                         candidates.getSeeds().addSeed(curi);
@@ -518,14 +515,7 @@ public class KafkaUrlReceiver
                         if (curi.getData().containsKey(RESET_QUOTAS))
                             resetQuotas(curi);
 
-                        // And release the lock:
-                        candidates.getFrontier().endDisposition();
-
                     } else {
-
-                        // Lock the frontier for this operation, to avoid
-                        // conflict with other operations:
-                        candidates.getFrontier().beginDisposition(curi);
 
                         // Attempt to add this URI to the crawl:
                         logger.fine("Adding URI to crawl: " + curi + " "
@@ -537,9 +527,6 @@ public class KafkaUrlReceiver
                         // classKey now set, so we can reset quotas:
                         if (curi.getData().containsKey(RESET_QUOTAS))
                             resetQuotas(curi);
-
-                        // And release the lock:
-                        candidates.getFrontier().endDisposition();
 
                         // Only >=0 status codes get scheduled, so we can use
                         // that to log e.g.
@@ -581,9 +568,6 @@ public class KafkaUrlReceiver
                             "Unanticipated problem creating CrawlURI from json received via Kafka "
                                     + jo,
                             e);
-                } finally {
-                    // Make sure any lock is released:
-                    candidates.getFrontier().endDisposition();
                 }
 
             } else {
