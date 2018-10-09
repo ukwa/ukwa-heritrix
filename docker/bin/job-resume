@@ -1,0 +1,7 @@
+#!/bin/sh
+echo Building ${JOB_NAME}...
+curl -o /dev/null -s -d "action=build" -k -u $HERITRIX_USER:$HERITRIX_PASSWORD --anyauth --location https://localhost:8443/engine/job/${JOB_NAME}
+
+echo Launching ${JOB_NAME} from the latest checkpoint...
+curl -o /dev/null -s -d "action=launch" -d "checkpoint=latest" -k -u $HERITRIX_USER:$HERITRIX_PASSWORD --anyauth --location https://localhost:8443/engine/job/${JOB_NAME}
+
