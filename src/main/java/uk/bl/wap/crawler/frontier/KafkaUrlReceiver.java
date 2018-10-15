@@ -222,7 +222,10 @@ public class KafkaUrlReceiver
 
     protected String groupId = "crawlers";
     public String getGroupId() {
-        return groupId;
+        // Because we are manually assigning partitions, we need to give each
+        // consumer a unique groupID, @see
+        // https://kafka.apache.org/0102/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html#manualassignment:
+        return groupId + "-" + getConsumerId();
     }
 
     public void setGroupId(String groupId) {
