@@ -717,8 +717,8 @@
 	<bean id="checkpointService" class="org.archive.crawler.framework.CheckpointService">
 		<property name="checkpointIntervalMinutes" value="#{systemEnvironment['CHECKPOINT_INTERVAL_MINUTES'] ?: 1440}"/>
 		<property name="checkpointsDir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/checkpoints"/>
-        <!-- this controls whether we retain all checkpoints, or only the last one: -->
-        <property name="forgetAllButLatest" value="#{systemEnvironment['CHECKPOINT_FORGET_ALL_BUT_LATEST'] ?: true}"/>
+        <!-- this controls whether we retain all checkpoints, or only the last one. Unfortunately, using is also keeps merging all the previous logs into a single massive log file: -->
+        <property name="forgetAllButLatest" value="#{systemEnvironment['CHECKPOINT_FORGET_ALL_BUT_LATEST'] ?: false}"/>
 	</bean>
 	
 	<!-- 
