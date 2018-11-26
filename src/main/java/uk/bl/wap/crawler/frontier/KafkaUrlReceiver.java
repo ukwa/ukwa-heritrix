@@ -330,7 +330,9 @@ public class KafkaUrlReceiver
             Properties props = new Properties();
             props.put("bootstrap.servers", getBootstrapServers());
             props.put("group.id", getGroupId());
-            props.put("enable.auto.commit", "true");
+            props.put("enable.auto.commit", "true"); // NOTE This is ignored
+                                                     // because we are manually
+                                                     // assigning partitions.
             props.put("auto.commit.interval.ms", "1000");
             props.put("session.timeout.ms", "60000");
             props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG,
@@ -429,6 +431,8 @@ public class KafkaUrlReceiver
                                             + discardedCount);
                                 }
                             }
+                            // Commit the offsets for what we've consumed:
+                            consumer.commitSync();
                             // Wait for this batch to finish:
                             messageHandlerPool.shutdown();
                             messageHandlerPool.awaitTermination(10,
