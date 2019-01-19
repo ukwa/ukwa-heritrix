@@ -27,7 +27,7 @@ services:
        - "KAFKA_DISCARDED_TOPIC=uris.discarded.fc"
        - "KAFKA_CRAWLED_TOPIC=uris.crawled.fc"
        - "KAFKA_NUM_MESSAGE_THREADS=2"
-       - "KAFKA_SEEK_TO_BEGINNING=true"
+       - "KAFKA_SEEK_TO_BEGINNING=false"
        - "CDXSERVER_ENDPOINT=http://cdxserver:8080/fc"
        - "WEBRENDER_ENABLED=true"
        - "WEBRENDER_ENDPOINT=http://webrender:8010/render"

@@ -112,6 +112,13 @@ import uk.bl.wap.modules.deciderules.RecentlySeenDecideRule;
  * The recrawlInterval allows the default or sheet-defined recrawl interval to
  * be overridden for individual CrawlURIs.
  * 
+ * Note this uses standalone consumers
+ * (https://www.oreilly.com/library/view/kafka-the-definitive/9781491936153/ch04.html#idm139631817751824)
+ * 
+ * We fix assignment between partitions and crawlers to ensure the same crawlers
+ * always get the same range of keys. This means the same hosts are always
+ * routed to the same crawlers.
+ * 
  * @contributor anjackson
  */
 public class KafkaUrlReceiver
@@ -612,13 +619,17 @@ public class KafkaUrlReceiver
         }
 
         private void resetFetchStats(FetchStats fs) {
+            //
+            logger.info("Values before resetting: " + fs.shortReportLine());
             // Resets all tallies that can be used by QuotaEnforcer:
-            fs.tally(FetchStats.FETCH_SUCCESSES, 0);
-            fs.tally(FetchStats.SUCCESS_BYTES, 0);
-            fs.tally(FetchStats.FETCH_RESPONSES, 0);
-            fs.tally(FetchStats.TOTAL_BYTES, 0);
-            fs.tally(FetchStats.NOVEL, 0);
-            fs.tally(FetchStats.NOVELCOUNT, 0);
+            fs.put(FetchStats.FETCH_SUCCESSES, 0L);
+            fs.put(FetchStats.SUCCESS_BYTES, 0L);
+            fs.put(FetchStats.FETCH_RESPONSES, 0L);
+            fs.put(FetchStats.TOTAL_BYTES, 0L);
+            fs.put(FetchStats.NOVEL, 0L);
+            fs.put(FetchStats.NOVELCOUNT, 0L);
+            //
+            logger.info("Values after resetting: " + fs.shortReportLine());
         }
 
     }
