@@ -69,6 +69,7 @@ import org.archive.net.UURIFactory;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.Reporter;
+import org.archive.util.SurtPrefixSet;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -848,9 +849,12 @@ public class KafkaUrlReceiver
      * 
      */
     private void setSheetAssociations(CrawlURI curi, List<String> sheets) {
-        // Get the SURT prefix to use:
-        String prefix = curi.getUURI().getSurtForm(); // c.f.
-        // org.archive.crawler.frontier.SurtAuthorityQueueAssignmentPolicy
+        // Get the SURT prefix to use (copying logic from
+        // SheetOverlaysManager.applyOverlaysTo):
+        // (This includes coercing https to http etc.)
+        String effectiveSurt = SurtPrefixSet
+                .getCandidateSurt(curi.getPolicyBasisUURI());
+
         // Get the list of all known sheets:
         Set<String> allSheetNames = getSheetOverlaysManager().getSheetsByName()
                 .keySet();
@@ -864,8 +868,9 @@ public class KafkaUrlReceiver
             }
         }
         // Set the association for this prefix:
-        logger.info("Setting sheets for " + prefix + " to " + sheetNames);
-        getSheetOverlaysManager().getSheetsNamesBySurt().put(prefix,
+        logger.info(
+                "Setting sheets for " + effectiveSurt + " to " + sheetNames);
+        getSheetOverlaysManager().getSheetsNamesBySurt().put(effectiveSurt,
                 sheetNames);
     }
 
