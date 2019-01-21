@@ -337,7 +337,10 @@ public class KafkaUrlReceiver
             logger.info("Setting up KafkaConsumerRunner...");
             Properties props = new Properties();
             props.put("bootstrap.servers", getBootstrapServers());
-            props.put("group.id", getGroupId());
+            props.put("client.id", getGroupId());
+            props.put("group.id", getGroupId()); // Manual partitioning, so
+                                                 // separate group.id for each
+                                                 // client.
             props.put("enable.auto.commit", "true"); // NOTE This is ignored
                                                      // because we are manually
                                                      // assigning partitions.
