@@ -222,7 +222,7 @@ public class MetricsExporterBean implements Lifecycle {
                     m_uris.labels(host, jobName, "future")
                             .set(controller.getFrontier().futureUriCount());
 
-                    m_uris.labels(host, jobName, "failed_fetch")
+                    m_uris.labels(host, jobName, "failed-fetch")
                             .set(controller.getFrontier().failedFetchCount());
 
                     m_uris.labels(host, jobName, "disregarded").set(
