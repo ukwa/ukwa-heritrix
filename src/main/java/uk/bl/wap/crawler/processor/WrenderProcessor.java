@@ -124,7 +124,7 @@ public class WrenderProcessor extends Processor implements
 
     /**
      * @param maxTries
-     *            maximum number of times to retry the web render request.
+     *            maximum number of times to retry the web render of this URL.
      */
     public void setMaxTries(int maxTries) {
         this.maxTries = maxTries;

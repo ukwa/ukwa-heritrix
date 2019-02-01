@@ -309,7 +309,7 @@
   						<property name="decision" value="ACCEPT"/>
   						<property name="regexList">
   							<list>
-  								<value>^WrenderThis$</value>
+  								<value>^WebRenderThis$</value>
   							</list>
   						</property>
   					  </bean>
