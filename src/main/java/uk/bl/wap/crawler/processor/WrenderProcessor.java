@@ -53,6 +53,12 @@ import org.springframework.context.ApplicationListener;
  * TODO consider adding a downloadViaHeritrix option for those without warcprox
  * to hand.
  * 
+ * TODO Use the H3 retry/deferral logic, as per
+ * org.archive.crawler.frontier.AbstractFrontier.needsReenqueuing(CrawlURI)
+ * rather than retrying directly (which recrawls a lot). Instead, use annotation
+ * to note number of retries and when browser rendering keeps failing, allow
+ * FetchHTTP to handle it instead.
+ * 
  */
 public class WrenderProcessor extends Processor implements
         ApplicationContextAware,
@@ -62,9 +68,8 @@ public class WrenderProcessor extends Processor implements
 
     private int readTimeout = 20 * 60 * 1000; // Default 20 minutes
 
-    private int maxTries = 10; // Retry 10 times.
-
-    private int secondsBetweenRetries = 2 * 60; // Retry once every two minutes.
+    private int maxTries = 1; // How many times to attempt web-rendering before
+                              // deferring to plain FetchHTTP
 
     private String wrenderEndpoint = "http://localhost:8000/render";
 
@@ -76,7 +81,7 @@ public class WrenderProcessor extends Processor implements
 
     public static final String HTTP_SCHEME = "http";
     public static final String HTTPS_SCHEME = "https";
-    public static final String ANNOTATION = "WrenderedURL";
+    public static final String ANNOTATION = "WebRenderCount:";
 
     protected CrawlController controller;
 
@@ -181,22 +186,43 @@ public class WrenderProcessor extends Processor implements
     @Override
     public ProcessResult innerProcessResult(CrawlURI curi)
             throws InterruptedException {
-        // Attempt to render and extract links using a web-rendering service:
-        curi.setFetchBeginTime(System.currentTimeMillis());
-        boolean wrendered = this.doWrender(curi);
-        curi.setFetchCompletedTime(System.currentTimeMillis());
-        // Did that work?
-        if (wrendered) {
-            // Wrendering worked, so jump past the usual fetchers/extractors:
-            // return ProcessResult.jump("ipAnnotator");
+        // Get # attempts to use the web renderer so far.
+        int tries = getTriesFromCrawlURI(curi);
+        // Should we keep trying to use the web renderer?
+        if (tries < maxTries) {
+            // Attempt to render and extract links using a web-rendering
+            // service:
+            curi.setFetchBeginTime(System.currentTimeMillis());
+            this.doWrender(curi);
+            curi.setFetchCompletedTime(System.currentTimeMillis());
+            setTriesForCrawlURI(curi, tries + 1);
+            // Jump past the usual fetchers/extractors, to finish or retry
+            // later:
             return ProcessResult.FINISH;
         } else {
-            // If that did't work, let the usual H3 process chain handle this
-            // URL:
+            // Let the usual H3 process chain handle this URL:
             return ProcessResult.PROCEED;
         }
     }
 
+    private void setTriesForCrawlURI(CrawlURI curi, int i) {
+        // Additional annotation:
+        curi.getAnnotations().add(ANNOTATION + Integer.toString(i));
+    }
+
+    private int getTriesFromCrawlURI(CrawlURI curi) {
+        for (String annot : curi.getAnnotations()) {
+            if (annot.startsWith(ANNOTATION)) {
+                try {
+                    return Integer
+                            .parseInt(annot.substring(ANNOTATION.length()));
+                } catch (NumberFormatException e) {
+                    LOGGER.warning("Could not parse annotation: " + annot);
+                }
+            }
+        }
+        return 0;
+    }
 
     /**
      * Pick up the launch ID from the ApplicationContext.
@@ -243,45 +269,31 @@ public class WrenderProcessor extends Processor implements
      * @return True if it worked, false if not
      */
     private boolean doWrender(CrawlURI curi) {
-        int tries = 0;
-        while (tries < maxTries) {
-            try {
-                UriBuilder builder = UriBuilder.fromUri(getWrenderEndpoint())
-                        .queryParam("url", curi.getURI());
-                // Add warc_prefix based on launch ID
-                String warcPrefix = this.buildWarcPrefix();
-                builder = builder.queryParam("warc_prefix", warcPrefix);
-                URL wrenderUrl = builder.build().toURL();
-                // Read render result as JSON:
-                JSONObject har = readJsonFromUrl(wrenderUrl,
-                        this.connectTimeout, this.readTimeout);
-                processHar(har, curi);
+        try {
+            UriBuilder builder = UriBuilder.fromUri(getWrenderEndpoint())
+                    .queryParam("url", curi.getURI());
+            // Add warc_prefix based on launch ID
+            String warcPrefix = this.buildWarcPrefix();
+            builder = builder.queryParam("warc_prefix", warcPrefix);
+            URL wrenderUrl = builder.build().toURL();
+            // Read render result as JSON:
+            JSONObject har = readJsonFromUrl(wrenderUrl, this.connectTimeout,
+                    this.readTimeout);
+            processHar(har, curi);
 
-                // Additional annotation:
-                curi.getAnnotations().add(ANNOTATION);
+            // If we find status code, assume rendering worked:
+            if (curi.getFetchStatus() != 0) {
                 curi.addExtraInfo("warcPrefix", warcPrefix);
-
-                // If we didn't find a status code, assume rendering failed:
-                if (curi.getFetchStatus() == 0) {
-                    return false;
-                } else {
-                    // Otherwise, handle as
-                    // FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR:
-                    return true;
-                }
-            } catch (Exception e) {
-                LOGGER.log(Level.SEVERE,
-                        "Web rendering " + getWrenderEndpoint()
-                                + " failed with unexpected exception: " + e,
-                        e);
-                tries++;
+                // FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR: ???
+                return true;
             }
-            try {
-                Thread.sleep(1000 * this.secondsBetweenRetries);
-            } catch (InterruptedException e) {
-                LOGGER.log(Level.SEVERE, "Sleep was interrupted!", e);
-            }
+        } catch (Exception e) {
+            LOGGER.log(Level.SEVERE, "Web rendering " + getWrenderEndpoint()
+                    + " failed with unexpected exception: " + e, e);
         }
+        // Either we hit an exception, or got a FetchStatus of 0, so:
+        // Defer for retry:
+        curi.setFetchStatus(FetchStatusCodes.S_DEFERRED);
         return false;
     }
 
@@ -313,7 +325,7 @@ public class WrenderProcessor extends Processor implements
                         curi.setFetchStatus(
                                 FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR);
                         // Extract status code:
-                        curi.getAnnotations().add("WrenderedStatus:" + entry
+                        curi.getAnnotations().add("WebRenderStatus:" + entry
                                 .getJSONObject("response").getInt("status"));
                     }
                 } else {
