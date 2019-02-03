@@ -81,7 +81,7 @@ public class WrenderProcessor extends Processor implements
 
     public static final String HTTP_SCHEME = "http";
     public static final String HTTPS_SCHEME = "https";
-    public static final String ANNOTATION = "WebRenderCount:";
+    public static final String TRIES_ANNOTATION_PREFIX = "WebRenderCount:";
 
     protected CrawlController controller;
 
@@ -206,20 +206,31 @@ public class WrenderProcessor extends Processor implements
     }
 
     private void setTriesForCrawlURI(CrawlURI curi, int i) {
-        // Additional annotation:
-        curi.getAnnotations().add(ANNOTATION + Integer.toString(i));
+        // Remove any existing annotation:
+        String toRemove = getTriesAnnotation(curi);
+        if (toRemove != null) {
+            curi.getAnnotations().remove(toRemove);
+        }
+
+        // Add updated annotation:
+        curi.getAnnotations().add(TRIES_ANNOTATION_PREFIX + Integer.toString(i));
+    }
+
+    private String getTriesAnnotation(CrawlURI curi) {
+        for (String annot : curi.getAnnotations()) {
+            if (annot.startsWith(TRIES_ANNOTATION_PREFIX)) {
+                return annot;
+            }
+        }
+        return null;
     }
 
     private int getTriesFromCrawlURI(CrawlURI curi) {
-        for (String annot : curi.getAnnotations()) {
-            if (annot.startsWith(ANNOTATION)) {
-                try {
-                    return Integer
-                            .parseInt(annot.substring(ANNOTATION.length()));
-                } catch (NumberFormatException e) {
-                    LOGGER.warning("Could not parse annotation: " + annot);
-                }
-            }
+        String annot = getTriesAnnotation(curi);
+        try {
+            return Integer.parseInt(annot.substring(TRIES_ANNOTATION_PREFIX.length()));
+        } catch (NumberFormatException e) {
+            LOGGER.warning("Could not parse annotation: " + annot);
         }
         return 0;
     }
