@@ -10,9 +10,10 @@ RUN \
   dpkg -i filebeat_1.0.0-rc1_amd64.deb
 
 # Get the H3 binary:
-RUN curl -L -O http://builds.archive.org/maven2/org/archive/heritrix/heritrix/3.3.0-SNAPSHOT/heritrix-3.3.0-SNAPSHOT-dist.zip && \
-    unzip heritrix-3.3.0-SNAPSHOT-dist.zip && \
-    ln -s /heritrix-3.3.0-SNAPSHOT /h3-bin
+ARG HERITRIX_VERSION=3.4.0-20190205
+RUN curl -L -O https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/${HERITRIX_VERSION}/heritrix-${HERITRIX_VERSION}-dist.zip && \
+    unzip heritrix-${HERITRIX_VERSION}-dist.zip && \
+    ln -s /heritrix-${HERITRIX_VERSION} /h3-bin
 
 # Build the latest UKWA H3:
 #COPY docker/build-ukwa-h3.sh /
