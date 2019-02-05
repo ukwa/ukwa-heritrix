@@ -548,6 +548,7 @@
 	</bean>
     <!-- This provides a crawl log feed to a queue - note that you'll need to set up a binding that matches these parameters to a queue -->
     <bean id="crawlLogFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedCrawlLogFeed">
+      <property name="enabled" value="#{systemEnvironment['KAFKA_CRAWL_LOG_ENABLED'] ?: true}" />
       <property name="topic" value="#{systemEnvironment['KAFKA_CRAWLED_TOPIC'] ?: 'uris.crawled'}" />
       <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
       <property name="extraFields">
@@ -595,6 +596,7 @@
   -->
      <!-- This provides a crawl log feed to a queue - note that you'll need to set up a binding that matches these parameters to a queue -->
      <bean id="toCrawlFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedToCrawlFeed">
+       <property name="enabled" value="#{systemEnvironment['KAFKA_CANDIDATES_LOG_ENABLED'] ?: true}" />
        <property name="emitInScopeOnly" value="#{systemEnvironment['KAFKA_CANDIDATES_IN_SCOPE_ONLY'] ?: false}"/>
        <property name="topic" value="#{systemEnvironment['KAFKA_CANDIDATES_TOPIC'] ?: 'uris.candidates'}" />
        <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
