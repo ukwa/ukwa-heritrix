@@ -10,7 +10,7 @@ RUN \
   dpkg -i filebeat_1.0.0-rc1_amd64.deb
 
 # Get the H3 binary:
-ARG HERITRIX_VERSION=3.4.0-20190205
+ARG HERITRIX_VERSION=3.4.0-20190207
 RUN curl -L -O https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/${HERITRIX_VERSION}/heritrix-${HERITRIX_VERSION}-dist.zip && \
     unzip heritrix-${HERITRIX_VERSION}-dist.zip && \
     ln -s /heritrix-${HERITRIX_VERSION} /h3-bin
