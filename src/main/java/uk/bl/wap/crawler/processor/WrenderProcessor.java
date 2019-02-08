@@ -227,10 +227,13 @@ public class WrenderProcessor extends Processor implements
 
     private int getTriesFromCrawlURI(CrawlURI curi) {
         String annot = getTriesAnnotation(curi);
-        try {
-            return Integer.parseInt(annot.substring(TRIES_ANNOTATION_PREFIX.length()));
-        } catch (NumberFormatException e) {
-            LOGGER.warning("Could not parse annotation: " + annot);
+        if (annot != null) {
+            try {
+                return Integer.parseInt(
+                        annot.substring(TRIES_ANNOTATION_PREFIX.length()));
+            } catch (NumberFormatException e) {
+                LOGGER.warning("Could not parse annotation: " + annot);
+            }
         }
         return 0;
     }
