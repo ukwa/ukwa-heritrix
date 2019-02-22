@@ -7,7 +7,7 @@
    <properties>
       <jdk.version>1.6</jdk.version>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-      <heritrix.version>3.4.0-20190207</heritrix.version>
+      <heritrix.version>3.4.0-SNAPSHOT</heritrix.version>
    </properties>
    <build>
       <plugins>
@@ -43,7 +43,7 @@
          <id>sbforge-nexus</id>
          <url>https://sbforge.org/nexus/content/groups/public</url>
          <releases>
-            <enabled>true</enabled>
+            <enabled>false</enabled>
          </releases>
          <snapshots>
             <enabled>false</enabled>
@@ -51,12 +51,12 @@
       </repository>
       <repository>
          <releases>
-            <enabled>true</enabled>
+            <enabled>false</enabled>
             <updatePolicy>daily</updatePolicy>
             <checksumPolicy>warn</checksumPolicy>
          </releases>
          <snapshots>
-            <enabled>true</enabled>
+            <enabled>false</enabled>
             <updatePolicy>daily</updatePolicy>
             <checksumPolicy>fail</checksumPolicy>
          </snapshots>
