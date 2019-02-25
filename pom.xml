@@ -67,30 +67,14 @@
    </build>
    <repositories>
       <repository>
-         <id>sbforge-nexus</id>
-         <url>https://sbforge.org/nexus/content/groups/public</url>
+         <id>ossrh-snapshots</id>
+         <url>https://oss.sonatype.org/content/repositories/snapshots</url>
          <releases>
             <enabled>false</enabled>
          </releases>
          <snapshots>
-            <enabled>false</enabled>
+            <enabled>true</enabled>
          </snapshots>
-      </repository>
-      <repository>
-         <releases>
-            <enabled>false</enabled>
-            <updatePolicy>daily</updatePolicy>
-            <checksumPolicy>warn</checksumPolicy>
-         </releases>
-         <snapshots>
-            <enabled>false</enabled>
-            <updatePolicy>daily</updatePolicy>
-            <checksumPolicy>fail</checksumPolicy>
-         </snapshots>
-         <id>internetarchive</id>
-         <name>Internet Archive Maven Repository</name>
-         <url>http://builds.archive.org:8080/maven2</url>
-         <layout>default</layout>
       </repository>
    </repositories>
    <dependencies>
