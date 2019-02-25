@@ -9,17 +9,6 @@ RUN \
   curl -L -O https://download.elastic.co/beats/filebeat/filebeat_1.0.0-rc1_amd64.deb && \
   dpkg -i filebeat_1.0.0-rc1_amd64.deb
 
-# Get the H3 binary:
-ARG HERITRIX_VERSION=3.4.0-20190207
-RUN curl -L -O https://repo1.maven.org/maven2/org/archive/heritrix/heritrix/${HERITRIX_VERSION}/heritrix-${HERITRIX_VERSION}-dist.zip && \
-    unzip heritrix-${HERITRIX_VERSION}-dist.zip && \
-    ln -s /heritrix-${HERITRIX_VERSION} /h3-bin
-
-# Build the latest UKWA H3:
-#COPY docker/build-ukwa-h3.sh /
-#RUN /build-ukwa-h3.sh && \
-#    ln -s heritrix-3.3.0-SNAPSHOT /h3-bin
-
 # Add in the UKWA modules.
 #
 # We process the dependencies and source separately, so the JARs can be cached and 
@@ -33,7 +22,7 @@ RUN mvn -B -f /bl-heritrix-modules/pom.xml -s /usr/share/maven/ref/settings-dock
 COPY src /bl-heritrix-modules/src
 RUN cd /bl-heritrix-modules && \
     mvn -B -s /usr/share/maven/ref/settings-docker.xml -DskipTests install && \
-    cp /bl-heritrix-modules/target/bl-heritrix-modules-*jar-with-dependencies.jar /h3-bin/lib/
+    cp -r /bl-heritrix-modules/target/dist/heritrix-* /h3-bin
 
 # Send in other required files:
 COPY docker/filebeat.yml /etc/filebeat/filebeat.yml
