@@ -34,8 +34,35 @@
                <descriptorRefs>
                   <descriptorRef>jar-with-dependencies</descriptorRef>
                </descriptorRefs>
+               <outputDirectory>${project.build.directory}/dist/heritrix-${heritrix.version}/lib</outputDirectory>
             </configuration>
          </plugin>
+        <plugin>
+         <groupId>org.apache.maven.plugins</groupId>
+         <artifactId>maven-dependency-plugin</artifactId>
+         <version>3.1.1</version>
+         <executions>
+           <execution>
+             <id>unpack</id>
+             <phase>validate</phase>
+             <goals>
+               <goal>unpack</goal>
+             </goals>
+             <configuration>
+               <artifactItems>
+                 <artifactItem>
+                   <groupId>org.archive.heritrix</groupId>
+                   <artifactId>heritrix</artifactId>
+                   <version>${heritrix.version}</version>
+                   <type>zip</type>
+                   <classifier>dist</classifier>
+                 </artifactItem>
+               </artifactItems>
+               <outputDirectory>${project.build.directory}/dist</outputDirectory>
+             </configuration>
+           </execution>
+         </executions>
+       </plugin>
       </plugins>
    </build>
    <repositories>
