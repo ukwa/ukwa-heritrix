@@ -54,6 +54,7 @@ import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.event.CrawlStateEvent;
 import org.archive.crawler.framework.Frontier.FrontierGroup;
+import org.archive.crawler.frontier.AbstractFrontier;
 import org.archive.crawler.postprocessor.CandidatesProcessor;
 import org.archive.crawler.spring.SheetOverlaysManager;
 import org.archive.modules.CrawlURI;
@@ -516,8 +517,11 @@ public class KafkaUrlReceiver
                 try {
                     // Make the CrawlURI:
                     CrawlURI curi = makeCrawlUri(jo);
-                    KeyedProperties.clearAllOverrideContexts();
                     
+                    // If requested, reset quotas:
+                    if (curi.getData().containsKey(RESET_QUOTAS))
+                        resetQuotas(curi);
+
                     // Add a seed to the crawl:
                     if (curi.isSeed()) {
                         logger.info("Adding seed to crawl: " + curi);
@@ -529,10 +533,6 @@ public class KafkaUrlReceiver
                         // nothing:
                         candidates.getSeeds().addSeed(curi);
 
-                        // classKey now set, so we can reset quotas:
-                        if (curi.getData().containsKey(RESET_QUOTAS))
-                            resetQuotas(curi);
-
                     } else {
 
                         // Attempt to add this URI to the crawl:
@@ -541,10 +541,6 @@ public class KafkaUrlReceiver
                                 + curi.forceFetch());
                         int statusAfterCandidateChain = candidates
                                 .runCandidateChain(curi, null);
-
-                        // classKey now set, so we can reset quotas:
-                        if (curi.getData().containsKey(RESET_QUOTAS))
-                            resetQuotas(curi);
 
                         // Only >=0 status codes get scheduled, so we can use
                         // that to log e.g.
@@ -595,11 +591,25 @@ public class KafkaUrlReceiver
 
         private void resetQuotas(CrawlURI curi) {
             logger.info("Clearing down quota stats for " + curi);
+
+            // First, prepare the URL so that the class key is set,
+            // so we can find the quotas to reset:
+            try {
+                sheetOverlaysManager.applyOverlaysTo(curi);
+                KeyedProperties.loadOverridesFrom(curi);
+                AbstractFrontier f = (AbstractFrontier) candidates
+                        .getFrontier();
+                f.getFrontierPreparer().prepare(curi);
+                curi.setClassKey(candidates.getFrontier().getClassKey(curi));
+            } finally {
+                KeyedProperties.clearOverridesFrom(curi);
+            }
+
             // Group stats:
             FrontierGroup group = candidates.getFrontier().getGroup(curi);
             synchronized (group) {
                 if (group != null) {
-                    resetFetchStats(group.getSubstats());
+                    resetFetchStats(group.getSubstats(), "Frontier Group");
                     group.makeDirty();
                 }
             }
@@ -607,7 +617,7 @@ public class KafkaUrlReceiver
             final CrawlServer server = serverCache.getServerFor(curi.getUURI());
             if (server != null) {
                 synchronized (server) {
-                    resetFetchStats(server.getSubstats());
+                    resetFetchStats(server.getSubstats(), "Server");
                     server.makeDirty();
                 }
             }
@@ -616,15 +626,16 @@ public class KafkaUrlReceiver
             // Host can be null if lookup fails:
             if (host != null) {
                 synchronized (host) {
-                    resetFetchStats(host.getSubstats());
+                    resetFetchStats(host.getSubstats(), "Host");
                     host.makeDirty();
                 }
             }
         }
 
-        private void resetFetchStats(FetchStats fs) {
-            //
-            logger.info("Values before resetting: " + fs.shortReportLine());
+        private void resetFetchStats(FetchStats fs, String kind) {
+            // Record initial state:
+            String before = fs.shortReportLine();
+
             // Resets all tallies that can be used by QuotaEnforcer:
             fs.put(FetchStats.FETCH_SUCCESSES, 0L);
             fs.put(FetchStats.SUCCESS_BYTES, 0L);
@@ -632,8 +643,10 @@ public class KafkaUrlReceiver
             fs.put(FetchStats.TOTAL_BYTES, 0L);
             fs.put(FetchStats.NOVEL, 0L);
             fs.put(FetchStats.NOVELCOUNT, 0L);
-            //
-            logger.info("Values after resetting: " + fs.shortReportLine());
+
+            // Report the result of the resetting:
+            logger.fine("Reset " + kind + " stats from " + before + " to "
+                    + fs.shortReportLine());
         }
 
     }
