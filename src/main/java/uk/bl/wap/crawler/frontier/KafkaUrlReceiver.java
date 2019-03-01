@@ -67,7 +67,6 @@ import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
-import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.Reporter;
 import org.archive.util.SurtPrefixSet;
@@ -616,16 +615,16 @@ public class KafkaUrlReceiver
 
             // First, prepare the URL so that the class key is set,
             // so we can find the quotas to reset:
-            try {
-                sheetOverlaysManager.applyOverlaysTo(curi);
-                KeyedProperties.loadOverridesFrom(curi);
+            // try {
+            // sheetOverlaysManager.applyOverlaysTo(curi);
+            // KeyedProperties.loadOverridesFrom(curi);
                 AbstractFrontier f = (AbstractFrontier) candidates
                         .getFrontier();
                 f.getFrontierPreparer().prepare(curi);
                 curi.setClassKey(candidates.getFrontier().getClassKey(curi));
-            } finally {
-                KeyedProperties.clearOverridesFrom(curi);
-            }
+            // } finally {
+            // KeyedProperties.clearOverridesFrom(curi);
+            // }
 
             // Group stats:
             FrontierGroup group = candidates.getFrontier().getGroup(curi);
