@@ -517,8 +517,30 @@ public class KafkaUrlReceiver
                 try {
                     // Make the CrawlURI:
                     CrawlURI curi = makeCrawlUri(jo);
-                    
-                    // If requested, reset quotas:
+                    /*
+                     * OKAY different logic Need clear target launch time plus
+                     * tolerance. IF item turns up early but within tolerance,
+                     * use curi.setRescheduleTime(demand); to delay until the
+                     * tolerance period is passed. Sooo, set target crawl time
+                     * i.e. ignoring tol then modify fetch chain to skip if
+                     * early, and setRescheduleTime instead. UNLESS it comes in
+                     * from outside in which case enqueue ASAP if within
+                     * tolerance
+                     * 
+                     * OR
+                     * 
+                     * Default small tolerance for discovered URLs Larger
+                     * tolerance for injected URLs (essentially, external
+                     * requests should 'always' get crawled) The only
+                     * restriction is we need to avoid re-enqueing too many
+                     * times on re-consumption of crawl queue A small tolerance
+                     * (say 15 mins) on discovered URLs should be fine, as long
+                     * as seeds requests happen
+                     * 
+                     * Delaying the queue is appealing but could overshoot and
+                     * will eat up tries.
+                     * 
+                     */ // If requested, reset quotas:
                     if (curi.getData().containsKey(RESET_QUOTAS))
                         resetQuotas(curi);
 

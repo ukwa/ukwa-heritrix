@@ -15,8 +15,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.archive.crawler.spring.SheetOverlaysManager;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideRule;
+import org.archive.spring.KeyedProperties;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -64,6 +66,18 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
     @Autowired
     public void setScope(DecideRule scope) {
         this.scope = scope;
+    }
+
+    protected SheetOverlaysManager sheetOverlaysManager;
+
+    public SheetOverlaysManager getSheetOverlaysManager() {
+        return sheetOverlaysManager;
+    }
+
+    @Autowired
+    public void setSheetOverlaysManager(
+            SheetOverlaysManager sheetOverlaysManager) {
+        this.sheetOverlaysManager = sheetOverlaysManager;
     }
 
     protected KafkaKeyedDiscardedFeed discardedUriFeed;
@@ -209,20 +223,30 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
                         if (!sentURIs.contains(candidate.getURI())) {
 
                             // Only emit URLs that are in scope, if configured
-                            // to do
-                            // so:
+                            // to do so:
                             if (this.emitInScopeOnly) {
-                                if (this.getScope().accepts(candidate)) {
-                                    // Pass to Kafka queue:
-                                    sendToKafka(getTopic(), curi, candidate);
-                                } else {
-                                    // (optionally) log discarded URLs for
-                                    // analysis:
-                                    if (discardedUriFeedEnabled) {
-                                        discardedUriFeed
-                                                .doInnerProcess(candidate);
+                                try {
+                                    // Load the sheet overlays so we apply
+                                    // recrawl frequencies etc.
+                                    sheetOverlaysManager.applyOverlaysTo(curi);
+                                    KeyedProperties.loadOverridesFrom(curi);
+
+                                    if (this.getScope().accepts(candidate)) {
+                                        // Pass to Kafka queue:
+                                        sendToKafka(getTopic(), curi,
+                                                candidate);
+                                    } else {
+                                        // (optionally) log discarded URLs for
+                                        // analysis:
+                                        if (discardedUriFeedEnabled) {
+                                            discardedUriFeed
+                                                    .doInnerProcess(candidate);
+                                        }
                                     }
+                                } finally {
+                                    KeyedProperties.clearOverridesFrom(curi);
                                 }
+
                             } else {
                                 // Ignore scope rules and emit all
                                 // non-prerequisites:
