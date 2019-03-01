@@ -217,7 +217,7 @@
                   <bean
                      class="org.archive.modules.deciderules.HopsPathMatchesRegexDecideRule">
                      <property name="decision" value="ACCEPT" />
-                     <property name="regex" value="^E*$" />
+                     <property name="regex" value="^.*E+$" />
                   </bean>
                </list>
             </property>
