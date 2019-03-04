@@ -396,8 +396,11 @@
 	<bean id="fetchProcessors" class="org.archive.modules.FetchChain">
 		<property name="processors">
 			<list>
-				<!-- enforce per-host quotas... -->
-				<ref bean="quotaEnforcer"/>
+				<!-- reset quotas if requested... -->
+                <bean class="uk.bl.wap.crawler.prefetch.QuotaResetProcessor">
+                </bean>
+                <!-- enforce per-host quotas... -->
+                <ref bean="quotaEnforcer"/>
 				<!-- recheck scope, if so enabled... -->
 				<ref bean="preselector"/>
 				<!-- ...then verify or trigger prerequisite URIs fetched, allow crawling... -->

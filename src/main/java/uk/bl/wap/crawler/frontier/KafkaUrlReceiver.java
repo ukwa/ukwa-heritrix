@@ -53,20 +53,15 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.event.CrawlStateEvent;
-import org.archive.crawler.framework.Frontier.FrontierGroup;
-import org.archive.crawler.frontier.AbstractFrontier;
 import org.archive.crawler.postprocessor.CandidatesProcessor;
 import org.archive.crawler.spring.SheetOverlaysManager;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.SchedulingConstants;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
-import org.archive.modules.fetcher.FetchStats;
-import org.archive.modules.net.CrawlHost;
-import org.archive.modules.net.CrawlServer;
-import org.archive.modules.net.ServerCache;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
+import org.archive.spring.KeyedProperties;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.Reporter;
 import org.archive.util.SurtPrefixSet;
@@ -84,6 +79,7 @@ import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import uk.bl.wap.crawler.postprocessor.KafkaKeyedDiscardedFeed;
 import uk.bl.wap.crawler.postprocessor.KafkaKeyedToCrawlFeed;
+import uk.bl.wap.crawler.prefetch.QuotaResetProcessor;
 import uk.bl.wap.modules.deciderules.RecentlySeenDecideRule;
 
 /**
@@ -132,8 +128,6 @@ public class KafkaUrlReceiver
     private static final Logger logger = 
             Logger.getLogger(KafkaUrlReceiver.class.getName());
 
-    public static final String RESET_QUOTAS = "resetQuotas";
-
     protected ApplicationContext appCtx;
     public void setApplicationContext(ApplicationContext appCtx) throws BeansException {
         this.appCtx = appCtx;
@@ -164,17 +158,6 @@ public class KafkaUrlReceiver
     @Autowired
     public void setCandidates(CandidatesProcessor candidates) {
         this.candidates = candidates;
-    }
-
-    protected ServerCache serverCache;
-
-    public ServerCache getServerCache() {
-        return this.serverCache;
-    }
-
-    @Autowired
-    public void setServerCache(ServerCache serverCache) {
-        this.serverCache = serverCache;
     }
 
     protected KafkaKeyedDiscardedFeed discardedUriFeed;
@@ -516,32 +499,9 @@ public class KafkaUrlReceiver
                 try {
                     // Make the CrawlURI:
                     CrawlURI curi = makeCrawlUri(jo);
-                    /*
-                     * OKAY different logic Need clear target launch time plus
-                     * tolerance. IF item turns up early but within tolerance,
-                     * use curi.setRescheduleTime(demand); to delay until the
-                     * tolerance period is passed. Sooo, set target crawl time
-                     * i.e. ignoring tol then modify fetch chain to skip if
-                     * early, and setRescheduleTime instead. UNLESS it comes in
-                     * from outside in which case enqueue ASAP if within
-                     * tolerance
-                     * 
-                     * OR
-                     * 
-                     * Default small tolerance for discovered URLs Larger
-                     * tolerance for injected URLs (essentially, external
-                     * requests should 'always' get crawled) The only
-                     * restriction is we need to avoid re-enqueing too many
-                     * times on re-consumption of crawl queue A small tolerance
-                     * (say 15 mins) on discovered URLs should be fine, as long
-                     * as seeds requests happen
-                     * 
-                     * Delaying the queue is appealing but could overshoot and
-                     * will eat up tries.
-                     * 
-                     */ // If requested, reset quotas:
-                    if (curi.getData().containsKey(RESET_QUOTAS))
-                        resetQuotas(curi);
+
+                    // Clear override contexts (or sheet application will fail):
+                    KeyedProperties.clearAllOverrideContexts();
 
                     // Add a seed to the crawl:
                     if (curi.isSeed()) {
@@ -608,66 +568,6 @@ public class KafkaUrlReceiver
             } else {
                 logger.info("ignoring url with method other than GET - " + jo);
             }
-        }
-
-        private void resetQuotas(CrawlURI curi) {
-            logger.info("Clearing down quota stats for " + curi);
-
-            // First, prepare the URL so that the class key is set,
-            // so we can find the quotas to reset:
-            // try {
-            // sheetOverlaysManager.applyOverlaysTo(curi);
-            // KeyedProperties.loadOverridesFrom(curi);
-                AbstractFrontier f = (AbstractFrontier) candidates
-                        .getFrontier();
-                f.getFrontierPreparer().prepare(curi);
-                curi.setClassKey(candidates.getFrontier().getClassKey(curi));
-            // } finally {
-            // KeyedProperties.clearOverridesFrom(curi);
-            // }
-
-            // Group stats:
-            FrontierGroup group = candidates.getFrontier().getGroup(curi);
-            synchronized (group) {
-                if (group != null) {
-                    resetFetchStats(group.getSubstats(), "Frontier Group");
-                    group.makeDirty();
-                }
-            }
-            // By server:
-            final CrawlServer server = serverCache.getServerFor(curi.getUURI());
-            if (server != null) {
-                synchronized (server) {
-                    resetFetchStats(server.getSubstats(), "Server");
-                    server.makeDirty();
-                }
-            }
-            // And by host:
-            final CrawlHost host = serverCache.getHostFor(curi.getUURI());
-            // Host can be null if lookup fails:
-            if (host != null) {
-                synchronized (host) {
-                    resetFetchStats(host.getSubstats(), "Host");
-                    host.makeDirty();
-                }
-            }
-        }
-
-        private void resetFetchStats(FetchStats fs, String kind) {
-            // Record initial state:
-            String before = fs.shortReportLine();
-
-            // Resets all tallies that can be used by QuotaEnforcer:
-            fs.put(FetchStats.FETCH_SUCCESSES, 0L);
-            fs.put(FetchStats.SUCCESS_BYTES, 0L);
-            fs.put(FetchStats.FETCH_RESPONSES, 0L);
-            fs.put(FetchStats.TOTAL_BYTES, 0L);
-            fs.put(FetchStats.NOVEL, 0L);
-            fs.put(FetchStats.NOVELCOUNT, 0L);
-
-            // Report the result of the resetting:
-            logger.fine("Reset " + kind + " stats from " + before + " to "
-                    + fs.shortReportLine());
         }
 
     }
@@ -874,7 +774,8 @@ public class KafkaUrlReceiver
         // Reset quotas if requested (seeds only):
         if (jo.has("resetQuotas")) {
             // Store the request in the CrawlURI data:
-            curi.getData().put(RESET_QUOTAS, jo.get("resetQuotas"));
+            curi.getData().put(QuotaResetProcessor.RESET_QUOTAS,
+                    jo.get("resetQuotas"));
         }
 
         return curi;
