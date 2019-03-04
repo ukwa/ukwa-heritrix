@@ -225,11 +225,15 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
                             // Only emit URLs that are in scope, if configured
                             // to do so:
                             if (this.emitInScopeOnly) {
+                                // Load the sheet overlays so we apply
+                                // recrawl frequencies etc. (as done in
+                                // CandidatesProcessor):
+                                candidate.setFullVia(curi);
+                                sheetOverlaysManager.applyOverlaysTo(candidate);
                                 try {
-                                    // Load the sheet overlays so we apply
-                                    // recrawl frequencies etc.
-                                    sheetOverlaysManager.applyOverlaysTo(curi);
-                                    KeyedProperties.loadOverridesFrom(curi);
+                                    KeyedProperties.clearOverridesFrom(curi);
+                                    KeyedProperties
+                                            .loadOverridesFrom(candidate);
 
                                     if (this.getScope().accepts(candidate)) {
                                         // Pass to Kafka queue:
@@ -244,7 +248,9 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
                                         }
                                     }
                                 } finally {
-                                    KeyedProperties.clearOverridesFrom(curi);
+                                    KeyedProperties
+                                            .clearOverridesFrom(candidate);
+                                    KeyedProperties.loadOverridesFrom(curi);
                                 }
 
                             } else {
