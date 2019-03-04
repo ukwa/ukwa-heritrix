@@ -632,6 +632,8 @@
 				<ref bean="warcWriterDefault"/>
 				<!-- update the persist store -->
 				<ref bean="persistStoreProcessor" />
+                <!-- get the frontier to 'forget' this URI was queued -->
+                <bean class="uk.bl.wap.crawler.postprocessor.ForgettingFrontierProcessor"></bean>
                 <!-- send the crawl log to a queue for downstream checks -->
                 <ref bean="crawlLogFeed"/>
                 <!-- filter our and send outlink candidate URIs to the to-crawl feed -->
@@ -685,9 +687,9 @@
 		</property>
 	</bean>
 	
-	<!-- URI UNIQ FILTER: Used by frontier to remember already-included URIs --> 
-	<bean id="uriUniqFilter" class="org.archive.crawler.util.NoopUriUniqFilter">
-       <!-- We accept all URIs that get past the Decide Rules, which now handle the 'not recently seen' criteria. -->
+	<!-- URI UNIQ FILTER: Used by frontier to remember URIs currently in the BDBFrontier --> 
+	<bean id="uriUniqFilter" class="org.archive.crawler.util.BdbUriUniqFilter">
+        <property name="bdbModule" ref="bdbUriUniqFilterBdb"/>
 	</bean>
    
     <!-- Shared OutbackCDX client and configuration -->
@@ -812,6 +814,11 @@
 	<!-- BDBMODULE: BDB-JE disk persistence manager -->
   <bean id="bdbFrontierBdb" class="org.archive.bdb.BdbModule">
     <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/frontier"/>
+    <property name="cachePercent" value="30"/>
+    <property name="expectedConcurrency" value="100"/>
+  </bean>
+  <bean id="bdbUriUniqFilterBdb" class="org.archive.bdb.BdbModule">
+    <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/uriUniqFilter"/>
     <property name="cachePercent" value="30"/>
     <property name="expectedConcurrency" value="100"/>
   </bean>
