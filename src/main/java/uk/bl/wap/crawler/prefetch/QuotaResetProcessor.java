@@ -130,7 +130,7 @@ public class QuotaResetProcessor extends Processor {
         fs.put(FetchStats.NOVELCOUNT, 0L);
 
         // Report the result of the resetting:
-        logger.info("Reset " + kind + " stats from " + before + " to "
+        logger.fine("Reset " + kind + " stats from " + before + " to "
                 + fs.shortReportLine());
     }
 
