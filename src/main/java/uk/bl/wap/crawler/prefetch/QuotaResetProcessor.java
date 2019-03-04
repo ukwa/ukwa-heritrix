@@ -53,8 +53,8 @@ public class QuotaResetProcessor extends Processor {
      */
     @Override
     protected boolean shouldProcess(CrawlURI curi) {
-        // Check if the appropriate KEY is set:
-        if (curi.getData().containsKey(RESET_QUOTAS)) {
+        // Check if the appropriate annotation is set:
+        if (curi.getAnnotations().contains(RESET_QUOTAS)) {
             logger.finer("Found reset-quota annotation for " + curi);
             return true;
         }

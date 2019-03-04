@@ -774,8 +774,7 @@ public class KafkaUrlReceiver
         // Reset quotas if requested (seeds only):
         if (jo.has("resetQuotas")) {
             // Store the request in the CrawlURI data:
-            curi.getData().put(QuotaResetProcessor.RESET_QUOTAS,
-                    jo.get("resetQuotas"));
+            curi.getAnnotations().add(QuotaResetProcessor.RESET_QUOTAS);
         }
 
         return curi;
