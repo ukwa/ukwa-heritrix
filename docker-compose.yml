@@ -22,7 +22,7 @@ services:
        - "KAFKA_BOOTSTRAP_SERVERS=kafka:9092"
        - "KAFKA_TOCRAWL_TOPIC=uris.tocrawl.fc"
        - "KAFKA_CANDIDATES_TOPIC=uris.tocrawl.fc"
-       - "KAFKA_CANDIDATES_IN_SCOPE_ONLY=true"
+       - "KAFKA_CANDIDATES_IN_SCOPE_ONLY=false"
        - "KAFKA_DISCARDED_FEED_ENABLED=true"
        - "KAFKA_DISCARDED_TOPIC=uris.discarded.fc"
        - "KAFKA_CRAWLED_TOPIC=uris.crawled.fc"
@@ -128,21 +128,24 @@ services:
 
   # PhantomJS web page rendering service
   webrender:
-    image: ukwa/webrender-phantomjs:2.0.11
+    image: ukwa/webrender-phantomjs:puppeteer-alternative
+    command: "gunicorn -c gunicorn.ini webrender.wrengine:app"
     environment:
       - "WARCPROX=warcprox:8000"
+      - "DOCKER_NETWORK=ukwa-heritrix_default" # warcprox network, to attach renderer containers to
       - "LC_ALL=en_US.utf8"
-      - "TMP=/tmp/webrender"
+      - "WEB_RENDER_TMP=/tmp/webrender" # Has to match the _host_ folder mounted below:
     ports:
       - "8010:8010"
     links:
       - warcprox
-    #volumes:
-    #  - "./pulse-beta/gunicorn.ini:/webrender/gunicorn.ini" # Override render server configuration
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # Needs to connect to Docker to launch render container
+      - /tmp/webrender:/tmp/webrender # Host mount must match internal mount at present!
 
 # WARC Proxy, with de-duplication disabled and a rapid rollover:
   warcprox:
-    image: ukwa/warcprox #:2.0-py36-alpine
+    image: ukwa/warcprox:2.3
     command: "warcprox -b 0.0.0.0 -d /heritrix/wren --base32 --gzip --rollover-idle-time 600 --dedup-db-file /dev/null --stats-db-file /dev/null --quiet --plugin warcprox-plugins.listeners.KafkaCaptureFeed --plugin warcprox-plugins.listeners.UpdateOutbackCDX"
     environment:
       - "LC_ALL=en_US.utf8"
@@ -229,4 +232,4 @@ services:
     depends_on:
       - kafka
       - cdxserver
-    
+      
