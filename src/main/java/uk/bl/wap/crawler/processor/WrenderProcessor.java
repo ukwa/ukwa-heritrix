@@ -7,8 +7,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -70,6 +68,9 @@ public class WrenderProcessor extends Processor implements
 
     private int maxTries = 1; // How many times to attempt web-rendering before
                               // deferring to plain FetchHTTP
+
+    private String warcFilePrefix = "WREN"; // Tag to put at start of WARC
+                                              // filenames
 
     private String wrenderEndpoint = "http://localhost:8000/render";
 
@@ -144,6 +145,22 @@ public class WrenderProcessor extends Processor implements
      */
     public void setWrenderEndpoint(String wrenderEndpoint) {
         this.wrenderEndpoint = wrenderEndpoint;
+    }
+
+    /**
+     * 
+     * @return
+     */
+    public String getWarcFilePrefix() {
+        return warcFilePrefix;
+    }
+
+    /**
+     * 
+     * @param warcFilePrefix
+     */
+    public void setWarcFilePrefix(String warcFilePrefix) {
+        this.warcFilePrefix = warcFilePrefix;
     }
 
     /**
@@ -263,15 +280,16 @@ public class WrenderProcessor extends Processor implements
      * Create a prefix for the WARC file names, based on job name, launch id,
      * and current date.
      * 
-     * WREN-{job}-{launchId}-{yyyyMMdd}
+     * This ensures all the WARCs (H3 and warcprox) end up in the same place.
+     * 
+     * {job}/{launchId}/warcs/{warcFilePrefix}-{job}-{launchId}
      * 
      * @return
      */
     private String buildWarcPrefix() {
-        Calendar cal = Calendar.getInstance();
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
-        return "WREN-" + controller.getMetadata().getJobName() + "-" + launchId
-                + "-" + format.format(cal.getTime());
+        return controller.getMetadata().getJobName() + "/"
+                + this.launchId + "/warcs/" + warcFilePrefix + "-"
+                + controller.getMetadata().getJobName() + "-" + launchId;
     }
 
     /**

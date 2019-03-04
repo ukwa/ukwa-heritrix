@@ -227,7 +227,7 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
                             if (this.emitInScopeOnly) {
                                 // Load the sheet overlays so we apply
                                 // recrawl frequencies etc. (as done in
-                                // CandidatesProcessor):
+                                // CandidatesProcessor.runCandidateChain():
                                 candidate.setFullVia(curi);
                                 sheetOverlaysManager.applyOverlaysTo(candidate);
                                 try {
