@@ -22,7 +22,7 @@ services:
        - "KAFKA_BOOTSTRAP_SERVERS=kafka:9092"
        - "KAFKA_TOCRAWL_TOPIC=uris.tocrawl.fc"
        - "KAFKA_CANDIDATES_TOPIC=uris.tocrawl.fc"
-       - "KAFKA_CANDIDATES_IN_SCOPE_ONLY=false"
+       - "KAFKA_CANDIDATES_IN_SCOPE_ONLY=true"
        - "KAFKA_DISCARDED_FEED_ENABLED=true"
        - "KAFKA_DISCARDED_TOPIC=uris.discarded.fc"
        - "KAFKA_CRAWLED_TOPIC=uris.crawled.fc"

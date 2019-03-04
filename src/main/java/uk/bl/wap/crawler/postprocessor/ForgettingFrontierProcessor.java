@@ -42,7 +42,7 @@ public class ForgettingFrontierProcessor extends Processor {
      */
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
-        logger.info("Making the frontier forget it has seen " + curi);
+        logger.finer("Making the frontier forget it has seen " + curi);
         uriUniqFilter.forget(curi.getCanonicalString(), curi);
     }
 
