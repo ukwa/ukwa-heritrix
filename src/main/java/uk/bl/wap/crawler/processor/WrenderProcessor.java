@@ -280,16 +280,13 @@ public class WrenderProcessor extends Processor implements
      * Create a prefix for the WARC file names, based on job name, launch id,
      * and current date.
      * 
-     * This ensures all the WARCs (H3 and warcprox) end up in the same place.
-     * 
-     * {job}/{launchId}/warcs/{warcFilePrefix}-{job}-{launchId}
+     * {warcFilePrefix}-{job}-{launchId}
      * 
      * @return
      */
     private String buildWarcPrefix() {
-        return controller.getMetadata().getJobName() + "/"
-                + this.launchId + "/warcs/" + warcFilePrefix + "-"
-                + controller.getMetadata().getJobName() + "-" + launchId;
+        return warcFilePrefix + "-" + controller.getMetadata().getJobName()
+                + "-" + launchId;
     }
 
     /**
