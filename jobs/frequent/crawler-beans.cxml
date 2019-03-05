@@ -296,7 +296,7 @@
 	<bean id="wrenderHttp" class="uk.bl.wap.crawler.processor.WrenderProcessor">
         <property name="enabled" value="#{systemEnvironment['WEBRENDER_ENABLED'] ?: false}"/>
 		<property name="WrenderEndpoint" value="#{systemEnvironment['WEBRENDER_ENDPOINT'] ?: 'http://localhost:5000/wrender'}" />
-        <property name="warcFilePrefix" value="#{systemEnvironment['WEBRENDER_WARC_FILE_PREFIX'] ?: 'WREN'}"/>
+        <property name="warcFilePrefix" value="#{systemEnvironment['WEBRENDER_WARC_PREFIX'] ?: 'WREN'}"/>
         <property name="shouldProcessRule">
             <bean class="org.archive.modules.deciderules.DecideRuleSequence">
                 <property name="rules">
