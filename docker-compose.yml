@@ -127,15 +127,14 @@ services:
     environment:
       - "ZK_HOST=zookeeper:2181"
 
-  # PhantomJS web page rendering service
+  # Web page rendering service
   webrender:
-    image: ukwa/webrender-phantomjs:puppeteer-alternative
-    command: "gunicorn -c gunicorn.ini webrender.wrengine:app"
-    environment:
+    image: ukwa/webrender-api
+    environment: # DOCKER_HOST could be used to run rendering on a dedicated service.
       - "WARCPROX=warcprox:8000"
       - "DOCKER_NETWORK=ukwa-heritrix_default" # warcprox network, to attach renderer containers to
       - "LC_ALL=en_US.utf8"
-      - "WEB_RENDER_TMP=/tmp/webrender" # Has to match the _host_ folder mounted below:
+      - "WEB_RENDER_TMP=/tmp/webrender" # Has to match the _host_ folder mounted below.
     ports:
       - "8010:8010"
     links:
