@@ -42,7 +42,7 @@ PID=$!
 # Launch the job if configured to do so:
 if [ "$LAUNCH_AUTOMATICALLY" = "true" ]; then
     echo STARTER: Waiting while Heritrix starts up...
-    sleep 5
+    sleep 15
     echo STARTER: Launching job ${JOB_NAME}...
     #/h3-bin/bin/job-launch
     /h3-bin/bin/job-resume
