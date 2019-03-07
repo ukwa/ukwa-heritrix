@@ -66,7 +66,7 @@ public class QuotaResetProcessor extends Processor {
      */
     @Override
     protected void innerProcess(CrawlURI curi) throws InterruptedException {
-        logger.finer("Clearing down quota stats for " + curi);
+        logger.info("Clearing quotas for " + curi);
 
         // Group stats:
         FrontierGroup group = candidates.getFrontier().getGroup(curi);

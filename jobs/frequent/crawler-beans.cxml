@@ -250,6 +250,8 @@
 			<ref bean="scope" />
 		</property>
 	</bean>
+    <bean id="quotaResetter" class="uk.bl.wap.crawler.prefetch.QuotaResetProcessor">
+    </bean>
 	<bean id="quotaEnforcer" class="org.archive.crawler.prefetch.QuotaEnforcer">
         <!-- Default quota of 500MiB (can be overridden in sheets too, use -1 for no quota): -->
 		<property name="serverMaxSuccessKb" value="#{systemEnvironment['QUOTA_SERVER_MAX_SUCCESS_KB'] ?: 524288}" />
@@ -398,8 +400,7 @@
 		<property name="processors">
 			<list>
 				<!-- reset quotas if requested... -->
-                <bean class="uk.bl.wap.crawler.prefetch.QuotaResetProcessor">
-                </bean>
+                <ref bean="quotaResetter"/>
                 <!-- enforce per-host quotas... -->
                 <ref bean="quotaEnforcer"/>
 				<!-- recheck scope, if so enabled... -->
@@ -598,6 +599,10 @@
     </property>
   </bean>
   -->
+     <!-- This lets the crawler forget about the URIs that were in the frontier -->
+     <bean id="forgetfulFrontierProcessor" class="uk.bl.wap.crawler.postprocessor.ForgettingFrontierProcessor">
+     </bean>
+     
      <!-- This provides a crawl log feed to a queue - note that you'll need to set up a binding that matches these parameters to a queue -->
      <bean id="toCrawlFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedToCrawlFeed">
        <property name="enabled" value="#{systemEnvironment['KAFKA_CANDIDATES_LOG_ENABLED'] ?: true}" />
@@ -634,7 +639,7 @@
 				<!-- update the persist store -->
 				<ref bean="persistStoreProcessor" />
                 <!-- get the frontier to 'forget' this URI was queued -->
-                <bean class="uk.bl.wap.crawler.postprocessor.ForgettingFrontierProcessor"></bean>
+                <ref bean="forgetfulFrontierProcessor" />
                 <!-- send the crawl log to a queue for downstream checks -->
                 <ref bean="crawlLogFeed"/>
                 <!-- filter our and send outlink candidate URIs to the to-crawl feed -->
