@@ -212,29 +212,29 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
 
             // Iterate through the outlinks:
             for (CrawlURI candidate : outLinks) {
+                // Load the sheet overlays so we apply recrawl frequencies etc.
+                // (as done in CandidatesProcessor.runCandidateChain():
+                candidate.setFullVia(curi);
+                sheetOverlaysManager.applyOverlaysTo(candidate);
+                try {
+                    KeyedProperties.clearOverridesFrom(curi);
+                    KeyedProperties.loadOverridesFrom(candidate);
 
-                // Route most via Kafka, not prerequisites
-                if (!candidate.isPrerequisite()) {
+                    // Route most via Kafka, not prerequisites
+                    if (!candidate.isPrerequisite()) {
 
-                    // Discard malformed or 'data:' or 'mailto:' URLs
-                    if (this.shouldEmit(candidate)) {
+                        // Discard malformed or 'data:' or 'mailto:' URLs
+                        if (this.shouldEmit(candidate)) {
 
-                        // Avoid re-sending the same URI a lot:
-                        if (!sentURIs.contains(candidate.getURI())) {
+                            // Avoid re-sending the same URI a lot:
+                            if (!sentURIs.contains(candidate.getURI())) {
 
-                            // Only emit URLs that are in scope, if configured
-                            // to do so:
-                            if (this.emitInScopeOnly) {
-                                // Load the sheet overlays so we apply
-                                // recrawl frequencies etc. (as done in
-                                // CandidatesProcessor.runCandidateChain():
-                                candidate.setFullVia(curi);
-                                sheetOverlaysManager.applyOverlaysTo(candidate);
-                                try {
-                                    KeyedProperties.clearOverridesFrom(curi);
-                                    KeyedProperties
-                                            .loadOverridesFrom(candidate);
-
+                                // Only emit URLs that are in scope, if
+                                // configured
+                                // to do so:
+                                if (this.emitInScopeOnly) {
+                                    // This part needs the
+                                    // sheets/keyed-properties setup right:
                                     if (this.getScope().accepts(candidate)) {
                                         // Pass to Kafka queue:
                                         sendToKafka(getTopic(), curi,
@@ -247,42 +247,43 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
                                                     .doInnerProcess(candidate);
                                         }
                                     }
-                                } finally {
-                                    KeyedProperties
-                                            .clearOverridesFrom(candidate);
-                                    KeyedProperties.loadOverridesFrom(curi);
+                                } else {
+                                    // Ignore scope rules and emit all
+                                    // non-prerequisites:
+                                    sendToKafka(getTopic(), curi, candidate);
                                 }
 
-                            } else {
-                                // Ignore scope rules and emit all
-                                // non-prerequisites:
-                                sendToKafka(getTopic(), curi, candidate);
-                            }
+                                // Record this diverted URL string so it will
+                                // only
+                                // be sent once:
+                                sentURIs.add(candidate.getURI());
 
-                            // Record this diverted URL string so it will only
-                            // be sent once:
-                            sentURIs.add(candidate.getURI());
+                            } else {
+                                logger.finest(
+                                        "Not emitting CrawlURI (appears to have been sent already): "
+                                                + candidate.getURI());
+                            }
 
                         } else {
                             logger.finest(
-                                    "Not emitting CrawlURI (appears to have been sent already): "
+                                    "Not emitting CrawlURI (appears to be invalid): "
                                             + candidate.getURI());
                         }
 
+                        // Remove all Crawl URIs except pre-requisites so only
+                        // they
+                        // will be queued directly:
+                        toRemove.add(candidate);
                     } else {
                         logger.finest(
-                                "Not emitting CrawlURI (appears to be invalid): "
+                                "Not emitting pre-requisite CrawlURI (will be enqueued locally): "
                                         + candidate.getURI());
                     }
-
-                    // Remove all Crawl URIs except pre-requisites so only they
-                    // will be queued directly:
-                    toRemove.add(candidate);
-                } else {
-                    logger.finest(
-                            "Not emitting pre-requisite CrawlURI (will be enqueued locally): "
-                                    + candidate.getURI());
+                } finally {
+                    KeyedProperties.clearOverridesFrom(candidate);
+                    KeyedProperties.loadOverridesFrom(curi);
                 }
+
             }
 
             // And remove re-routed candidates from the candidates list:
