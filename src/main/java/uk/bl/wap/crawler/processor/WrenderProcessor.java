@@ -348,14 +348,15 @@ public class WrenderProcessor extends Processor implements
                 if (!url.startsWith("data:")) {
                     UURI requestUri = UURIFactory.getInstance(url);
                     if (curi.getUURI().equals(requestUri)) {
+                        int status_code = entry.getJSONObject("response")
+                                .getInt("status");
                         // Record that this worked so the rest of the Fetch
                         // Chain
                         // can be skipped:
-                        curi.setFetchStatus(
-                                FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR);
+                        curi.setFetchStatus(status_code);
                         // Extract status code:
-                        curi.getAnnotations().add("WebRenderStatus:" + entry
-                                .getJSONObject("response").getInt("status"));
+                        curi.getAnnotations()
+                                .add("WebRenderStatus:" + status_code);
                     }
                 } else {
                     LOGGER.fine("Skipping data: URI embedded in " + curi);
@@ -369,6 +370,7 @@ public class WrenderProcessor extends Processor implements
         JSONArray pages = har.getJSONObject("log").getJSONArray("pages");
         for (int i = 0; i < pages.length(); i++) {
             JSONObject page = pages.getJSONObject(i);
+            LOGGER.finest("JSON for PAGE " + page);
             // Get the content, if present:
             // JSONObject rc = page.getJSONObject("renderedContent");
             // String responseBody = rc.getString("text");
@@ -382,6 +384,7 @@ public class WrenderProcessor extends Processor implements
             //
             // Process the link map:
             JSONArray map = page.getJSONArray("map");
+            LOGGER.finest("JSON for MAP " + map);
             for (int j = 0; j < map.length(); j++) {
                 JSONObject mapi = map.getJSONObject(j);
                 // Not all map entries have a 'href' (e.g. 'onclick'):
@@ -421,6 +424,7 @@ public class WrenderProcessor extends Processor implements
             UURI dest = UURIFactory.getInstance(curi.getBaseURI(), newUri);
             CrawlURI link = curi.createCrawlURI(dest, LinkContext.NAVLINK_MISC,
                     Hop.NAVLINK);
+            LOGGER.finer("Adding Outlink: " + link);
             curi.getOutLinks().add(link);
         } catch (URIException e) {
             LOGGER.log(Level.SEVERE, "URIException when processing " + newUri,

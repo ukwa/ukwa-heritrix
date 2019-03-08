@@ -643,7 +643,7 @@
                 <ref bean="forgetfulFrontierProcessor" />
                 <!-- send the crawl log to a queue for downstream checks -->
                 <ref bean="crawlLogFeed"/>
-                <!-- filter our and send outlink candidate URIs to the to-crawl feed -->
+                <!-- route outlink candidate URIs via to-crawl feed -->
                 <ref bean="toCrawlFeed"/>
                 <!-- get any pre-requisites -->
                 <ref bean="candidates"/>
