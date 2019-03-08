@@ -369,6 +369,18 @@ public class WrenderProcessor extends Processor implements
         JSONArray pages = har.getJSONObject("log").getJSONArray("pages");
         for (int i = 0; i < pages.length(); i++) {
             JSONObject page = pages.getJSONObject(i);
+            // Get the content, if present:
+            // JSONObject rc = page.getJSONObject("renderedContent");
+            // String responseBody = rc.getString("text");
+            // responseBody = Base64.base64Decode(responseBody);
+            //
+            // Not that easy to set up.
+            //
+            // ExtractorHTML uses
+            // ReplayCharSequence cs =
+            // curi.getRecorder().getContentReplayCharSequence();
+            //
+            // Process the link map:
             JSONArray map = page.getJSONArray("map");
             for (int j = 0; j < map.length(); j++) {
                 JSONObject mapi = map.getJSONObject(j);
