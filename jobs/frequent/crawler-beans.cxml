@@ -250,15 +250,8 @@
 			<ref bean="scope" />
 		</property>
 	</bean>
-    <bean id="quotaResetter" class="uk.bl.wap.crawler.prefetch.QuotaResetProcessor">
-    </bean>
-	<bean id="quotaEnforcer" class="org.archive.crawler.prefetch.QuotaEnforcer">
-        <!-- Default quota of 500MiB (can be overridden in sheets too, use -1 for no quota): -->
-		<property name="serverMaxSuccessKb" value="#{systemEnvironment['QUOTA_SERVER_MAX_SUCCESS_KB'] ?: 524288}" />
-		<!-- This will log all out-of-quota URLs rather than just retiring the queue. -->
-     	<property name="forceRetire" value="false"/>
-	</bean>
-	<!-- assembled into ordered CandidateChain bean -->
+	<!-- assembled into ordered CandidateChain bean.
+         NOTE that seeds are prepared and scheduled via a SeedListener and don't run through the candidate chain. -->
 	<bean id="candidateProcessors" class="org.archive.modules.CandidateChain">
 		<property name="processors">
 			<list>
@@ -271,6 +264,14 @@
 		
 	<!-- FETCH CHAIN --> 
 	<!-- processors declared as named beans -->
+    <bean id="quotaResetter" class="uk.bl.wap.crawler.prefetch.QuotaResetProcessor">
+    </bean>
+    <bean id="quotaEnforcer" class="org.archive.crawler.prefetch.QuotaEnforcer">
+        <!-- Default quota of 500MiB (can be overridden in sheets too, use -1 for no quota): -->
+      <property name="serverMaxSuccessKb" value="#{systemEnvironment['QUOTA_SERVER_MAX_SUCCESS_KB'] ?: 524288}" />
+      <!-- This will log all out-of-quota URLs rather than just retiring the queue. -->
+      <property name="forceRetire" value="false"/>
+    </bean>
 	<bean id="preselector" class="org.archive.crawler.prefetch.Preselector">
 		<property name="recheckScope" value="true" />
 		<property name="blockAll" value="false" />
