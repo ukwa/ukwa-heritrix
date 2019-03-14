@@ -45,7 +45,7 @@ ENV MONITRIX_ENABLE=false \
 # Finish setup:
 EXPOSE 8443
 
-#VOLUME /jobs
+VOLUME /shared
 VOLUME /output
 
 #STOPSIGNAL TERM # Which is the default

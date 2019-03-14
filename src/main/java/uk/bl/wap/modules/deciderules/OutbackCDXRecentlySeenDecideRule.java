@@ -118,11 +118,11 @@ public class OutbackCDXRecentlySeenDecideRule
         long currentTime = System.currentTimeMillis() / 1000;
         if (ts == 0l || currentTime - ts > ttl_s || curi.forceFetch()) {
             LOGGER.finest("Got elapsed: " + (currentTime - ts) + " versus TTL "
-                    + ttl_s + " hence NOT recently seen.");
+                    + ttl_s + " hence NOT recently seen " + curi);
             return false;
         } else {
             LOGGER.finest("Got elapsed: " + (currentTime - ts) + " versus TTL "
-                    + ttl_s + " hence recently seen.");
+                    + ttl_s + " hence recently seen " + curi);
             return true;
         }
     }

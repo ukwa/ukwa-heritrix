@@ -258,6 +258,7 @@
 				<!-- apply scoping rules to each individual candidate URI... -->
 				<ref bean="candidateScoper"/>
 				<ref bean="preparer"/>
+                <!-- FIXME Inherit the resetQuotas annotation if the hopPath is P?R* - curi.getFullVia().getAnnotations()... -->
 			</list>
 		</property>
 	</bean>
@@ -268,7 +269,7 @@
     </bean>
     <bean id="quotaEnforcer" class="org.archive.crawler.prefetch.QuotaEnforcer">
         <!-- Default quota of 500MiB (can be overridden in sheets too, use -1 for no quota): -->
-      <property name="serverMaxSuccessKb" value="#{systemEnvironment['QUOTA_SERVER_MAX_SUCCESS_KB'] ?: 524288}" />
+      <property name="hostMaxSuccessKb" value="#{systemEnvironment['DEFAULT_HOST_MAX_SUCCESS_KB_QUOTA'] ?: 524288}" />
       <!-- This will log all out-of-quota URLs rather than just retiring the queue. -->
       <property name="forceRetire" value="false"/>
     </bean>
@@ -283,7 +284,7 @@
 	</bean>
 	<bean id="preconditions" class="org.archive.crawler.prefetch.PreconditionEnforcer">
 		<property name="ipValidityDurationSeconds" value="21600" />
-		<property name="robotsValidityDurationSeconds" value="86400" />
+		<property name="robotsValidityDurationSeconds" value="86400" /> <!-- 24 hr -->
 		<property name="calculateRobotsOnly" value="false" />
 	</bean>
 	<bean id="fetchDns" class="org.archive.modules.fetcher.FetchDNS">
