@@ -269,7 +269,7 @@
     </bean>
     <bean id="quotaEnforcer" class="org.archive.crawler.prefetch.QuotaEnforcer">
         <!-- Default quota of 500MiB (can be overridden in sheets too, use -1 for no quota): -->
-      <property name="hostMaxSuccessKb" value="#{systemEnvironment['DEFAULT_HOST_MAX_SUCCESS_KB_QUOTA'] ?: 524288}" />
+      <property name="serverMaxSuccessKb" value="#{systemEnvironment['DEFAULT_HOST_MAX_SUCCESS_KB_QUOTA'] ?: 524288}" />
       <!-- This will log all out-of-quota URLs rather than just retiring the queue. -->
       <property name="forceRetire" value="false"/>
     </bean>

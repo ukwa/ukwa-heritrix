@@ -7,7 +7,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
-import org.archive.crawler.framework.Frontier.FrontierGroup;
 import org.archive.crawler.postprocessor.CandidatesProcessor;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
@@ -115,19 +114,8 @@ public class QuotaResetProcessor extends Processor {
             }
         }
 
-        // And clear the FrontierGroup:
-        // TODO NOTE that this does not clear the FrontierGroup for aliases.
-        // TODO Perhaps quota resetting needs to be done differently, e.g.
-        // inheriting the resetQuotas under certain circumstances (like
-        // pre-requisite processing?)
-        FrontierGroup group = candidates.getFrontier().getGroup(curi);
-        synchronized (group) {
-            if (group != null) {
-                resetFetchStats(group.getSubstats(), "Frontier Group");
-                group.makeDirty();
-            }
-        }
-
+        // NOTE Does not modify FrontierGroup FetchStats as this appears to
+        // destablize the frontier. Lots of cannot-set-
     }
 
     /**
