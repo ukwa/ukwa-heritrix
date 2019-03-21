@@ -7,6 +7,8 @@
 +http://clop.in/
 +http://coge.la/
 +http://durl.me/
++http://doi.org/
++http://dx.doi.org/
 +http://fon.gs/
 +http://fwd4.me/
 +http://gkurl.us/
