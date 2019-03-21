@@ -10,7 +10,6 @@ Launch first test crawl
 	Log	${result.stdout}
 	Log	${result.stderr}
 	Should Be Equal As Integers	${result.rc}	0
-	${result}=	Run Process	submit -k kafka:9092 -S uris.tocrawl.fc http://crawl-test-site.webarchive.org.uk	shell=yes
 
 Launch second test crawl
 	${result}=	Run Process	submit -k kafka:9092 -S -R uris.tocrawl.fc http://acid.matkelly.com/	shell=yes

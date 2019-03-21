@@ -115,7 +115,10 @@ public class QuotaResetProcessor extends Processor {
         }
 
         // NOTE Does not modify FrontierGroup FetchStats as this appears to
-        // destablize the frontier. Lots of cannot-set-
+        // destablize the frontier. Lots of "Can not set
+        // org.archive.modules.fetcher.FetchStats field
+        // org.archive.crawler.frontier.WorkQueue.substats to java.lang.Byte"
+
     }
 
     /**

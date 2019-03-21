@@ -357,6 +357,8 @@ public class WrenderProcessor extends Processor implements
                         // Extract status code:
                         curi.getAnnotations()
                                 .add("WebRenderStatus:" + status_code);
+                        // Only grab the first one:
+                        break;
                     }
                 } else {
                     LOGGER.fine("Skipping data: URI embedded in " + curi);
