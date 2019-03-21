@@ -3,12 +3,14 @@
  */
 package uk.bl.wap.modules.deciderules;
 
+import java.text.ParseException;
 import java.util.logging.Logger;
 
 import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.PredicatedDecideRule;
 import org.archive.spring.KeyedProperties;
+import org.archive.util.DateUtils;
 
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -32,6 +34,9 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
 
     /** Recrawl-interval key if set in CrawlURI, in seconds */
     public static final String RECRAWL_INTERVAL = "recrawlInterval";
+
+    /** Launch timestamp key if set in CrawlURI, in ms since epoch */
+    public static final String LAUNCH_TS = "launch_ts";
 
     // Hash function used for building keys:
     private HashFunction hf = Hashing.murmur3_128();
@@ -152,7 +157,21 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
         if (curi.getData().containsKey(RECRAWL_INTERVAL)) {
             ttl_s = (int) curi.getData().get(RECRAWL_INTERVAL);
         }
-        return evaluateWithTTL(key, curi, ttl_s);
+        // Allow launch-request-time-stamps:
+        long launch_ts = -1;
+        if (curi.getData().containsKey(LAUNCH_TS)) {
+            try {
+                launch_ts = DateUtils
+                        .parse14DigitDate(
+                                (String) curi.getData().get(LAUNCH_TS))
+                        .getTime();
+                launch_ts = launch_ts / 1000;
+            } catch (ParseException e) {
+                LOGGER.severe("Could not parse launch timestamp field: "
+                        + curi.getData().get(LAUNCH_TS));
+            }
+        }
+        return evaluateWithTTL(key, curi, ttl_s, launch_ts);
     }
 
     /**
@@ -160,10 +179,16 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
      * @param key
      * @param uri
      * @param ttl_s
+     *            Recrawl period (time-to-live in seconds) if this has been
+     *            crawled before:
+     * @param launch_ts
+     *            The target launch time, if any, as seconds since January 1,
+     *            1970, 00:00:00 GMT.
+     * 
      * @return true if the item is new and is being added to the set of known
      *         URIs
      */
     abstract public boolean evaluateWithTTL(String key, CrawlURI curi,
-            int ttl_s);
+            int ttl_s, long launch_ts);
 
 }

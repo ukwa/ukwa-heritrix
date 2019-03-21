@@ -77,7 +77,8 @@ public class OutbackCDXRecentlySeenDecideRule
      * @see uk.bl.wap.modules.deciderules.RecentlySeenDecideRule#evaluateWithTTL(java.lang.String, org.archive.modules.CrawlURI, int)
      */
     @Override
-    public boolean evaluateWithTTL(String key, CrawlURI curi, int ttl_s) {
+    public boolean evaluateWithTTL(String key, CrawlURI curi, int ttl_s,
+            long launch_ts) {
         // Get the last crawl date and hash:
         HashMap<String, Object> info = getInfo(curi.getURI());
 
@@ -120,9 +121,12 @@ public class OutbackCDXRecentlySeenDecideRule
             LOGGER.finest("Got elapsed: " + (currentTime - ts) + " versus TTL "
                     + ttl_s + " hence NOT recently seen " + curi);
             return false;
+        } else if (launch_ts > 0 && ts < launch_ts) {
+            LOGGER.finest("Got recrawl time: " + ts + " versus launch time "
+                    + launch_ts + " hence NOT recently seen " + curi);
+            return false;
         } else {
-            LOGGER.finest("Got elapsed: " + (currentTime - ts) + " versus TTL "
-                    + ttl_s + " hence recently seen " + curi);
+            LOGGER.finest("Has been recently seen: " + curi);
             return true;
         }
     }

@@ -7,8 +7,8 @@ services:
     hostname: "h3w" # Set the hostname so the persistent files are in consistent locations
     ports:
       - "8443:8443"
-      - "9101:9101" # JMX
-      - "9119:9118" # Metrics
+      - "9101:9101" # JMX port
+      - "9119:9118" # Metrics for Prometheus
     environment:
        - "JAVA_OPTS=-Xmx2g -javaagent:/jmx_prometheus_javaagent-0.3.1.jar=9101:/jmx-config.yml"
        - "CRAWL_NAME=npld-fc"
@@ -48,7 +48,7 @@ services:
     volumes:
       - ./docker/jmx_prometheus_javaagent-0.3.1.jar:/jmx_prometheus_javaagent-0.3.1.jar
       - ./docker/heritrix-jmx-config.yml:/jmx-config.yml
-      - ./docker/shared:/shared
+      #- ./docker/shared:/shared
     volumes_from:
       - dvc:rw  
 
@@ -146,7 +146,7 @@ services:
 
 # WARC Proxy, with de-duplication disabled and a rapid rollover:
   warcprox:
-    image: ukwa/warcprox:2.3
+    image: ukwa/warcprox:2.3.1
     command: "warcprox -b 0.0.0.0 -d /heritrix/wren --base32 --gzip --rollover-idle-time 600 --dedup-db-file /dev/null --stats-db-file /dev/null --quiet --plugin warcprox-plugins.listeners.KafkaCaptureFeed --plugin warcprox-plugins.listeners.UpdateOutbackCDX"
     environment:
       - "LC_ALL=en_US.utf8"
