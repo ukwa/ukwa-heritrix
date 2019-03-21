@@ -313,7 +313,9 @@ public class WrenderProcessor extends Processor implements
             // If we find status code, assume rendering worked:
             if (curi.getFetchStatus() != 0) {
                 curi.addExtraInfo("warcPrefix", warcPrefix);
-                // FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR: ???
+                // Override FetchStatus so this event is logger appropriately:
+                curi.setFetchStatus(
+                        FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR);
                 return true;
             }
         } catch (Exception e) {

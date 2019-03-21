@@ -637,6 +637,8 @@
   
 	<bean id="candidates" class="org.archive.crawler.postprocessor.CandidatesProcessor">
 		<property name="seedsRedirectNewSeeds" value="true" />
+        <!-- Get outlinks discovered on non-success pages too (which includes WebRendered ones) -->
+        <property name="processErrorOutlinks" value="true"/>
 	</bean>
 	<bean id="disposition" class="org.archive.crawler.postprocessor.DispositionProcessor">
 		<property name="delayFactor" value="2.0" />
