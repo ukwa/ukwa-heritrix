@@ -3,10 +3,8 @@
  */
 package uk.bl.wap.crawler.prefetch;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.postprocessor.CandidatesProcessor;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
@@ -15,7 +13,6 @@ import org.archive.modules.net.CrawlHost;
 import org.archive.modules.net.CrawlServer;
 import org.archive.modules.net.ServerCache;
 import org.archive.net.UURI;
-import org.archive.net.UURIFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 /**
@@ -89,46 +86,6 @@ public class QuotaResetProcessor extends Processor {
         }
 
         // By server ('authority' i.e. including port):
-        clearQuotasFor(uri);
-        // Also need to clear quotas for likely server aliases:
-        // If http, do https:
-        if (uri.getScheme() == "http") {
-            try {
-                String altUri = uri.getURI().replaceFirst("http", "https");
-                UURI alt = UURIFactory.getInstance(altUri);
-                clearQuotasFor(alt);
-            } catch (URIException e) {
-                logger.log(Level.WARNING,
-                        "Could not generate https URI from http URI!", e);
-            }
-        }
-        // If https, clear http:
-        if (uri.getScheme() == "https") {
-            try {
-                String altUri = uri.getURI().replaceFirst("https", "http");
-                UURI alt = UURIFactory.getInstance(altUri);
-                clearQuotasFor(alt);
-            } catch (URIException e) {
-                logger.log(Level.WARNING,
-                        "Could not generate https URI from http URI!", e);
-            }
-        }
-
-        // NOTE Does not modify FrontierGroup FetchStats as this appears to
-        // destablize the frontier. Lots of "Can not set
-        // org.archive.modules.fetcher.FetchStats field
-        // org.archive.crawler.frontier.WorkQueue.substats to java.lang.Byte"
-
-    }
-
-    /**
-     * Clear quotas associated with a particular URI:
-     * 
-     * @param uri
-     */
-    private void clearQuotasFor(UURI uri) {
-
-        // By server:
         final CrawlServer server = serverCache.getServerFor(uri);
         if (server != null) {
             synchronized (server) {
@@ -136,6 +93,15 @@ public class QuotaResetProcessor extends Processor {
                 server.makeDirty();
             }
         }
+
+
+        // NOTE Does not modify FrontierGroup FetchStats as this appears to
+        // destablize the frontier. Lots of "Can not set
+        // org.archive.modules.fetcher.FetchStats field
+        // org.archive.crawler.frontier.WorkQueue.substats to java.lang.Byte"
+        // ADDEDUM: Even after removing this, these errors still turned up.
+        // Now wondering if attemoting to clear http and https stats here was
+        // causing the problem somehow.
 
     }
 

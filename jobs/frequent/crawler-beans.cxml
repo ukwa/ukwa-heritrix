@@ -265,11 +265,13 @@
 		
 	<!-- FETCH CHAIN --> 
 	<!-- processors declared as named beans -->
+   
+    <!-- This resets the quotas if we this URL has been annotated to indicate we are re-launching this URL -->
     <bean id="quotaResetter" class="uk.bl.wap.crawler.prefetch.QuotaResetProcessor">
     </bean>
     <bean id="quotaEnforcer" class="org.archive.crawler.prefetch.QuotaEnforcer">
         <!-- Default quota of 500MiB (can be overridden in sheets too, use -1 for no quota): -->
-        <property name="serverMaxSuccessKb" value="#{systemEnvironment['DEFAULT_HOST_MAX_SUCCESS_KB_QUOTA'] ?: 524288}" />
+        <property name="hostMaxSuccessKb" value="#{systemEnvironment['DEFAULT_HOST_MAX_SUCCESS_KB_QUOTA'] ?: 524288}" />
         <!-- This will log all out-of-quota URLs rather than just retiring the queue. -->
         <property name="forceRetire" value="false"/>
         <!-- Modify behaviour so prerequisites are never blocked by quotas (e.g. robots.txt) -->
