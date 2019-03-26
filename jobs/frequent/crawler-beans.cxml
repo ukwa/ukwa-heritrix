@@ -258,7 +258,6 @@
 				<!-- apply scoping rules to each individual candidate URI... -->
 				<ref bean="candidateScoper"/>
 				<ref bean="preparer"/>
-                <!-- FIXME Inherit the resetQuotas annotation if the hopPath is P?R* - curi.getFullVia().getAnnotations()... -->
 			</list>
 		</property>
 	</bean>
