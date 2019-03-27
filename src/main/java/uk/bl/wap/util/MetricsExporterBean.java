@@ -133,6 +133,11 @@ public class MetricsExporterBean implements Lifecycle {
             .labelNames("crawl_host", "jobname", "kind")
             .help("Notable queue depths, by kind.").register();
 
+    private static final Gauge m_alerts = Gauge.build()
+            .name("heritrix3_crawl_job_alerts_count")
+            .labelNames("crawl_host", "jobname")
+            .help("Number of alerts experienced by this crawl.").register();
+
     // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
     // This thread collects the metrics:
     // ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ----
@@ -176,6 +181,10 @@ public class MetricsExporterBean implements Lifecycle {
                     // General job state:
                     m_up.labels(host, jobName, getCrawlState())
                             .setToCurrentTime();
+
+                    // Alert count:
+                    m_alerts.labels(host, jobName)
+                            .set(controller.getLoggerModule().getAlertCount());
 
                     // Durations:
                     m_durations.labels(host, jobName, "total")
