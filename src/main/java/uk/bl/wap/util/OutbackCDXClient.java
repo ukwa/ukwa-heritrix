@@ -229,22 +229,24 @@ public class OutbackCDXClient {
                 cumulativeFetchTime.addAndGet(System.currentTimeMillis() - t0);
                 StatusLine sl = resp.getStatusLine();
                 if (sl.getStatusCode() != 200) {
-                    logger.severe("GET " + url + " failed with status="
-                            + sl.getStatusCode() + " " + sl.getReasonPhrase());
                     entity = resp.getEntity();
                     entity.getContent().close();
                     entity = null;
                     if (sl.getStatusCode() == 404) {
-                        logger.warning(
+                        logger.info(
                                 "Got a 404: the collection has probably not been created yet.");
                         return null;
+                    } else {
+                        logger.severe("GET " + url + " failed with status="
+                                + sl.getStatusCode() + " "
+                                + sl.getReasonPhrase());
                     }
                     continue;
                 }
                 entity = resp.getEntity();
             } catch (IOException ex) {
                 logger.severe(
-                        "GEt " + url + " failed with error " + ex.getMessage());
+                        "GET " + url + " failed with error " + ex.getMessage());
             } catch (Exception ex) {
                 logger.log(Level.SEVERE, "GET " + url + " failed with error ",
                         ex);
