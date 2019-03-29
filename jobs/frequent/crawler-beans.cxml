@@ -473,6 +473,8 @@
 	</bean>
 	<!-- DISPOSITION CHAIN -->
 	<!-- processors declared as named beans -->
+    <bean id="skipDispositionChain" class="uk.bl.wap.crawler.postprocessor.SkipDispositionChainProcessor">
+    </bean>
       <!-- property name="pauseThresholdMiB" value="1048576" / --> <!-- 1TiB -->
    	<bean id="diskSpaceMonitor" class="org.archive.crawler.monitor.DiskSpaceMonitor">
 		<property name="pauseThresholdMiB" value="1024" />   <!-- 1GiB -->
@@ -653,6 +655,8 @@
 	<bean id="dispositionProcessors" class="org.archive.modules.DispositionChain">
 		<property name="processors">
 			<list>
+                <!-- allow the disposition chain to be skipped if it's not appropriate -->
+                <ref bean="skipDispositionChain"/>
 				<!-- write viral content to aggregate archival files... -->
 				<ref bean="warcWriterViral"/>
 				<!-- write to aggregate archival files... -->
@@ -665,7 +669,7 @@
                 <ref bean="crawlLogFeed"/>
                 <!-- route outlink candidate URIs via to-crawl feed -->
                 <ref bean="toCrawlFeed"/>
-                <!-- get any pre-requisites -->
+                <!-- get any outlinks and enqueue them -->
                 <ref bean="candidates"/>
 				<!-- ...then update stats, shared-structures, frontier decisions -->
 				<ref bean="disposition"/>
