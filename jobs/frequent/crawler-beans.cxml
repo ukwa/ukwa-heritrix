@@ -888,7 +888,7 @@
 	</bean>
    
    <!-- Metrics Endpoint for Monitoring with Prometheus -->
-   <bean class="uk.bl.wap.util.MetricsExporterBean">
+   <bean class="uk.bl.wap.util.PrometheusMetricsExporterBean">
       <property name="metricsPort" value="#{systemEnvironment['PROMETHEUS_METRICS_PORT'] ?: 9118}"/>
    </bean>
 </beans>

@@ -26,10 +26,10 @@ import io.prometheus.client.hotspot.DefaultExports;
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
-public class MetricsExporterBean implements Lifecycle {
+public class PrometheusMetricsExporterBean implements Lifecycle {
 
     private static final Logger LOGGER = Logger
-            .getLogger(MetricsExporterBean.class.getName());
+            .getLogger(PrometheusMetricsExporterBean.class.getName());
 
     private CrawlJobMetricsThread cjmt = null;
 
