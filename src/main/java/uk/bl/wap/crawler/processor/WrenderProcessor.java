@@ -64,7 +64,9 @@ public class WrenderProcessor extends Processor implements
 
     private int connectTimeout = 5 * 60 * 1000; // Default 5 minutes
 
-    private int readTimeout = 20 * 60 * 1000; // Default 20 minutes
+    private int readTimeout = 60 * 60 * 1000; // Default 60 minutes (as web
+                                              // render load can be severe
+                                              // sometimes)
 
     private int maxTries = 1; // How many times to attempt web-rendering before
                               // deferring to plain FetchHTTP
@@ -319,7 +321,7 @@ public class WrenderProcessor extends Processor implements
                 return true;
             }
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Web rendering " + getWrenderEndpoint()
+            LOGGER.log(Level.SEVERE, "Web rendering of " + curi
                     + " failed with unexpected exception: " + e, e);
         }
         // Either we hit an exception, or got a FetchStatus of 0, so:
