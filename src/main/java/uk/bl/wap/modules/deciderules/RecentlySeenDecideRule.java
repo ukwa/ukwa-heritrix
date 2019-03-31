@@ -37,6 +37,7 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
 
     /** Launch timestamp key if set in CrawlURI, in ms since epoch */
     public static final String LAUNCH_TS = "launch_ts";
+    public static final String LAUNCH_TIMESTAMP = "launchTimestamp";
 
     // Hash function used for building keys:
     private HashFunction hf = Hashing.murmur3_128();
@@ -74,8 +75,24 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
      *            the TTL (in seconds) to set
      */
     public void setRecrawlInterval(int recentlySeenTTLsecs) {
-        LOGGER.warning("Setting TTL to " + recentlySeenTTLsecs);
+        LOGGER.info("Setting TTL to " + recentlySeenTTLsecs);
         kp.put(RECRAWL_INTERVAL, recentlySeenTTLsecs);
+    }
+
+    /**
+     * @return the launch timestamp (wayback format 14 char)
+     */
+    public String getLaunchTimestamp() {
+        return (String) kp.get(LAUNCH_TIMESTAMP);
+    }
+
+    /**
+     * @param launchTimestamp
+     *            the launch timestamp (wayback format 14 char) to set
+     */
+    public void setLaunchTimestamp(String launchTimestamp) {
+        LOGGER.warning("Setting launchTimestamp to " + launchTimestamp);
+        kp.put(LAUNCH_TIMESTAMP, launchTimestamp);
     }
 
     /**
@@ -158,18 +175,27 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
             ttl_s = (int) curi.getData().get(RECRAWL_INTERVAL);
         }
         // Allow launch-request-time-stamps:
-        long launch_ts = -1;
+        String launch_tss = null;
         if (curi.getData().containsKey(LAUNCH_TS)) {
+            launch_tss = (String) curi.getData().get(LAUNCH_TS);
+        }
+        // Also allow sheet override of the launch timestamp:
+        if (this.getLaunchTimestamp() != null) {
+            launch_tss = this.getLaunchTimestamp();
+            LOGGER.warning("Setting launchTimestamp from sheet: " + launch_tss);
+        }
+        long launch_ts = -1;
+        if (launch_tss != null ) {
             try {
                 launch_ts = DateUtils
-                        .parse14DigitDate(
-                                (String) curi.getData().get(LAUNCH_TS))
+                        .parse14DigitDate(launch_tss)
                         .getTime();
                 launch_ts = launch_ts / 1000;
             } catch (ParseException e) {
                 LOGGER.severe("Could not parse launch timestamp field: "
                         + curi.getData().get(LAUNCH_TS));
             }
+            
         }
         return evaluateWithTTL(key, curi, ttl_s, launch_ts);
     }

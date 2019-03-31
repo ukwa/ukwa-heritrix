@@ -62,6 +62,7 @@ import org.archive.modules.extractor.LinkContext;
 import org.archive.net.UURI;
 import org.archive.net.UURIFactory;
 import org.archive.spring.KeyedProperties;
+import org.archive.spring.Sheet;
 import org.archive.util.ArchiveUtils;
 import org.archive.util.Reporter;
 import org.archive.util.SurtPrefixSet;
@@ -738,14 +739,13 @@ public class KafkaUrlReceiver
                     customHttpRequestHeaders);
         }
 
-        // Set up sheet associations, if specified:
+        // Get sheet associations, if specified:
+        List<String> sheetNames = new LinkedList<String>();
         if (jo.has("sheets")) {
-            List<String> sheetNames = new LinkedList<String>();
             JSONArray jsn = jo.getJSONArray("sheets");
             for (int i = 0; i < jsn.length(); i++) {
                 sheetNames.add(jsn.getString(i));
             }
-            this.setSheetAssociations(curi, sheetNames);
         }
 
         // Set up recrawl interval, if specified:
@@ -754,6 +754,16 @@ public class KafkaUrlReceiver
             curi.getData().put(RecentlySeenDecideRule.RECRAWL_INTERVAL,
                     recrawlInterval);
         }
+
+        // Get launch time-stamp, if specified:
+        String launchTimestamp = null;
+        if (jo.has(RecentlySeenDecideRule.LAUNCH_TIMESTAMP)) {
+            launchTimestamp = jo
+                    .getString(RecentlySeenDecideRule.LAUNCH_TIMESTAMP);
+        }
+
+        // Create and apply sheets:
+        this.setSheetAssociations(curi, sheetNames, launchTimestamp);
 
         /*
          * Crawl job must be configured to use HighestUriQueuePrecedencePolicy
@@ -785,12 +795,24 @@ public class KafkaUrlReceiver
      * with the URL, this can be used to set the sheet associations up.
      * 
      */
-    private void setSheetAssociations(CrawlURI curi, List<String> sheets) {
+    private void setSheetAssociations(CrawlURI curi, List<String> sheets,
+            String launchTimestamp) {
         // Get the SURT prefix to use (copying logic from
         // SheetOverlaysManager.applyOverlaysTo):
         // (This includes coercing https to http etc.)
         String effectiveSurt = SurtPrefixSet
                 .getCandidateSurt(curi.getPolicyBasisUURI());
+
+        // Add a specific custom sheet for this URL:
+        Sheet ts = this.getSheetOverlaysManager()
+                .getOrCreateSheet("target-sheet " + effectiveSurt);
+        if (launchTimestamp != null) {
+            logger.warning("Setting sheet property launchTimestamp "
+                    + launchTimestamp);
+            ts.getMap().put("recentlySeen.launchTimestamp", launchTimestamp);
+        }
+        // Add it to the list of sheets to apply:
+        sheets.add(ts.getName());
 
         // Get the list of all known sheets:
         Set<String> allSheetNames = getSheetOverlaysManager().getSheetsByName()
@@ -809,6 +831,7 @@ public class KafkaUrlReceiver
                 "Setting sheets for " + effectiveSurt + " to " + sheetNames);
         getSheetOverlaysManager().getSheetsNamesBySurt().put(effectiveSurt,
                 sheetNames);
+
     }
 
     // set the heritable data from the parent url, passed back to us via Kafka
