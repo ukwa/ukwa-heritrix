@@ -36,7 +36,6 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
     public static final String RECRAWL_INTERVAL = "recrawlInterval";
 
     /** Launch timestamp key if set in CrawlURI, in ms since epoch */
-    public static final String LAUNCH_TS = "launch_ts";
     public static final String LAUNCH_TIMESTAMP = "launchTimestamp";
 
     // Hash function used for building keys:
@@ -174,15 +173,14 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
         if (curi.getData().containsKey(RECRAWL_INTERVAL)) {
             ttl_s = (int) curi.getData().get(RECRAWL_INTERVAL);
         }
-        // Allow launch-request-time-stamps:
-        String launch_tss = null;
-        if (curi.getData().containsKey(LAUNCH_TS)) {
-            launch_tss = (String) curi.getData().get(LAUNCH_TS);
+
+        // Allow launch-request timestamps, via sheet by default:
+        String launch_tss = this.getLaunchTimestamp();
+        // Also allow URI-level override of the launch timestamp:
+        if (curi.getData().containsKey(LAUNCH_TIMESTAMP)) {
+            launch_tss = (String) curi.getData().get(LAUNCH_TIMESTAMP);
         }
-        // Also allow sheet override of the launch timestamp:
-        if (this.getLaunchTimestamp() != null) {
-            launch_tss = this.getLaunchTimestamp();
-        }
+        // Parse it:
         long launch_ts = -1;
         if (launch_tss != null ) {
             try {
@@ -192,7 +190,7 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
                 launch_ts = launch_ts / 1000;
             } catch (ParseException e) {
                 LOGGER.severe("Could not parse launch timestamp field: "
-                        + curi.getData().get(LAUNCH_TS));
+                        + curi.getData().get(LAUNCH_TIMESTAMP));
             }
             
         }
