@@ -91,7 +91,7 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
      *            the launch timestamp (wayback format 14 char) to set
      */
     public void setLaunchTimestamp(String launchTimestamp) {
-        LOGGER.warning("Setting launchTimestamp to " + launchTimestamp);
+        LOGGER.info("Setting launchTimestamp to " + launchTimestamp);
         kp.put(LAUNCH_TIMESTAMP, launchTimestamp);
     }
 
@@ -182,7 +182,6 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule {
         // Also allow sheet override of the launch timestamp:
         if (this.getLaunchTimestamp() != null) {
             launch_tss = this.getLaunchTimestamp();
-            LOGGER.warning("Setting launchTimestamp from sheet: " + launch_tss);
         }
         long launch_ts = -1;
         if (launch_tss != null ) {

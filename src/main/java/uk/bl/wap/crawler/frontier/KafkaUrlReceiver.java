@@ -755,15 +755,19 @@ public class KafkaUrlReceiver
                     recrawlInterval);
         }
 
-        // Get launch time-stamp, if specified:
-        String launchTimestamp = null;
-        if (jo.has(RecentlySeenDecideRule.LAUNCH_TIMESTAMP)) {
-            launchTimestamp = jo
-                    .getString(RecentlySeenDecideRule.LAUNCH_TIMESTAMP);
+        // Get the target-level sheet, if specified:
+        Map<String, Object> targetSheetMap = null;
+        if (jo.has("targetSheet")) {
+            targetSheetMap = new HashMap<String, Object>();
+            JSONObject tsh = jo.getJSONObject("targetSheet");
+            for (Object sheetProp : tsh.keySet()) {
+                String sheetProperty = (String) sheetProp;
+                targetSheetMap.put(sheetProperty, tsh.get(sheetProperty));
+            }
         }
 
         // Create and apply sheets:
-        this.setSheetAssociations(curi, sheetNames, launchTimestamp);
+        this.setSheetAssociations(curi, sheetNames, targetSheetMap);
 
         /*
          * Crawl job must be configured to use HighestUriQueuePrecedencePolicy
@@ -796,23 +800,25 @@ public class KafkaUrlReceiver
      * 
      */
     private void setSheetAssociations(CrawlURI curi, List<String> sheets,
-            String launchTimestamp) {
+            Map<String, Object> targetSheetMap) {
         // Get the SURT prefix to use (copying logic from
         // SheetOverlaysManager.applyOverlaysTo):
         // (This includes coercing https to http etc.)
         String effectiveSurt = SurtPrefixSet
                 .getCandidateSurt(curi.getPolicyBasisUURI());
 
-        // Add a specific custom sheet for this URL:
-        Sheet ts = this.getSheetOverlaysManager()
-                .getOrCreateSheet("target-sheet " + effectiveSurt);
-        if (launchTimestamp != null) {
-            logger.warning("Setting sheet property launchTimestamp "
-                    + launchTimestamp);
-            ts.getMap().put("recentlySeen.launchTimestamp", launchTimestamp);
+        // Add a specific custom sheet for this URL, if requested:
+        if (targetSheetMap != null) {
+            Sheet targetSheet = this.getSheetOverlaysManager()
+                    .getOrCreateSheet("target-sheet " + effectiveSurt);
+            for (String k : targetSheetMap.keySet()) {
+                logger.info("Setting sheet property " + k + " to  "
+                        + targetSheetMap.get(k));
+                targetSheet.getMap().put(k, targetSheetMap.get(k));
+            }
+            // Add it to the list of sheets to apply:
+            sheets.add(targetSheet.getName());
         }
-        // Add it to the list of sheets to apply:
-        sheets.add(ts.getName());
 
         // Get the list of all known sheets:
         Set<String> allSheetNames = getSheetOverlaysManager().getSheetsByName()
@@ -826,6 +832,7 @@ public class KafkaUrlReceiver
                 logger.severe("Unknown sheet name: " + sheetName);
             }
         }
+
         // Set the association for this prefix:
         logger.info(
                 "Setting sheets for " + effectiveSurt + " to " + sheetNames);
