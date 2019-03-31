@@ -286,7 +286,7 @@
       <property name="map">
          <map>
             <entry key="fetchHttp.maxLengthBytes" value="0" />
-            <entry key="quotaEnforcer.serverMaxSuccessKb" value="-1" />
+            <entry key="quotaEnforcer.hostMaxSuccessKb" value="-1" />
          </map>
       </property>
    </bean>
@@ -294,7 +294,7 @@
    <bean id="higherLimit" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-            <entry key="quotaEnforcer.serverMaxSuccessKb" value="2097152" />
+            <entry key="quotaEnforcer.hostMaxSuccessKb" value="2097152" />
          </map>
       </property>
    </bean>
@@ -325,7 +325,7 @@
       <property name="map">
          <map>
             <entry key="frontier.queueTotalBudget" value="25" />
-            <entry key="quotaEnforcer.serverMaxFetchResponses"
+            <entry key="quotaEnforcer.hostMaxFetchResponses"
                value="25" />
          </map>
       </property>
