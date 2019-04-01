@@ -655,7 +655,11 @@
 	<bean id="dispositionProcessors" class="org.archive.modules.DispositionChain">
 		<property name="processors">
 			<list>
-                <!-- allow the disposition chain to be skipped if it's not appropriate -->
+                <!-- get the frontier to 'forget' this URI was queued -->
+                <ref bean="forgetfulFrontierProcessor" />
+                <!-- send the crawl log to a queue for downstream checks -->
+                <ref bean="crawlLogFeed"/>
+                <!-- allow the rest of the disposition chain to be skipped if it's not appropriate -->
                 <ref bean="skipDispositionChain"/>
 				<!-- write viral content to aggregate archival files... -->
 				<ref bean="warcWriterViral"/>
@@ -663,10 +667,6 @@
 				<ref bean="warcWriterDefault"/>
 				<!-- update the persist store -->
 				<ref bean="persistStoreProcessor" />
-                <!-- get the frontier to 'forget' this URI was queued -->
-                <ref bean="forgetfulFrontierProcessor" />
-                <!-- send the crawl log to a queue for downstream checks -->
-                <ref bean="crawlLogFeed"/>
                 <!-- route outlink candidate URIs via to-crawl feed -->
                 <ref bean="toCrawlFeed"/>
                 <!-- get any outlinks and enqueue them -->
