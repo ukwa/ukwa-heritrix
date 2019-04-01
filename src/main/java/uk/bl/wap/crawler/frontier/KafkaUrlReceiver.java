@@ -528,9 +528,10 @@ public class KafkaUrlReceiver
                         // that to log e.g.
                         // org.archive.modules.fetcher.FetchStatusCodes.S_OUT_OF_SCOPE
                         if (statusAfterCandidateChain < 0) {
-                            logger.finest("Discarding URI " + curi
-                                    + " with Status Code: "
-                                    + statusAfterCandidateChain);
+                            logger.fine("Discarding URI " + curi
+                                    + " with status code "
+                                    + statusAfterCandidateChain + " "
+                                    + curi.getExtraInfo());
                             messageCounter.labels(getTopic(), "discarded")
                                     .inc();
                             discardedCount++;
