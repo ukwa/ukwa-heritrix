@@ -44,7 +44,13 @@ if [ "$LAUNCH_AUTOMATICALLY" = "true" ]; then
     echo STARTER: Waiting while Heritrix starts up...
     sleep 15
     echo STARTER: Launching job ${JOB_NAME}...
-    #/h3-bin/bin/job-launch
+    /h3-bin/bin/job-launch
+fi
+# Alternatively, resume:
+if [ "$LAUNCH_AUTOMATICALLY" = "resume" ]; then
+    echo STARTER: Waiting while Heritrix starts up...
+    sleep 15
+    echo STARTER: Resuming job ${JOB_NAME}...
     /h3-bin/bin/job-resume
 fi
 
