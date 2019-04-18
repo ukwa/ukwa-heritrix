@@ -117,7 +117,7 @@ public class OutbackCDXRecentlySeenDecideRule
         // If we've never seen this before, or if enough time has elapsed
         // since we last saw it:
         long currentTime = System.currentTimeMillis() / 1000;
-        if (ts == 0l || currentTime - ts > ttl_s || curi.forceFetch()) {
+        if (ts == 0l || (currentTime - ts) > ttl_s || curi.forceFetch()) {
             LOGGER.finest("Got elapsed: " + (currentTime - ts) + " versus TTL "
                     + ttl_s + " hence NOT recently seen " + curi);
             return false;
