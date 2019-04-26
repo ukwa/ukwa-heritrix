@@ -383,30 +383,30 @@
       </property>
    </bean>
 
-   <!-- Re-crawl Frequency Sheets: Recently-Seen Recrawl Interval in seconds. -->
-      
+   <!-- Re-crawl Frequency Sheets: Recently-Seen Recrawl Interval in seconds. 
+   n.b. this has been superceded by the launchTimestamp technique for re-launching crawls -->
+   
    <bean id="recrawl-1hr" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-            <!-- This value of 3600 would mean any URLs in this sheet could not be 
-               re-crawled more than hourly. We use 50 mins as tolerance for crawl delays. -->
-            <entry key="recentlySeen.recrawlInterval" value="3000" />
+            <!-- 60 minutes in seconds -->
+            <entry key="recentlySeen.recrawlInterval" value="3600" />
          </map>
       </property>
    </bean>
    <bean id="recrawl-1day" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-           <!-- Actually 23 hours, again in case of crawl delays. -->
-            <entry key="recentlySeen.recrawlInterval" value="82800" />
+           <!-- 24 hours. -->
+            <entry key="recentlySeen.recrawlInterval" value="86400" />
          </map>
       </property>
    </bean>
    <bean id="recrawl-1week" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-           <!-- Actually 6.5 days -->
-            <entry key="recentlySeen.recrawlInterval" value="561600" />
+           <!-- 7 days -->
+            <entry key="recentlySeen.recrawlInterval" value="604800" />
          </map>
       </property>
    </bean>
@@ -421,32 +421,32 @@
    <bean id="recrawl-4weeks" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-           <!-- actually 27.5 days! -->
-            <entry key="recentlySeen.recrawlInterval" value="2376000" />
+           <!-- four weeks -->
+            <entry key="recentlySeen.recrawlInterval" value="2419200" />
          </map>
       </property>
    </bean>
    <bean id="recrawl-12weeks" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-           <!-- Actually 11.5 weeks -->
-            <entry key="recentlySeen.recrawlInterval" value="6955200" />
+           <!-- twelve weeks -->
+            <entry key="recentlySeen.recrawlInterval" value="7257600" />
          </map>
       </property>
    </bean>
    <bean id="recrawl-24weeks" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-           <!-- Actually 23.5 weeks -->
-            <entry key="recentlySeen.recrawlInterval" value="14212800" />
+           <!-- 24 weeks -->
+            <entry key="recentlySeen.recrawlInterval" value="14515200" />
          </map>
       </property>
    </bean>
    <bean id="recrawl-365days" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-           <!-- Actually 364 days -->
-            <entry key="recentlySeen.recrawlInterval" value="31449600" />
+           <!-- 365 days -->
+            <entry key="recentlySeen.recrawlInterval" value="31536000" />
          </map>
       </property>
    </bean>
