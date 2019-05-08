@@ -809,13 +809,18 @@ public class KafkaUrlReceiver
         // (This includes coercing https to http etc.)
         String effectiveSurt = SurtPrefixSet
                 .getCandidateSurt(curi.getPolicyBasisUURI());
+        // Current sheets for this SURT:
+        List<String> currentSheets = getSheetOverlaysManager()
+                .getSheetsNamesBySurt().get(effectiveSurt);
 
         // If nothing is being set, don't modify current sheet configuration -
         // use it:
         if (sheets == null) {
-            // Current sheets for this SURT:
-            sheets = getSheetOverlaysManager().getSheetsNamesBySurt()
-                    .get(effectiveSurt);
+            if (currentSheets == null) {
+                sheets = new LinkedList<String>();
+            } else {
+                sheets = currentSheets;
+            }
         }
 
         // Add a specific custom sheet for this URL, if requested:
