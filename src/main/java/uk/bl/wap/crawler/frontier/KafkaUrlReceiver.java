@@ -804,16 +804,19 @@ public class KafkaUrlReceiver
     private void setSheetAssociations(CrawlURI curi, List<String> sheets,
             Map<String, Object> targetSheetMap) {
 
-        // If nothing is being set, don't modify current sheet configuration
-        if (sheets == null && targetSheetMap == null) {
-            return;
-        }
-
         // Get the SURT prefix to use (copying logic from
         // SheetOverlaysManager.applyOverlaysTo):
         // (This includes coercing https to http etc.)
         String effectiveSurt = SurtPrefixSet
                 .getCandidateSurt(curi.getPolicyBasisUURI());
+
+        // If nothing is being set, don't modify current sheet configuration -
+        // use it:
+        if (sheets == null) {
+            // Current sheets for this SURT:
+            sheets = getSheetOverlaysManager().getSheetsNamesBySurt()
+                    .get(effectiveSurt);
+        }
 
         // Add a specific custom sheet for this URL, if requested:
         if (targetSheetMap != null) {
@@ -824,11 +827,10 @@ public class KafkaUrlReceiver
                         + targetSheetMap.get(k));
                 targetSheet.getMap().put(k, targetSheetMap.get(k));
             }
-            // Add it to the list of sheets to apply:
-            if (sheets == null) {
-                sheets = new LinkedList<String>();
+            // Add it to the list of sheets to apply (if necessary):
+            if (!sheets.contains(targetSheet.getName())) {
+                sheets.add(targetSheet.getName());
             }
-            sheets.add(targetSheet.getName());
         }
 
         // Get the list of all known sheets:
