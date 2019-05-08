@@ -741,8 +741,9 @@ public class KafkaUrlReceiver
         }
 
         // Get sheet associations, if specified:
-        List<String> sheetNames = new LinkedList<String>();
+        List<String> sheetNames = null;
         if (jo.has("sheets")) {
+            sheetNames = new LinkedList<String>();
             JSONArray jsn = jo.getJSONArray("sheets");
             for (int i = 0; i < jsn.length(); i++) {
                 sheetNames.add(jsn.getString(i));
@@ -802,6 +803,12 @@ public class KafkaUrlReceiver
      */
     private void setSheetAssociations(CrawlURI curi, List<String> sheets,
             Map<String, Object> targetSheetMap) {
+
+        // If nothing is being set, don't modify current sheet configuration
+        if (sheets == null && targetSheetMap == null) {
+            return;
+        }
+
         // Get the SURT prefix to use (copying logic from
         // SheetOverlaysManager.applyOverlaysTo):
         // (This includes coercing https to http etc.)
@@ -818,6 +825,9 @@ public class KafkaUrlReceiver
                 targetSheet.getMap().put(k, targetSheetMap.get(k));
             }
             // Add it to the list of sheets to apply:
+            if (sheets == null) {
+                sheets = new LinkedList<String>();
+            }
             sheets.add(targetSheet.getName());
         }
 
