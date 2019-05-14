@@ -293,17 +293,29 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
         } else {
             // Treat the CrawlURI instead:
             CrawlURI candidate = curi;
+            int statusAfterCandidateChain = candidate.getFetchStatus();
 
-            // Discard malformed or 'data:' or 'mailto:' URLs
-            if (this.shouldEmit(candidate)) {
-
-                // Pass to Kafka queue:
-                sendToKafka(getTopic(), curi, candidate);
-
+            // If the URL appears to be in-scope:
+            if (statusAfterCandidateChain >= 0 ) {
+                // Discard malformed or 'data:' or 'mailto:' URLs
+                if (this.shouldEmit(candidate)) {
+    
+                    // Pass to Kafka queue:
+                    sendToKafka(getTopic(), curi.getFullVia(), candidate);
+    
+                } else {
+                    logger.finest(
+                            "Not emitting CrawlURI (appears to be invalid): "
+                                    + candidate.getURI());
+                }
             } else {
-                logger.finest(
-                        "Not emitting CrawlURI (appears to be invalid): "
-                                + candidate.getURI());
+                if (discardedUriFeedEnabled) {
+                    // (optionally) log discarded URLs for
+                    // analysis:
+                    if (discardedUriFeedEnabled) {
+                        discardedUriFeed.doInnerProcess(candidate);
+                    }
+                }
             }
         }
     }

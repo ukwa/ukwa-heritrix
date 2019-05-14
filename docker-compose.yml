@@ -16,7 +16,7 @@ services:
        - "LAUNCH_AUTOMATICALLY=true"
        - "PAUSE_AT_START=false"
        - "WARC_PREFIX=BL-NPLD-TEST"
-       - "WEBRENDER_WARC_PREFIX=BL-NPLD-WREN"
+       - "WEBRENDER_WARC_PREFIX=BL-NPLD-WEBRENDER"
        - "SCOPE_LOG_ENABLED=false"
        - "SCOPE_FILE_RELOAD_INTERVAL=5"
        - "RECORD_DECIDING_RULE=true"
@@ -26,12 +26,13 @@ services:
        - "KAFKA_CANDIDATES_TOPIC=uris.tocrawl.fc"
        - "KAFKA_CANDIDATES_IN_SCOPE_ONLY=true"
        - "KAFKA_DISCARDED_FEED_ENABLED=true"
+       - "KAFKA_INSCOPE_TOPIC=uris.inscope.fc"
        - "KAFKA_DISCARDED_TOPIC=uris.discarded.fc"
        - "KAFKA_CRAWLED_TOPIC=uris.crawled.fc"
        - "KAFKA_NUM_MESSAGE_THREADS=2"
        - "KAFKA_SEEK_TO_BEGINNING=false"
        - "CDXSERVER_ENDPOINT=http://cdxserver:8080/fc"
-       - "WEBRENDER_ENABLED=true"
+       - "WEBRENDER_ENABLED=false"
        - "WEBRENDER_ENDPOINT=http://webrender:8010/render"
        - "CLAMD_ENABLED=true"
        - "CLAMD_HOST=clamd"
@@ -105,7 +106,7 @@ services:
       LOG_RETENTION_HOURS: -1
       LOG_RETENTION_BYTES: -1
       NUM_PARTITIONS: 16
-      KAFKA_CREATE_TOPICS: "uris.candidates.fc:16:1 --config=compression.type=snappy,uris.tocrawl.fc:16:1 --config=compression.type=snappy,uris.crawled.fc:16:1 --config=compression.type=snappy,uris.discarded.fc:16:1 --config=compression.type=snappy"
+      KAFKA_CREATE_TOPICS: "uris.candidates.fc:16:1 --config=compression.type=snappy,uris.tocrawl.fc:16:1 --config=compression.type=snappy,uris.crawled.fc:16:1 --config=compression.type=snappy,uris.discarded.fc:16:1 --config=compression.type=snappy,uris.inscope.fc:16:1 --config=compression.type=snappy"
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
       LOG4J_LOGGER_KAFKA: WARN
     volumes:
