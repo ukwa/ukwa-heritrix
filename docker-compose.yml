@@ -21,18 +21,18 @@ services:
        - "SCOPE_FILE_RELOAD_INTERVAL=5"
        - "RECORD_DECIDING_RULE=true"
        - "KAFKA_BOOTSTRAP_SERVERS=kafka:9092"
-       - "KAFKA_TOCRAWL_TOPIC=uris.tocrawl.fc"
+       - "KAFKA_TOCRAWL_TOPIC=fc.tocrawl"
        - "KAFKA_CANDIDATES_LOG_ENABLED=false"
-       - "KAFKA_CANDIDATES_TOPIC=uris.tocrawl.fc"
+       - "KAFKA_CANDIDATES_TOPIC=fc.tocrawl"
        - "KAFKA_CANDIDATES_IN_SCOPE_ONLY=true"
+       - "KAFKA_INSCOPE_TOPIC=fc.inscope"
        - "KAFKA_DISCARDED_FEED_ENABLED=true"
-       - "KAFKA_INSCOPE_TOPIC=uris.inscope.fc"
-       - "KAFKA_DISCARDED_TOPIC=uris.discarded.fc"
-       - "KAFKA_CRAWLED_TOPIC=uris.crawled.fc"
+       - "KAFKA_DISCARDED_TOPIC=fc.discarded"
+       - "KAFKA_CRAWLED_TOPIC=fc.crawled"
        - "KAFKA_NUM_MESSAGE_THREADS=2"
        - "KAFKA_SEEK_TO_BEGINNING=false"
        - "CDXSERVER_ENDPOINT=http://cdxserver:8080/fc"
-       - "WEBRENDER_ENABLED=false"
+       - "WEBRENDER_ENABLED=true"
        - "WEBRENDER_ENDPOINT=http://webrender:8010/render"
        - "CLAMD_ENABLED=true"
        - "CLAMD_HOST=clamd"
@@ -66,7 +66,7 @@ services:
       - "WEBHDFS_PREFIX=http://warc-server:8000/by-filename/"
       - "CDX_SERVER=http://cdxserver:8080/fc"
       - "KAFKA_BOOTSTRAP_SERVERS=kafka:9092"
-      - "KAFKA_CRAWLED_TOPIC=uris.crawled.fc"
+      - "KAFKA_CRAWLED_TOPIC=fc.crawled"
       - "KAFKA_SEEK_TO_BEGINNING=true"
     volumes:
       - ./integration-test/crawl-jobs.json:/crawl-jobs.json
@@ -106,7 +106,7 @@ services:
       LOG_RETENTION_HOURS: -1
       LOG_RETENTION_BYTES: -1
       NUM_PARTITIONS: 16
-      KAFKA_CREATE_TOPICS: "uris.candidates.fc:16:1 --config=compression.type=snappy,uris.tocrawl.fc:16:1 --config=compression.type=snappy,uris.crawled.fc:16:1 --config=compression.type=snappy,uris.discarded.fc:16:1 --config=compression.type=snappy,uris.inscope.fc:16:1 --config=compression.type=snappy"
+      KAFKA_CREATE_TOPICS: "fc.candidates:16:1 --config=compression.type=snappy,fc.tocrawl:16:1 --config=compression.type=snappy,fc.crawled:16:1 --config=compression.type=snappy,fc.discarded:16:1 --config=compression.type=snappy,fc.inscope:16:1 --config=compression.type=snappy"
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
       LOG4J_LOGGER_KAFKA: WARN
     volumes:
@@ -153,7 +153,7 @@ services:
       - "LC_ALL=en_US.utf8"
       - "TMP=/tmp/warcprox"
       - "KAFKA_BOOTSTRAP_SERVERS=kafka:9092"
-      - "KAFKA_CRAWLED_TOPIC=uris.crawled.fc"
+      - "KAFKA_CRAWLED_TOPIC=fc.crawled"
       - "KAFKA_CRAWLED_ACKS=1"
       - "CDXSERVER_ENDPOINT=http://cdxserver:8080/fc"
     ports:

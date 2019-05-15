@@ -309,12 +309,10 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
                                     + candidate.getURI());
                 }
             } else {
+                // (optionally) log discarded URLs for
+                // analysis:
                 if (discardedUriFeedEnabled) {
-                    // (optionally) log discarded URLs for
-                    // analysis:
-                    if (discardedUriFeedEnabled) {
-                        discardedUriFeed.doInnerProcess(candidate);
-                    }
+                    discardedUriFeed.doInnerProcess(candidate);
                 }
             }
         }

@@ -103,7 +103,7 @@ public class WrenderProcessor extends Processor implements
 
     /**
      * @param connectTimeout
-     *            connection timeout in microseconds, e.g. 1 minute = 60 * 1000
+     *            connection timeout in milliseconds, e.g. 1 minute = 60 * 1000
      */
     public void setConnectTimeout(int connectTimeout) {
         this.connectTimeout = connectTimeout;
@@ -115,7 +115,7 @@ public class WrenderProcessor extends Processor implements
 
     /**
      * @param readTimeout
-     *            read timeout in microseconds, e.g. 1 minute = 60 * 1000
+     *            read timeout in milliseconds, e.g. 1 minute = 60 * 1000
      */
     public void setReadTimeout(int readTimeout) {
         this.readTimeout = readTimeout;
