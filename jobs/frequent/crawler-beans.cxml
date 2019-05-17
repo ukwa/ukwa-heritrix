@@ -333,6 +333,7 @@
         <property name="enabled" value="#{systemEnvironment['WEBRENDER_ENABLED'] ?: false}"/>
         <property name="connectTimeout" value="#{systemEnvironment['WEBRENDER_CONNECT_TIMEOUT_MS'] ?: 3600000}" />
         <property name="readTimeout" value="#{systemEnvironment['WEBRENDER_READ_TIMEOUT_MS'] ?: 3600000}" />
+        <property name="maxTries" value="#{systemEnvironment['WEBRENDER_MAX_TRIES'] ?: 1" />
 		<property name="WrenderEndpoint" value="#{systemEnvironment['WEBRENDER_ENDPOINT'] ?: 'http://localhost:5000/wrender'}" />
         <property name="warcFilePrefix" value="#{systemEnvironment['WEBRENDER_WARC_PREFIX'] ?: 'WEBRENDER'}"/>
         <property name="shouldProcessRule">
