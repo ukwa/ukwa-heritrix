@@ -1,6 +1,10 @@
 #!/bin/sh
 
-#curl -s -k -u $HERITRIX_USER:$HERITRIX_PASSWORD --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/${JOB_NAME}/status
+echo Pausing ${JOB_NAME}...
+curl -s -d "action=pause" -k -u $HERITRIX_USER:$HERITRIX_PASSWORD --anyauth --location https://localhost:8443/engine/job/${JOB_NAME}
+
+echo Checkpointing ${JOB_NAME}...
+curl -s -d "action=checkpoint" -k -u $HERITRIX_USER:$HERITRIX_PASSWORD --anyauth --location https://localhost:8443/engine/job/${JOB_NAME}
 
 echo Terminating ${JOB_NAME}...
 curl -o /dev/null -s -d "action=terminate" -k -u $HERITRIX_USER:$HERITRIX_PASSWORD --anyauth --location https://localhost:8443/engine/job/${JOB_NAME}
@@ -8,4 +12,3 @@ curl -o /dev/null -s -d "action=terminate" -k -u $HERITRIX_USER:$HERITRIX_PASSWO
 echo Tearing down ${JOB_NAME}...
 curl -o /dev/null -s -d "action=teardown" -k -u $HERITRIX_USER:$HERITRIX_PASSWORD --anyauth --location https://localhost:8443/engine/job/${JOB_NAME}
 
-#curl -s -k -u $HERITRIX_USER:$HERITRIX_PASSWORD --anyauth --location -H "Accept: application/xml" https://localhost:8443/engine/job/${JOB_NAME}/status

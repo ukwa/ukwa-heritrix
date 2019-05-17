@@ -27,7 +27,6 @@ fi
 # Define a function to attempt a clean shutdown:
 stop_heritrix() {
     echo Attempting to shut-down Heritrix...
-    #/h3-bin/bin/job-pause
     /h3-bin/bin/job-stop
     #kill -TERM $PID
 }
