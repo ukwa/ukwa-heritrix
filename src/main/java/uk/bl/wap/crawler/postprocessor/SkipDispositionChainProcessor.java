@@ -58,7 +58,7 @@ public class SkipDispositionChainProcessor extends Processor {
             throws InterruptedException {
         logger.info("Skipping remainder of disposition chain for " + uri
                 + " status " + uri.getFetchStatus());
-        return ProcessResult.FINISH;
+        return ProcessResult.jump("disposition");
     }
 
 
