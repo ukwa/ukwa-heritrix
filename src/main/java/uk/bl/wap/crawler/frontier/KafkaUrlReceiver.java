@@ -53,6 +53,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.archive.checkpointing.Checkpoint;
 import org.archive.checkpointing.Checkpointable;
 import org.archive.crawler.event.CrawlStateEvent;
+import org.archive.crawler.frontier.WorkQueueFrontier;
 import org.archive.crawler.postprocessor.CandidatesProcessor;
 import org.archive.crawler.spring.SheetOverlaysManager;
 import org.archive.modules.CrawlURI;
@@ -286,6 +287,18 @@ public class KafkaUrlReceiver
         this.numMessageHandlerThreads = numMessageHandlerThreads;
     }
 
+    // Are queues retired when the quota runs out? And thus may need
+    // re-awakening?
+    private boolean retireQueues = false;
+
+    public boolean isRetireQueues() {
+        return retireQueues;
+    }
+
+    public void setRetireQueues(boolean retireQueues) {
+        this.retireQueues = retireQueues;
+    }
+
     protected boolean isRunning = false; 
 
     @Override
@@ -432,6 +445,14 @@ public class KafkaUrlReceiver
                             messageHandlerPool.shutdown();
                             messageHandlerPool.awaitTermination(10,
                                     TimeUnit.MINUTES);
+                            // Force queues to be rechecked in case some need
+                            // re-starting due to reset quotas (if we are
+                            // retiring over-quota queues).
+                            if (retireQueues) {
+                                WorkQueueFrontier wqf = (WorkQueueFrontier) candidates
+                                        .getFrontier();
+                                wqf.reconsiderRetiredQueues();
+                            }
                         }
                     } catch (WakeupException e) {
                         logger.info("Poll routine awoken for shutdown...");
@@ -819,7 +840,8 @@ public class KafkaUrlReceiver
             if (currentSheets == null) {
                 sheets = new LinkedList<String>();
             } else {
-                sheets = currentSheets;
+                sheets = new LinkedList<String>(currentSheets); // Copy rather
+                                                                // than re-use.
             }
         }
 
