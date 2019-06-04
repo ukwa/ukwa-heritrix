@@ -1,10 +1,12 @@
 #!/bin/sh
 
-echo Pausing ${JOB_NAME}...
-curl -s -d "action=pause" -k -u $HERITRIX_USER:$HERITRIX_PASSWORD --anyauth --location https://localhost:8443/engine/job/${JOB_NAME}
+#echo Pausing ${JOB_NAME}...
+#curl -s -d "action=pause" -k -u $HERITRIX_USER:$HERITRIX_PASSWORD --anyauth --location https://localhost:8443/engine/job/${JOB_NAME}
 
 echo Checkpointing ${JOB_NAME}...
 curl -s -d "action=checkpoint" -k -u $HERITRIX_USER:$HERITRIX_PASSWORD --anyauth --location https://localhost:8443/engine/job/${JOB_NAME}
+
+sleep 5
 
 echo Terminating ${JOB_NAME}...
 curl -o /dev/null -s -d "action=terminate" -k -u $HERITRIX_USER:$HERITRIX_PASSWORD --anyauth --location https://localhost:8443/engine/job/${JOB_NAME}
