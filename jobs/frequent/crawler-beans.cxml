@@ -540,7 +540,7 @@
 		<property name="compress" value="true" />
 		<property name="prefix" value="#{systemEnvironment['WARC_PREFIX'] ?: 'BL'}-VIRAL" />
 		<property name="maxFileSizeBytes" value="1006632959" />
-		<property name="poolMaxActive" value="5" />
+		<property name="poolMaxActive" value="#{systemEnvironment['WARC_VIRAL_WRITER_POOL_SIZE'] ?: 5}" />
 		<property name="skipIdenticalDigests" value="false" />
 		<property name="maxTotalBytesToWrite" value="0" />
 		<property name="directory" value="." />
@@ -577,7 +577,7 @@
 		<property name="compress" value="true" />
 		<property name="prefix" value="#{systemEnvironment['WARC_PREFIX'] ?: 'BL'}" />
 		<property name="maxFileSizeBytes" value="1006632959" />
-		<property name="poolMaxActive" value="5" />
+		<property name="poolMaxActive" value="#{systemEnvironment['WARC_WRITER_POOL_SIZE'] ?: 10}" />
 		<property name="skipIdenticalDigests" value="false" />
 		<property name="maxTotalBytesToWrite" value="0" />
 		<property name="directory" value="." />
