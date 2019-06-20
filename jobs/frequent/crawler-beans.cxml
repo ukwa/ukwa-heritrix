@@ -412,6 +412,8 @@
 	</bean>
 	<bean id="extractorSitemap" class="uk.bl.wap.modules.extractor.RobotsTxtSitemapExtractor">
 	</bean>
+    <bean id="extractorXml" class="org.archive.modules.extractor.ExtractorXML">
+    </bean> 
 	<bean id="extractorJs" class="org.archive.modules.extractor.ExtractorJS">
 	</bean>
     <!-- a processor that scans content for viruses -->
@@ -466,6 +468,8 @@
 				-->
 				<!-- ...extract sitemaps from robots.txt... -->
 				<ref bean="extractorSitemap"/>
+               <!-- ...extract links from XML (like sitemaps!)... -->
+               <ref bean="extractorXml"/>
 				<!-- ...extract oulinks from HTML content... -->
 				<ref bean="extractorHtml"/>
 				<!-- ...extract oulinks from CSS content... -->
