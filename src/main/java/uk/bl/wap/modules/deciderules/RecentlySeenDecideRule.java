@@ -6,6 +6,7 @@ package uk.bl.wap.modules.deciderules;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.ParseException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -209,13 +210,34 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule
             ttl_s = (int) curi.getData().get(RECRAWL_INTERVAL);
         }
 
+        // Also pick up any launch timestamp:
+        long launch_ts = chooseLaunchTimestamp(curi);
+        return evaluateWithTTL(key, curi, ttl_s, launch_ts);
+    }
+
+    /**
+     * Look for launch timestamp in this bean (plus any sheet overrides), and
+     * also in the CrawlURI
+     * 
+     * Choose whichever is the most recent.
+     * 
+     * @param curi
+     * @return
+     */
+    private long chooseLaunchTimestamp(CrawlURI curi) {
         // Allow launch-request timestamps, via sheet by default:
-        String launch_tss = this.getLaunchTimestamp();
+        long sheet_ts = this.parseLaunchTimestamp(this.getLaunchTimestamp());
         // Also allow URI-level override of the launch timestamp:
+        long curi_is = -1;
         if (curi.getData().containsKey(LAUNCH_TIMESTAMP)) {
-            launch_tss = (String) curi.getData().get(LAUNCH_TIMESTAMP);
+            curi_is = this.parseLaunchTimestamp(
+                    (String) curi.getData().get(LAUNCH_TIMESTAMP));
         }
-        // Parse it:
+        // Look at both and choose the most recent (largest value):
+        return Long.max(sheet_ts, curi_is);
+    }
+
+    private long parseLaunchTimestamp(String launch_tss) {
         long launch_ts = -1;
         if (launch_tss != null ) {
             try {
@@ -225,11 +247,10 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule
                 launch_ts = launch_ts / 1000;
             } catch (ParseException e) {
                 LOGGER.severe("Could not parse launch timestamp field: "
-                        + curi.getData().get(LAUNCH_TIMESTAMP));
+                        + launch_tss);
             }
-            
         }
-        return evaluateWithTTL(key, curi, ttl_s, launch_ts);
+        return launch_ts;
     }
 
     /**
@@ -334,6 +355,16 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule
     @Override
     public String shortReportLegend() {
         return "Recently Seen Decide Rule Report Legend";
+    }
+
+    /** Some helpers **/
+
+    public static void addLaunchTimestamp(CrawlURI curi, Date date) {
+        String launch_ts = DateUtils.get14DigitDate(date);
+        curi.getData().put(RecentlySeenDecideRule.LAUNCH_TIMESTAMP,
+                launch_ts);
+        curi.getAnnotations()
+                .add(RecentlySeenDecideRule.LAUNCH_TIMESTAMP + ":" + launch_ts);
     }
 
 }

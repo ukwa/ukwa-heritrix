@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -17,13 +18,17 @@ import org.archive.modules.extractor.ContentExtractor;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
 
+import uk.bl.wap.modules.deciderules.RecentlySeenDecideRule;
+
 public class RobotsTxtSitemapExtractor extends ContentExtractor {
     private static final Logger LOGGER = Logger
             .getLogger(RobotsTxtSitemapExtractor.class.getName());
-    public final static Pattern ROBOTS_PATTERN = Pattern
+    private final static Pattern ROBOTS_PATTERN = Pattern
             .compile("^https?://[^/]+/robots.txt$");
-    public final static Pattern SITEMAP_PATTERN = Pattern
+    private final static Pattern SITEMAP_PATTERN = Pattern
             .compile("(?i)Sitemap:\\s*(.+)$");
+
+    public final static String ANNOTATION_IS_SITEMAP = "isSitemap";
 
     @Override
     protected boolean shouldExtract(CrawlURI uri) {
@@ -78,8 +83,18 @@ public class RobotsTxtSitemapExtractor extends ContentExtractor {
                     LOGGER.fine("Found site map: " + link);
                     // Add links but using the cloned CrawlURI as the crawl
                     // context.
-                    addRelativeToBase(curiClone, max, link,
+                    CrawlURI newCuri = addRelativeToBase(curiClone, max, link,
                             LinkContext.NAVLINK_MISC, Hop.NAVLINK);
+
+                    // Annotate as a Site Map:
+                    newCuri.getAnnotations().add(
+                            RobotsTxtSitemapExtractor.ANNOTATION_IS_SITEMAP);
+
+                    // Add immediate launchTimestamp to ensure re-crawl of the
+                    // sitemap:
+                    RecentlySeenDecideRule.addLaunchTimestamp(newCuri,
+                            Calendar.getInstance().getTime());
+
                 } catch (URIException e) {
                     logUriError(e, curi.getUURI(), link);
                 }

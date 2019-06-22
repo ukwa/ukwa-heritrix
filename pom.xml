@@ -203,5 +203,10 @@
          <artifactId>simpleclient_hotspot</artifactId>
          <version>0.5.0</version>
       </dependency>
+      <dependency>
+         <groupId>com.github.crawler-commons</groupId>
+         <artifactId>crawler-commons</artifactId>
+         <version>1.0</version>
+      </dependency>
    </dependencies>
 </project>
