@@ -670,7 +670,8 @@
         <!-- Get outlinks discovered on non-success pages too (which includes WebRendered ones) -->
         <property name="processErrorOutlinks" value="true"/>
 	</bean>
-	<bean id="disposition" class="org.archive.crawler.postprocessor.DispositionProcessor">
+    <!-- Modified DispositionProcessor so robots.txt doesn't get trashed accidentally. -->
+	<bean id="disposition" class="uk.bl.wap.crawler.postprocessor.ModifiedDispositionProcessor">
 		<property name="delayFactor" value="2.0" />
 		<property name="minDelayMs" value="500" />
 		<property name="respectCrawlDelayUpToSeconds" value="300" />

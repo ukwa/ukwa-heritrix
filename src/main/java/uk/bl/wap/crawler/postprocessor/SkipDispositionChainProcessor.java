@@ -58,10 +58,12 @@ public class SkipDispositionChainProcessor extends Processor {
             throws InterruptedException {
         logger.info("Skipping remainder of disposition chain for " + uri
                 + " status " + uri.getFetchStatus());
-        // return ProcessResult.jump("disposition"); // This ensures
+        return ProcessResult.jump("disposition"); // This ensures
         // setPolitenessDelay is always called, but also means the robots.txt
-        // cache gets trampled on.
-        return ProcessResult.FINISH;
+        // cache gets trampled on unless we modify the Disposition Processor
+        //
+        // Whereas this works but does not set the politeness delay:
+        // return ProcessResult.FINISH;
     }
 
 
