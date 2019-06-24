@@ -60,7 +60,9 @@ https://webarchive.jira.com/wiki/spaces/Heritrix/pages/5735014/Heritrix+3.x+API+
 
 Changes
 -------
-
+* 2.6.1:
+    * Modify disposition processor so robots.txt cache does not get trashed when robots.txt get discovered outside of pre-requisites and ruled out-of-scope.
+    * Update to OutbackCDX 0.5.1 requirement, taking out hack needed to cope with URLs with * in (see https://github.com/nla/outbackcdx/issues/14)
 * 2.6.0:
     * Sitemap extraction and simple integration with re-crawl mechanism.
 

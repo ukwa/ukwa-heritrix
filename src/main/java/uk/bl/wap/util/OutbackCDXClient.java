@@ -197,13 +197,6 @@ public class OutbackCDXClient {
         if (mostRecentFirst) {
             uriBuilder.addParameter("sort", "reverse");
         }
-        // And the URI itself. Note that OutbackCDX treats URLs ending in * as
-        // prefix queries so we need to interfere here to stop that:
-        // See https://github.com/nla/outbackcdx/issues/14
-        if (url.endsWith("*")) {
-            url = url.replaceFirst("\\*$", "-asterisk");
-            logger.warning("Modified URL ending with `*`, now url=" + url);
-        }
         uriBuilder.addParameter("url", url);
         return uriBuilder.build().toString();
     }

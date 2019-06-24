@@ -168,8 +168,7 @@ services:
 
   # tinycdxserver
   cdxserver:
-    image: ukwa/tinycdxserver
-    command: "java -jar outbackcdx.jar -d /cdx-data -p 8080 -b 0.0.0.0"
+    image: nlagovau/outbackcdx:0.5.1
     # Verbose form logs submissions:
     #command: "java -jar outbackcdx.jar -v -d /cdx-data -p 8080 -b 0.0.0.0"
     ports:
