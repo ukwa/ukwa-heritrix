@@ -80,11 +80,14 @@ public class RobotsTxtSitemapExtractor extends ContentExtractor {
             // Accrue links:
             for (String link : links) {
                 try {
+                    // We've found a sitemap:
                     LOGGER.fine("Found site map: " + link);
+                    numberOfLinksExtracted.incrementAndGet();
+
                     // Add links but using the cloned CrawlURI as the crawl
                     // context.
                     CrawlURI newCuri = addRelativeToBase(curiClone, max, link,
-                            LinkContext.NAVLINK_MISC, Hop.NAVLINK);
+                            LinkContext.INFERRED_MISC, Hop.INFERRED);
 
                     // Annotate as a Site Map:
                     newCuri.getAnnotations().add(

@@ -131,6 +131,8 @@ public class SitemapExtractor extends ContentExtractor {
             // And log about it:
             LOGGER.fine("Found " + newUri + " from " + curi + " Dated "
                     + lastModified + " and with isSitemap = " + isSitemap);
+            // Count it:
+            numberOfLinksExtracted.incrementAndGet();
         } catch (URIException e) {
             LOGGER.log(Level.WARNING,
                     "URIException when recording outlink " + newUri, e);

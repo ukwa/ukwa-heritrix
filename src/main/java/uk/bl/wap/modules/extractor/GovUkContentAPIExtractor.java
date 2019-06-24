@@ -3,6 +3,9 @@
  */
 package uk.bl.wap.modules.extractor;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.apache.commons.httpclient.URIException;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.extractor.Extractor;
@@ -20,6 +23,8 @@ import org.archive.modules.extractor.LinkContext;
  *
  */
 public class GovUkContentAPIExtractor extends Extractor {
+    private static final Logger LOGGER = Logger
+            .getLogger(GovUkContentAPIExtractor.class.getName());
 
     /* (non-Javadoc)
      * @see org.archive.modules.extractor.Extractor#extract(org.archive.modules.CrawlURI)
@@ -33,10 +38,10 @@ public class GovUkContentAPIExtractor extends Extractor {
             path = "/api/content" + curi.getUURI().getPath();
             // And add it to the discovered links:
             addOutlink(curi, path, LinkContext.INFERRED_MISC, Hop.INFERRED);
+            numberOfLinksExtracted.incrementAndGet();
 
         } catch (URIException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOGGER.log(Level.WARNING, "URI exception when handling " + curi, e);
         }
 
     }
