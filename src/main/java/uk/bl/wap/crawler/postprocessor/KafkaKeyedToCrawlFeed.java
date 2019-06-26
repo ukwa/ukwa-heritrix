@@ -108,6 +108,10 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
      * @see CrawlURI#inheritFrom(CrawlURI)
      */
     protected JSONObject buildJsonMessage(CrawlURI source, CrawlURI curi) {
+        // If we have no source, use self:
+        if (source == null) {
+            source = curi;
+        }
 
         // Set up object concerning the new URI:
         JSONObject message = new JSONObject().put("url", curi.toString());
@@ -124,11 +128,8 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
          */
 
         // Also store metadata about the parent URI:
-        if (source != null) {
-            message.put("parentUrl", source.getURI());
-        } else {
-            message.put("parentUrl", curi.getURI());
-        }
+        message.put("parentUrl", source.getURI());
+
         HashMap<String, Object> metadata = new HashMap<String, Object>();
         metadata.put("pathFromSeed", source.getPathFromSeed());
 

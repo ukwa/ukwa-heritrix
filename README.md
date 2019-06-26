@@ -62,11 +62,12 @@ Changes
 -------
 
 * 2.6.3:
+    * Handle case where emitting inscope URIs with no source by using self as source.
+* 2.6.2:
     * Rely on Crawler Commons more so it handles site-maps of different formats.
     * Update to commons-io 2.4 across the whole project (to make sure Crawler Commons is happy).
     * Don't assume a Sitemap from robots.txt is definitely a sitemap as there could be redirects. See #44.
     * Handle case where incoming non-seed URIs were not getting logged right because the inscope log builder assumes there is a source CrawlURI.
-* 2.6.2:
     * Allow up to 50,000 outlinks per CrawlURI, to cope with the case of large sitemaps.
 * 2.6.1:
     * Modify disposition processor so robots.txt cache does not get trashed when robots.txt get discovered outside of pre-requisites and ruled out-of-scope.
