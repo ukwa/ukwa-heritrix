@@ -485,13 +485,13 @@
 				<!-- ...extract outlinks from Flash content... -->
 				<ref bean="extractorSwf"/>
                 <!-- ...infer GOV.UK Content API URL for the GOV.UK site... -->
-                <bean class="uk.bl.wap.modules.extractor.GovUkContentAPIExtractor">
+                <bean id="extractorGovUKContentApi" class="uk.bl.wap.modules.extractor.GovUkContentAPIExtractor">
                 </bean>
 				<!-- ...add IPs to crawl.log... -->
 				<bean id="ipAnnotator" class="uk.bl.wap.crawler.processor.IpAnnotator">
 				</bean>
 				<!-- ...add country-codes to crawl.log... -->
-				<bean class="uk.bl.wap.crawler.processor.CountryCodeAnnotator">
+				<bean id="countryCodeAnnotator" class="uk.bl.wap.crawler.processor.CountryCodeAnnotator">
 		        </bean>
 				<!-- ...scan for viruses... -->
 				<ref bean="viralContent" />
@@ -739,7 +739,7 @@
 		<property name="retryDelaySeconds" value="20" />
 		<property name="maxRetries" value="5" />
 		<property name="recoveryLogEnabled" value="false" />
-		<property name="maxOutlinks" value="6000" />
+		<property name="maxOutlinks" value="6000" /> <!-- this is ignored by the sitemap extractor -->
 		<property name="dumpPendingAtClose" value="false" />
 		<property name="scope">
 			<ref bean="scope" />

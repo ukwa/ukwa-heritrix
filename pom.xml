@@ -83,6 +83,12 @@
          <artifactId>heritrix-commons</artifactId>
          <version>${heritrix.version}</version>
          <scope>provided</scope>
+         <exclusions>
+            <exclusion>
+               <groupId>commons-io</groupId>
+               <artifactId>commons-io</artifactId>
+            </exclusion>
+         </exclusions>
       </dependency>
       <dependency>
          <groupId>org.archive.heritrix</groupId>
@@ -124,6 +130,10 @@
             <exclusion>
                <groupId>org.apache.kafka</groupId>
                <artifactId>kafka_2.10</artifactId>
+            </exclusion>
+            <exclusion>
+               <groupId>commons-io</groupId>
+               <artifactId>commons-io</artifactId>
             </exclusion>
          </exclusions>
       </dependency>      

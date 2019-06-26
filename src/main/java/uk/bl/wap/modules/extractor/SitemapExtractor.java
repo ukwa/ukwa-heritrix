@@ -3,6 +3,8 @@
  */
 package uk.bl.wap.modules.extractor;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Calendar;
 import java.util.Collection;
@@ -11,16 +13,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
+import org.apache.commons.io.IOUtils;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.extractor.ContentExtractor;
 import org.archive.modules.extractor.Hop;
 import org.archive.modules.extractor.LinkContext;
 
 import crawlercommons.sitemaps.AbstractSiteMap;
-import crawlercommons.sitemaps.CrawlURISitemapParser;
 import crawlercommons.sitemaps.SiteMap;
 import crawlercommons.sitemaps.SiteMapIndex;
+import crawlercommons.sitemaps.SiteMapParser;
 import crawlercommons.sitemaps.SiteMapURL;
+import crawlercommons.sitemaps.UnknownFormatException;
 import uk.bl.wap.modules.deciderules.RecentlySeenDecideRule;
 
 /**
@@ -40,7 +44,6 @@ public class SitemapExtractor extends ContentExtractor {
         if (uri.getAnnotations()
                 .contains(RobotsTxtSitemapExtractor.ANNOTATION_IS_SITEMAP)) {
             if (uri.is2XXSuccess()) {
-                LOGGER.info(" " + uri);
                 LOGGER.info("This url (" + uri
                         + ") is declared to be a sitemap (via robots.txt) and is a HTTP 200.");
                 return true;
@@ -82,7 +85,7 @@ public class SitemapExtractor extends ContentExtractor {
     @Override
     protected boolean innerExtract(CrawlURI uri) {
         // Parse the sitemap:
-        AbstractSiteMap sitemap = CrawlURISitemapParser.getSitemap(uri);
+        AbstractSiteMap sitemap = parseSiteMap(uri);
 
         // Did that work?
         if (sitemap != null) {
@@ -113,11 +116,54 @@ public class SitemapExtractor extends ContentExtractor {
         return false;
     }
 
+    /**
+     * Parse the sitemap using the Crawler Commons content-sniffing parser.
+     * 
+     * @param uri
+     * @return
+     */
+    private AbstractSiteMap parseSiteMap(CrawlURI uri) {
+        // The thing we will create:
+        AbstractSiteMap sitemap = null;
+
+        // Be strict about URLs but allow partial extraction:
+        SiteMapParser smp = new SiteMapParser(true, true);
+        // Parse it up:
+        InputStream in;
+        try {
+            // Sitemaps are not supposed to be bigger than 50MB (according to
+            // Google) so if we hit problems we can implement that limit:
+            byte[] content = IOUtils.toByteArray(
+                    uri.getRecorder().getContentReplayInputStream());
+            if (content.length > 52428800) {
+                LOGGER.warning("This sitemap is over 50MB " + uri + " "
+                        + content.length);
+            }
+            // Now we can process it:
+            sitemap = smp.parseSiteMap(content, new URL(uri.getURI()));
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING,
+                    "I/O Exception when parsing sitemap " + uri, e);
+        } catch (UnknownFormatException e) {
+            LOGGER.log(Level.WARNING,
+                    "UnknownFormatException when parsing sitemap " + uri, e);
+        }
+        return sitemap;
+    }
+
     private void recordOutlink(CrawlURI curi, URL newUri, Date lastModified,
             boolean isSitemap) {
         try {
             // Get the max outlinks (needed by add method):
-            int max = getExtractorParameters().getMaxOutlinks();
+            //
+            // Because sitemaps are really important we excuse this extractor
+            // from the general setting:
+            //
+            // getExtractorParameters().getMaxOutlinks();
+            //
+            // And instead use the maximum that is allowed for a sitemap:
+            int max = 50000;
+
             // Add the URI:
             CrawlURI newCuri = addRelativeToBase(curi, max, newUri.toString(),
                     LinkContext.INFERRED_MISC, Hop.INFERRED);
