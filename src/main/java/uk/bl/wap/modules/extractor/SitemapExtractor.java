@@ -39,9 +39,16 @@ public class SitemapExtractor extends ContentExtractor {
         // If declared as such:
         if (uri.getAnnotations()
                 .contains(RobotsTxtSitemapExtractor.ANNOTATION_IS_SITEMAP)) {
-            LOGGER.info("This is declared to be a sitemap (via robots.txt): "
-                    + uri);
-            return true;
+            if (uri.is2XXSuccess()) {
+                LOGGER.info(" " + uri);
+                LOGGER.info("This url (" + uri
+                        + ") is declared to be a sitemap (via robots.txt) and is a HTTP 200.");
+                return true;
+            } else {
+                LOGGER.info("This url (" + uri
+                        + ") is declared to be a sitemap (via robots.txt) but is a HTTP "
+                        + uri.getFetchStatus() + ".");
+            }
         }
 
         // Via content type:
