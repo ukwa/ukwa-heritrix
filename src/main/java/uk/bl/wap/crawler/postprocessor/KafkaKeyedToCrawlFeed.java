@@ -124,7 +124,11 @@ public class KafkaKeyedToCrawlFeed extends KafkaKeyedCrawlLogFeed {
          */
 
         // Also store metadata about the parent URI:
-        message.put("parentUrl", source.getURI());
+        if (source != null) {
+            message.put("parentUrl", source.getURI());
+        } else {
+            message.put("parentUrl", curi.getURI());
+        }
         HashMap<String, Object> metadata = new HashMap<String, Object>();
         metadata.put("pathFromSeed", source.getPathFromSeed());
 
