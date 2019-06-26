@@ -60,7 +60,11 @@ https://webarchive.jira.com/wiki/spaces/Heritrix/pages/5735014/Heritrix+3.x+API+
 
 Changes
 -------
+
 * 2.6.3:
+    * Rely on Crawler Commons more so it handles site-maps of different formats.
+    * Update to commons-io 2.4 across the whole project (to make sure Crawler Commons is happy).
+    * Don't assume a Sitemap from robots.txt is definitely a sitemap as there could be redirects. See #44.
     * Handle case where incoming non-seed URIs were not getting logged right because the inscope log builder assumes there is a source CrawlURI.
 * 2.6.2:
     * Allow up to 50,000 outlinks per CrawlURI, to cope with the case of large sitemaps.
@@ -171,17 +175,91 @@ Changes
      * Simplify web renderer to allow H3 to handle retries properly.
      * Add an explicit client id to the Kafka client.
      * Name Prometheus metric consistently.
- * 2.2.14:
+* 2.2.14:
      * Apply sheets to HTTPS and HTTP. 
- * 2.2.13:
+* 2.2.13:
      * Try alternate quota reset logic.
      * Ensure Kafka offsets get committed properly.
      * Switch to keeping all checkpoints by default, to avoid messing with log files.
- * 2.2.12:
+* 2.2.12:
      * Ensure unique groupId per consumer, as required for manual partition in Kafka.
-     
-    
-
+* 2.2.11:
+    * Add job-resume command. 
+    * Use latest ukwa/heritrix version.
+    * Always resume rather than launching without a checkpoint.
+    * Ensure we use the local SNAPSHOT build. 
+    * Store checkpoints in the state folder to make sure they get kept.
+    * Avoid using disposition lock unnecessarily. 
+    * Add standard Heritrix crawl metrics to the Prometheus exporter bean. 
+    * Add roofinglines host to polite list following CAS-1113711-Y8R9
+    * Use explicit flag to indicate that quotas should be reset.
+* 2.2.10:
+    * Don't skip revisits when looking up in OCDX, as this allowed heavy re-crawling of popular URLs.
+* 2.2.9:
+    * Add an 'excludes' watched file.
+    * Use tally mechanism to reset quotas.
+    * Use threadsafe queues branch of H3.
+* 2.2.8:
+    * Attempt thread-safe quota resets.    
+* 2.2.7:
+    * Make OutbackCDX connection pool size configurable.
+* 2.2.6:
+    * Modified quota reset logic.
+* 2.2.5:
+    * Stop WebRender treating data URIs as a serious problem.
+* 2.2.4:
+    * Format surt files correctly (use newline).
+    * Disposition lock around stats reset.
+* 2.2.3:
+    * Use watched file as per #17, log discarded URLs. 
+    * Fix over-prioritisation of inferred urls. 
+    * Add Prometheus Metrics bean.
+    * Allow separation of candidate URLs.
+    * Update GeoIP and add Prometheus dependencies.
+* 2.2.2:
+     * Add more detail to logging for virus scanner issues.
+     * Lock the frontier while enqueuing to avoid NPE, see #16
+* 2.2.1:
+     * Modifications to Kafka assignment handling and add SEEK_TO_BEGINNING control
+* 2.2.0:
+    * Make state re-usable between launches.
+    * Manually assign Kafka partitions.
+* 2.1.15:
+    * Add experimental JMX -> Prometheus hook. 
+    * Allow max.poll.records overrides. 
+* 2.1.14:
+    * Avoid checking OutbackCDX for already-rejected URIs. 
+* 2.1.13:
+    * Remove monitor process that seems unstable on GlusterFS. 
+* 2.1.12:
+    * Tunable message handler thread pool size. 
+    * Using multithreaded message processing to ease OutbackCDX bottleneck. 
+* 2.1.11:
+    * Also avoid null host bad URIs. 
+* 2.1.10:
+    * Also avoid sending problematic URLs to OutbackCDX if present. 
+    * Discard unwanted and malformed URLs. 
+* 2.1.9:
+    * Avoid overwriting seekToBeginning before the seeking has been done. 
+* 2.1.8:
+    * Cleaner behaviour for stop/start of Kafka hook. 
+    * Add scripts to examine the H3 service. 
+* 2.1.7:
+    * Make GEOIP_LOOKUP_EVERY_URI an option. 
+    * Avoid passing all URIs through GeoIP check if it won't change the result
+    * Tuneable Kafka behaviour. 
+* 2.1.6:
+    * Tidy up blockAll a bit. 
+* 2.1.5:
+    * Allow pause/resume to work as expected. 
+* 2.1.4:
+    * DNS results keyed consistently with hosts. 
+* 2.1.3:
+    * Scope decision recording made optional, and added more consistent naming.
+* 2.1.2:
+    * Extended DecideRuleSequence to record the decisive rule. 
+* 2.1.1:
+    * Added ability to log discarded URLs, and fixed a serious bug in URL routing
 * 2.1.0:
     * Recently Seen functionality moved to a DecideRule, allowing us to use Heritrix's `recheckScope` feature to prevent recrawling of URLs that have been crawled since the original request was enqueued.
     * The OutbackCDXRecentlySeenDecideRule implementation also stores the last hash, so the `OutbackCDXPersistLoadProcessor` is no longer needed.
