@@ -30,7 +30,7 @@ To test and build:
 
     mvn clean install assembly:single
 
-Modules for Heritrix 3.3.0+
+Modules for Heritrix 3.4.+
 
 * AnnotationMatchesListRegexDecideRule: DecideRule for checking against annotations.
 * AsynchronousMQExtractor: publishes messages to an external queue for processing (see '[WebTools](https://github.com/openplanets/wap.git)'; )
@@ -61,6 +61,9 @@ https://webarchive.jira.com/wiki/spaces/Heritrix/pages/5735014/Heritrix+3.x+API+
 Changes
 -------
 
+* 2.6.4:
+    * Realised critical data fields like launchTimestamp were not marked to perist in the disk cache! This was causing crawls to fail under load when items are swapped out before swapping back in for the fetch.
+    * Added optional refreshDepth field, which marks the number of hops for which the launchTimestamp will be marked as an inherited field.
 * 2.6.3:
     * Handle case where emitting inscope URIs with no source by using self as source.
 * 2.6.2:
@@ -97,7 +100,7 @@ Changes
 * 2.4.10:
     * Ensure sheets are unchanged if unspecified.
 * 2.4.9:
-    * Refactor and simplify RecentlySeen code and default to ignoring forceFetch.
+    * Refactor and simplify RecentlySeen code and default to ignoring forceFetch. Can override obeyForceFetch, but the behaviour we want is to force the CrawlURI to be accepted into the frontier even if it's already there (so it can be re-prioritised). We don't want forceFetch to override RecentlySeen in that case.
 * 2.4.8:
     * Reset sheet definitions for recrawl delays, as launchTimestamp resolves the issue.
 * 2.4.7:

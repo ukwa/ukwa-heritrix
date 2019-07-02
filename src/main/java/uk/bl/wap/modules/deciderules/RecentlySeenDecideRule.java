@@ -48,6 +48,13 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule
     /** Launch timestamp key if set in CrawlURI, in ms since epoch */
     public static final String LAUNCH_TIMESTAMP = "launchTimestamp";
 
+    /**
+     * Refresh depth key, if set in CrawlURI, indicating how many levels deep
+     * the launchTimestamp should go. i.e. how long the hop-path can get before
+     * we prevent the launchTimestamp from being inherited.
+     */
+    public static final String REFRESH_DEPTH = "refreshDepth";
+
     private long errors = 0;
     private long hits = 0;
     private long misses = 0;
@@ -94,6 +101,11 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule
     public void setRecrawlInterval(int recentlySeenTTLsecs) {
         LOGGER.info("Setting TTL to " + recentlySeenTTLsecs);
         kp.put(RECRAWL_INTERVAL, recentlySeenTTLsecs);
+    }
+
+    {
+        // Default to no launch time-stamp override set:
+        // setLaunchTimestamp();
     }
 
     /**
@@ -195,6 +207,10 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule
      */
     @Override
     protected boolean evaluate(CrawlURI curi) {
+        // Ensure the launch timestamp is inherited to the correct depth:
+        setLaunchTimestampInheritance(curi);
+
+        // Now perform the actual test:
         String uri = curi.getURI();
         String key;
         if (useHashedUriKey) {
@@ -215,6 +231,27 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule
         return evaluateWithTTL(key, curi, ttl_s, launch_ts);
     }
 
+    void setLaunchTimestampInheritance(CrawlURI curi) {
+        // Look for refreshDepth setting:
+        int refreshDepth = 0; // Seeds only by default
+        if (curi.getData().containsKey(REFRESH_DEPTH)) {
+            refreshDepth = (int) curi.getData().get(REFRESH_DEPTH);
+        }
+        LOGGER.finer("Found refreshDepth " + refreshDepth + " for " + curi
+                + " hop count " + curi.getHopCount());
+
+        // Check whether to inherit the launchTimestamp:
+        if (refreshDepth == -1 || refreshDepth > curi.getHopCount()) {
+            LOGGER.info("Ensuring launchTimestamp is inherited for " + curi);
+            curi.makeHeritable(LAUNCH_TIMESTAMP);
+        } else {
+            LOGGER.finer(
+                    "Ensuring launchTimestamp is NOT inherited for " + curi);
+            curi.makeNonHeritable(LAUNCH_TIMESTAMP);
+        }
+
+    }
+
     /**
      * Look for launch timestamp in this bean (plus any sheet overrides), and
      * also in the CrawlURI
@@ -224,7 +261,7 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule
      * @param curi
      * @return
      */
-    private long chooseLaunchTimestamp(CrawlURI curi) {
+    long chooseLaunchTimestamp(CrawlURI curi) {
         // Allow launch-request timestamps, via sheet by default:
         long sheet_ts = this.parseLaunchTimestamp(this.getLaunchTimestamp());
         // Also allow URI-level override of the launch timestamp:
@@ -237,7 +274,7 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule
         return Long.max(sheet_ts, curi_is);
     }
 
-    private long parseLaunchTimestamp(String launch_tss) {
+    protected long parseLaunchTimestamp(String launch_tss) {
         long launch_ts = -1;
         if (launch_tss != null ) {
             try {

@@ -82,7 +82,6 @@ import io.prometheus.client.Gauge;
 import uk.bl.wap.crawler.postprocessor.KafkaKeyedDiscardedFeed;
 import uk.bl.wap.crawler.postprocessor.KafkaKeyedToCrawlFeed;
 import uk.bl.wap.crawler.prefetch.QuotaResetProcessor;
-import uk.bl.wap.modules.deciderules.RecentlySeenDecideRule;
 
 /**
  * Based on
@@ -757,6 +756,7 @@ public class KafkaUrlReceiver
                             joHeaders.getString(key.toString()));
                 }
             }
+            curi.addPersistentDataMapKey("customHttpRequestHeaders");
             curi.getData().put("customHttpRequestHeaders",
                     customHttpRequestHeaders);
         }
@@ -769,13 +769,6 @@ public class KafkaUrlReceiver
             for (int i = 0; i < jsn.length(); i++) {
                 sheetNames.add(jsn.getString(i));
             }
-        }
-
-        // Set up recrawl interval, if specified:
-        if (jo.has("recrawlInterval")) {
-            int recrawlInterval = jo.getInt("recrawlInterval");
-            curi.getData().put(RecentlySeenDecideRule.RECRAWL_INTERVAL,
-                    recrawlInterval);
         }
 
         // Get the target-level sheet, if specified:
@@ -892,6 +885,9 @@ public class KafkaUrlReceiver
         JSONObject heritableData = parentUrlMetadata
                 .getJSONObject("heritableData");
         for (String key : (Set<String>) heritableData.keySet()) {
+            // Ensure this data is remembered:
+            curi.addPersistentDataMapKey(key);
+            // Store the value
             Object value = heritableData.get(key);
             if (value instanceof JSONArray) {
                 Set<String> valueSet = new HashSet<String>();
