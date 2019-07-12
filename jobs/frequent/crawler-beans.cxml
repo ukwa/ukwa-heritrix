@@ -853,7 +853,7 @@
  </bean>
 	
 	<!-- CRAWLERLOGGERMODULE: shared logging facility -->
-	<bean id="loggerModule" class="org.archive.crawler.reporting.CrawlerLoggerModule">
+	<bean id="loggerModule" class="org.archive.crawler.reporting.BufferedCrawlerLoggerModule">
 		<property name="path" value="/heritrix/output/#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/${launchId}/logs/" />
 		<property name="crawlLogPath" value="crawl.log" />
 		<property name="alertsLogPath" value="alerts.log" /> 
