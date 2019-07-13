@@ -61,8 +61,12 @@ https://webarchive.jira.com/wiki/spaces/Heritrix/pages/5735014/Heritrix+3.x+API+
 Changes
 -------
 
-* 2.6.4:
+* 2.6.6:
+    * Ensure `SourceTag` does not get set to `null` in `RobotsTxtSitemapExtractor` (#49)
+    * Modify logger to allow some buffering rather than flushing every line.
+* 2.6.5:
     * Realised critical data fields like launchTimestamp were not marked to perist in the disk cache! This was causing crawls to fail under load when items are swapped out before swapping back in for the fetch.
+* 2.6.4:
     * Added optional refreshDepth field, which marks the number of hops for which the launchTimestamp will be marked as an inherited field.
 * 2.6.3:
     * Handle case where emitting inscope URIs with no source by using self as source.
