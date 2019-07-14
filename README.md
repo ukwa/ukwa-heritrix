@@ -61,6 +61,8 @@ https://webarchive.jira.com/wiki/spaces/Heritrix/pages/5735014/Heritrix+3.x+API+
 Changes
 -------
 
+* 2.6.7:
+    * Avoid collecting source stats as this is causing problems arising from #49.
 * 2.6.6:
     * Ensure `SourceTag` does not get set to `null` in `RobotsTxtSitemapExtractor` (#49)
     * Modify logger to allow some buffering rather than flushing every line.

@@ -850,6 +850,7 @@
   <!-- 1 is sufficient for computing docs/s and KiB/s -->
   <property name="keepSnapshotsCount" value="1" />
   <!-- <property name="liveHostReportSize" value="20" /> -->
+  <property name="trackSources" value="false" /> <!-- Avoiding NPE when source accidentally null. -->
  </bean>
 	
 	<!-- CRAWLERLOGGERMODULE: shared logging facility -->
