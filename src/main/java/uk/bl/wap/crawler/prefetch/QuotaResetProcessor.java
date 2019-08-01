@@ -100,7 +100,7 @@ public class QuotaResetProcessor extends Processor {
         // org.archive.modules.fetcher.FetchStats field
         // org.archive.crawler.frontier.WorkQueue.substats to java.lang.Byte"
         // ADDEDUM: Even after removing this, these errors still turned up.
-        // Now wondering if attemoting to clear http and https stats here was
+        // Now wondering if attempting to clear http and https stats here was
         // causing the problem somehow.
 
     }
