@@ -251,19 +251,21 @@
 			<ref bean="scope" />
 		</property>
 	</bean>
-     <!-- This copies the stream of discovered, in-scope URIs to a Kafka topic (as a check/disaster-recovery mechanism) -->
-     <bean id="inScopeUriFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedToCrawlFeed">
-       <property name="enabled" value="#{systemEnvironment['KAFKA_INSCOPE_LOG_ENABLED'] ?: true}" />
-       <property name="emitOutlinks" value="false" /> <!-- this module should at on the CrawlURI in the chain, not it's outlinks -->
-       <property name="topic" value="#{systemEnvironment['KAFKA_INSCOPE_TOPIC'] ?: 'uris.inscope'}" />
-       <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
-       <property name="extraFields">
-           <map>
-             <entry key="CRAWL_NAME" value="#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}"/>
-           </map>
-       </property>
-       <property name="discardedUriFeedEnabled" value="#{systemEnvironment['KAFKA_DISCARDED_FEED_ENABLED'] ?: false}"/>
-     </bean>
+    <bean id="quotaResetPropagator" class="uk.bl.wap.crawler.prefetch.QuotaResetPropagationProcessor">
+    </bean>
+    <!-- This copies the stream of discovered, in-scope URIs to a Kafka topic (as a check/disaster-recovery mechanism) -->
+    <bean id="inScopeUriFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedToCrawlFeed">
+      <property name="enabled" value="#{systemEnvironment['KAFKA_INSCOPE_LOG_ENABLED'] ?: true}" />
+      <property name="emitOutlinks" value="false" /> <!-- this module should at on the CrawlURI in the chain, not it's outlinks -->
+      <property name="topic" value="#{systemEnvironment['KAFKA_INSCOPE_TOPIC'] ?: 'uris.inscope'}" />
+      <property name="brokerList" value="#{systemEnvironment['KAFKA_BOOTSTRAP_SERVERS'] ?: 'kafka:9092'}" />
+      <property name="extraFields">
+         <map>
+            <entry key="CRAWL_NAME" value="#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}"/>
+         </map>
+      </property>
+      <property name="discardedUriFeedEnabled" value="#{systemEnvironment['KAFKA_DISCARDED_FEED_ENABLED'] ?: false}"/>
+    </bean>
 	<!-- assembled into ordered CandidateChain bean.
          NOTE that seeds are prepared and scheduled via a SeedListener and don't run through the candidate chain. -->
 	<bean id="candidateProcessors" class="org.archive.modules.CandidateChain">
@@ -272,6 +274,8 @@
 				<!-- apply scoping rules to each individual candidate URI... -->
 				<ref bean="candidateScoper"/>
 				<ref bean="preparer"/>
+                <!-- Ensure quota reset events get propagated to aliases via pre-requisites or redirects... -->
+                <ref bean="quotaResetPropagator"/>
                 <!-- also emit log of URIs determined to be in-scope, and enqueued in the frontier -->
                 <ref bean="inScopeUriFeed"/>
 			</list>
