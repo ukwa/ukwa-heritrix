@@ -16,7 +16,6 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.deciderules.DecideResult;
 import org.archive.modules.deciderules.PredicatedDecideRule;
 import org.archive.modules.recrawl.FetchHistoryHelper;
-import org.archive.modules.recrawl.RecrawlAttributeConstants;
 import org.archive.spring.KeyedProperties;
 import org.archive.util.DateUtils;
 import org.archive.util.Reporter;
@@ -337,8 +336,8 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule
                 // this is all done during the fetch chain,
                 // but here things can linger in the Frontier, so if they get
                 // swapped out, it'll get lost.
-                curi.addPersistentDataMapKey(
-                        RecrawlAttributeConstants.A_FETCH_HISTORY);
+                // curi.addPersistentDataMapKey(
+                // RecrawlAttributeConstants.A_FETCH_HISTORY);
                 Map<String, Object> history = FetchHistoryHelper
                         .getFetchHistory(curi, o_ts, 1);
                 if (history != null)
@@ -399,7 +398,7 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule
     public static void addLaunchTimestamp(CrawlURI curi, Date date) {
         String launch_ts = DateUtils.get14DigitDate(date);
         // Add as a persistent field:
-        curi.addPersistentDataMapKey(RecentlySeenDecideRule.LAUNCH_TIMESTAMP);
+        // curi.addPersistentDataMapKey(RecentlySeenDecideRule.LAUNCH_TIMESTAMP);
         curi.getData().put(RecentlySeenDecideRule.LAUNCH_TIMESTAMP,
                 launch_ts);
         // Also note in an annotation:

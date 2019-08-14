@@ -5,9 +5,10 @@
    <artifactId>bl-heritrix-modules</artifactId>
    <version>2.3.1-SNAPSHOT</version>
    <properties>
-      <jdk.version>1.6</jdk.version>
+      <jdk.version>1.8</jdk.version>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-      <heritrix.version>3.4.0-20190418</heritrix.version>
+      <!-- heritrix.version>3.4.0-20190418</heritrix.version -->
+      <heritrix.version>3.4.0-SNAPSHOT</heritrix.version>
    </properties>
    <build>
       <plugins>

@@ -756,7 +756,7 @@ public class KafkaUrlReceiver
                             joHeaders.getString(key.toString()));
                 }
             }
-            curi.addPersistentDataMapKey("customHttpRequestHeaders");
+            // curi.addPersistentDataMapKey("customHttpRequestHeaders");
             curi.getData().put("customHttpRequestHeaders",
                     customHttpRequestHeaders);
         }
@@ -886,7 +886,7 @@ public class KafkaUrlReceiver
                 .getJSONObject("heritableData");
         for (String key : (Set<String>) heritableData.keySet()) {
             // Ensure this data is remembered:
-            curi.addPersistentDataMapKey(key);
+            // curi.addPersistentDataMapKey(key);
             // Store the value
             Object value = heritableData.get(key);
             if (value instanceof JSONArray) {
