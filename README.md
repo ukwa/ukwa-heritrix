@@ -61,6 +61,14 @@ https://webarchive.jira.com/wiki/spaces/Heritrix/pages/5735014/Heritrix+3.x+API+
 Changes
 -------
 
+
+* 2.7.0:
+    * Update Heritrix3 to version based on BDB-JE 7.
+    * ...
+* 2.6.9:
+    * Ensure quota resets get propagated to pre-requisites and redirects, for #50.
+* 2.6.8:
+    * Switch back to server quotas as the default.
 * 2.6.7:
     * Avoid collecting source stats as this is causing problems arising from #49.
 * 2.6.6:
