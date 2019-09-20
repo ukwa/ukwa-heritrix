@@ -655,6 +655,7 @@
   -->
      <!-- This lets the crawler forget about the URIs that were in the frontier -->
      <bean id="forgetfulFrontierProcessor" class="uk.bl.wap.crawler.postprocessor.ForgettingFrontierProcessor">
+       <property name="enabled" value="#{systemEnvironment['URI_FORGETTING_ENABLED'] ?: true}" />
      </bean>
      
      <!-- This provides a crawl log feed to a queue - note that you'll need to set up a binding that matches these parameters to a queue -->
@@ -752,11 +753,10 @@
 		</property>
 	</bean>
 	
-	<!-- URI UNIQ FILTER: Used by frontier to remember URIs currently in the BDBFrontier --> 
-	<bean id="uriUniqFilter" class="org.archive.crawler.util.BdbUriUniqFilter">
-        <property name="bdbModule" ref="bdbUriUniqFilterBdb"/>
-	</bean>
-   
+	<!-- URI UNIQ FILTER: Used by frontier to remember URIs currently in the BDBFrontier -->
+    <import resource="uriuniqfilter.xml"/>
+    <!-- n.b. uses a separate file so it can be overridden for the domain crawl -->
+     
     <!-- Shared OutbackCDX client and configuration -->
     <bean id="outbackCDXClient" class="uk.bl.wap.util.OutbackCDXClient">
         <property name="endpoint" value="#{systemEnvironment['CDXSERVER_ENDPOINT'] ?: 'http://localhost:9090/fc'}"/>
@@ -880,11 +880,6 @@
 	<!-- BDBMODULE: BDB-JE disk persistence manager -->
   <bean id="bdbFrontierBdb" class="org.archive.bdb.BdbModule">
     <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/frontier"/>
-    <property name="cachePercent" value="30"/>
-    <property name="expectedConcurrency" value="100"/>
-  </bean>
-  <bean id="bdbUriUniqFilterBdb" class="org.archive.bdb.BdbModule">
-    <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/uriUniqFilter"/>
     <property name="cachePercent" value="30"/>
     <property name="expectedConcurrency" value="100"/>
   </bean>

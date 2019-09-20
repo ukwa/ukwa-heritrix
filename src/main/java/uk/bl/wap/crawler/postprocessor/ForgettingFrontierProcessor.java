@@ -6,6 +6,7 @@ package uk.bl.wap.crawler.postprocessor;
 import java.util.logging.Logger;
 
 import org.archive.crawler.datamodel.UriUniqFilter;
+import org.archive.crawler.util.BloomUriUniqFilter;
 import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.springframework.beans.factory.annotation.Autowired;

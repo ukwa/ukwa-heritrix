@@ -39,6 +39,7 @@ services:
        #- "SURTS_SOURCE_FILE=domain-surts.txt" # Use the domain SURT scope
        - "SURTS_SOURCE_FILE=/shared/surts.txt"
        #- "QUOTA_SERVER_MAX_SUCCESS_KB=1"
+       - "URI_FORGETTING_ENABLED=false"
     links:
       - clamd
       - kafka
@@ -49,6 +50,8 @@ services:
     volumes:
       - ./docker/jmx_prometheus_javaagent-0.3.1.jar:/jmx_prometheus_javaagent-0.3.1.jar
       - ./docker/heritrix-jmx-config.yml:/jmx-config.yml
+      # Override to use a different uriUniqFilter:
+      - ./jobs/frequent/uriuniqfilter-bloom.xml:/jobs/frequent/uriuniqfilter.xml
       #- ./docker/shared:/shared
     volumes_from:
       - dvc:rw  
