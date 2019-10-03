@@ -878,6 +878,8 @@
     <import resource="sheets.xml"/>
     
 	<!-- BDBMODULE: BDB-JE disk persistence manager -->
+    <!-- By default, the cache is shared across all databases, and the cachePercent specifies the global percentage of heap to use.
+         Therefore, the same value should be used for all modules to that it definately gets set to the right value. -->
   <bean id="bdbFrontierBdb" class="org.archive.bdb.BdbModule">
     <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/frontier"/>
     <property name="cachePercent" value="30"/>
