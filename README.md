@@ -62,9 +62,13 @@ Changes
 -------
 
 
-* 2.7.0:
+* 2.7.0-BETA:
     * Update Heritrix3 to version based on BDB-JE 7.
-    * ...
+    * Stop using addPersistentDataMapKey because it's deprecated.
+* 2.6.10:
+    * Allow switch to Bloom filter unique URI approach based on environment variable.
+    * Switch OutbackCDX client POST to using HttpClient.
+    * Default to not checking system properties for the OutbackCDX HttpClient builder.
 * 2.6.9:
     * Ensure quota resets get propagated to pre-requisites and redirects, for #50.
 * 2.6.8:

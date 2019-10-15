@@ -26,9 +26,12 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.util.EntityUtils;
 import org.archive.format.cdx.CDXLine;
 import org.archive.format.cdx.StandardCDXLineFactory;
 import org.archive.modules.CoreAttributeConstants;
@@ -58,7 +61,6 @@ public class OutbackCDXClient {
 
     private String endpoint = "http://localhost:9090/fc";// ?url=";//
                                                          // "http://crawl-index/timeline?url=";
-
     protected StandardCDXLineFactory cdxLineFactory = new StandardCDXLineFactory(
             "cdx11");
 
@@ -68,6 +70,23 @@ public class OutbackCDXClient {
 
     public void setEndpoint(String endpoint) {
         this.endpoint = endpoint;
+    }
+
+    private boolean useSystemProperties = false;
+
+    /**
+     * @return the useSystemProperties
+     */
+    public boolean isUseSystemProperties() {
+        return useSystemProperties;
+    }
+
+    /**
+     * @param useSystemProperties
+     *            the useSystemProperties to set
+     */
+    public void setUseSystemProperties(boolean useSystemProperties) {
+        this.useSystemProperties = useSystemProperties;
     }
 
     private String contentDigestScheme = "sha1:";
@@ -157,7 +176,11 @@ public class OutbackCDXClient {
             }
             HttpClientBuilder builder = HttpClientBuilder.create()
                     .disableCookieManagement().setConnectionManager(conman);
-            builder.useSystemProperties();
+            // Allow client to look up system properties for proxy settings etc.
+            // Defaults to false as this can lead to thread contention.
+            if (useSystemProperties) {
+                builder.useSystemProperties();
+            }
             // And build:
             this.client = builder.build();
         }
@@ -370,38 +393,36 @@ public class OutbackCDXClient {
         String cdx11 = toCDXLine(curi);
         logger.fine("POSTING: " + cdx11);
 
+        // Use the shared client:
+        HttpClient client = getHttpClient();
+
+        // Retry loop in case of service problems:
         boolean retry = true;
         while (retry) {
             try {
                 // POST to the endpoint:
-                URL u = new URL(endpoint);
-                HttpURLConnection conn = (HttpURLConnection) u.openConnection();
-                conn.setDoOutput(true);
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type",
+                HttpPost postRequest = new HttpPost(endpoint);
+                postRequest.addHeader("Content-Type",
                         "application/x-www-form-urlencoded");
-                OutputStream os = conn.getOutputStream();
-                os.write(cdx11.getBytes("UTF-8"));
-                os.close();
-                if (conn.getResponseCode() == 200) {
-                    // Read the response:
-                    BufferedReader in = new BufferedReader(
-                            new InputStreamReader(conn.getInputStream()));
-                    String inputLine;
-                    StringBuffer response = new StringBuffer();
-                    while ((inputLine = in.readLine()) != null) {
-                        response.append(inputLine);
-                    }
-                    in.close();
-                    logger.finest(response.toString());
+                StringEntity userEntity = new StringEntity(cdx11, "UTF-8");
+                postRequest.setEntity(userEntity);
+                // Perform the POST
+                HttpResponse httpResponse = client.execute(postRequest);
+                // Get the result:
+                int statusCode = httpResponse.getStatusLine().getStatusCode();
+                // Including the body, to ensure the connection can be released:
+                String apiOutput = EntityUtils
+                        .toString(httpResponse.getEntity());
+                // Report if all went well:
+                if (statusCode == 200) {
+                    logger.finest("Sent the record, got: " + apiOutput);
                     // It worked! No need to retry:
-                    logger.finest("Sent the record.");
-                    this.totalSentRecords += 1;
                     retry = false;
+                    this.totalSentRecords += 1;
                 } else {
-                    logger.warning(
-                            "Got response code: " + conn.getResponseCode());
+                    logger.warning("Got response code: " + statusCode);
                 }
+
             } catch (Exception e) {
                 logger.log(Level.WARNING, "POSTing failed with ", e);
                 try {

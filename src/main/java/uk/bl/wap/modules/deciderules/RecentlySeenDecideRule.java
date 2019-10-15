@@ -398,7 +398,7 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule
     public static void addLaunchTimestamp(CrawlURI curi, Date date) {
         String launch_ts = DateUtils.get14DigitDate(date);
         // Add as a persistent field:
-        // curi.addPersistentDataMapKey(RecentlySeenDecideRule.LAUNCH_TIMESTAMP);
+        curi.addPersistentDataMapKey(RecentlySeenDecideRule.LAUNCH_TIMESTAMP);
         curi.getData().put(RecentlySeenDecideRule.LAUNCH_TIMESTAMP,
                 launch_ts);
         // Also note in an annotation:
