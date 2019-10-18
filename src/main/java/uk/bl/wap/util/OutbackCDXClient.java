@@ -25,11 +25,14 @@ import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.archive.format.cdx.CDXLine;
@@ -46,6 +49,7 @@ import org.json.JSONObject;
 
 import com.esotericsoftware.minlog.Log;
 
+import io.prometheus.client.Counter;
 import uk.bl.wap.modules.recrawl.OutbackCDXPersistLoadProcessor;
 
 /**
@@ -56,8 +60,9 @@ public class OutbackCDXClient {
     private static final Logger logger = Logger
             .getLogger(OutbackCDXPersistLoadProcessor.class.getName());
 
-    private HttpClient client;
-    private PoolingHttpClientConnectionManager conman;
+    private PoolingHttpClientConnectionManager cm = null;
+
+    private CloseableHttpClient client = null;
 
     private String endpoint = "http://localhost:9090/fc";// ?url=";//
                                                          // "http://crawl-index/timeline?url=";
@@ -142,11 +147,6 @@ public class OutbackCDXClient {
 
     public synchronized void setMaxConnections(int maxConnections) {
         this.maxConnections = maxConnections;
-        if (conman != null) {
-            if (conman.getMaxTotal() < this.maxConnections)
-                conman.setMaxTotal(this.maxConnections);
-            conman.setDefaultMaxPerRoute(this.maxConnections);
-        }
     }
 
     private AtomicLong cumulativeFetchTime = new AtomicLong();
@@ -162,34 +162,45 @@ public class OutbackCDXClient {
         return cumulativeFetchTime.get();
     }
 
-    public void setHttpClient(HttpClient client) {
-        this.client = client;
+    /*
+     * Set up a connection manager using the required settings:
+     */
+    private PoolingHttpClientConnectionManager getConnectionManager() {
+        if (cm == null) {
+            cm = new PoolingHttpClientConnectionManager();
+            cm.setDefaultMaxPerRoute(maxConnections);
+            cm.setMaxTotal(Math.max(cm.getMaxTotal(), maxConnections));
+        }
+        return cm;
     }
 
-    public synchronized HttpClient getHttpClient() {
-        if (client == null) {
-            if (conman == null) {
-                conman = new PoolingHttpClientConnectionManager();
-                conman.setDefaultMaxPerRoute(maxConnections);
-                conman.setMaxTotal(
-                        Math.max(conman.getMaxTotal(), maxConnections));
-            }
-            HttpClientBuilder builder = HttpClientBuilder.create()
-                    .disableCookieManagement().setConnectionManager(conman);
+    /*
+     * Get a shared HttpClient instance with the appropriate settings and
+     * connection pool
+     */
+    private CloseableHttpClient getHttpClient() {
+        if (this.client == null) {
             // Allow client to look up system properties for proxy settings etc.
             // Defaults to false as this can lead to thread contention.
             if (useSystemProperties) {
-                builder.useSystemProperties();
+                this.client = HttpClients.custom()
+                        .setConnectionManager(getConnectionManager())
+                        .disableCookieManagement().useSystemProperties()
+                        .build();
+            } else {
+                this.client = HttpClients.custom()
+                        .setConnectionManager(getConnectionManager())
+                        .disableCookieManagement().build();
             }
-            // And build:
-            this.client = builder.build();
         }
-        return client;
+        return this.client;
     }
 
     private long queryRangeSecs = 6L * 30 * 24 * 3600;
 
-    private int totalSentRecords = 0;
+    private static final Counter requestTotals = Counter.build()
+            .name("outbackcdx_requests_total").labelNames("kind", "status")
+            .help("Total OutbackCDX requests, query or post.").register();
 
     /**
      * 
@@ -201,15 +212,6 @@ public class OutbackCDXClient {
 
     public long getQueryRangeSecs() {
         return queryRangeSecs;
-    }
-
-    private String buildStartDate() {
-        final long range = queryRangeSecs;
-        if (range <= 0)
-            return ArchiveUtils.get14DigitDate(new Date(0));
-        Date now = new Date();
-        Date startDate = new Date(now.getTime() - range * 1000);
-        return ArchiveUtils.get14DigitDate(startDate);
     }
 
     protected String buildURL(String url, int limit, boolean mostRecentFirst)
@@ -224,14 +226,14 @@ public class OutbackCDXClient {
         return uriBuilder.build().toString();
     }
 
-    private InputStream getCDX(String qurl, int limit, boolean mostRecentFirst)
+    private CloseableHttpResponse getCDX(String qurl, int limit,
+            boolean mostRecentFirst)
             throws InterruptedException, IOException, URISyntaxException {
         final String url = buildURL(qurl, limit, mostRecentFirst);
         logger.fine("GET " + url);
         HttpGet m = new HttpGet(url);
         m.setConfig(RequestConfig.custom().setConnectTimeout(connectionTimeout)
                 .setSocketTimeout(socketTimeout).build());
-        HttpEntity entity = null;
         int attempts = 0;
         do {
             if (Thread.interrupted())
@@ -241,13 +243,13 @@ public class OutbackCDXClient {
             }
             try {
                 long t0 = System.currentTimeMillis();
-                HttpResponse resp = getHttpClient().execute(m);
+                CloseableHttpResponse resp = getHttpClient().execute(m);
                 cumulativeFetchTime.addAndGet(System.currentTimeMillis() - t0);
                 StatusLine sl = resp.getStatusLine();
+                requestTotals.labels("query", "" + sl.getStatusCode()).inc();
                 if (sl.getStatusCode() != 200) {
-                    entity = resp.getEntity();
-                    entity.getContent().close();
-                    entity = null;
+                    HttpEntity entity = resp.getEntity();
+                    EntityUtils.consume(entity);
                     if (sl.getStatusCode() == 404) {
                         logger.info(
                                 "Got a 404: the collection has probably not been created yet.");
@@ -258,21 +260,25 @@ public class OutbackCDXClient {
                                 + sl.getReasonPhrase());
                     }
                     continue;
+                } else {
+                    return resp;
                 }
-                entity = resp.getEntity();
             } catch (IOException ex) {
                 logger.severe(
                         "GET " + url + " failed with error " + ex.getMessage());
+                requestTotals.labels("query", "IOException").inc();
             } catch (Exception ex) {
                 logger.log(Level.SEVERE, "GET " + url + " failed with error ",
                         ex);
+                requestTotals.labels("query",
+                        "Exception: " + ex.getClass().getName()).inc();
             }
-        } while (entity == null && ++attempts < 3);
-        if (entity == null) {
-            throw new IOException("giving up on GET " + url + " after "
+        } while (++attempts < 3);
+
+        // That didn't work then!
+        throw new IOException(
+                "giving up on GET " + url + " after "
                     + attempts + " attempts");
-        }
-        return entity.getContent();
     }
 
     /**
@@ -296,33 +302,47 @@ public class OutbackCDXClient {
         if (!checkValid(qurl)) {
             return null;
         }
-        // Perform the query:
-        InputStream is = this.getCDX(qurl, 100, true);
-        if (is == null) {
-            return null;
-        }
         
-        // read CDX lines, recover the most recent (first) hash and timestamp:
-        // Only permit exact URL matches, skip revisit records.
+        CloseableHttpResponse response = null;
+        HttpEntity entity = null;
+        BufferedReader br = null;
         String hash = null;
         String timestamp = null;
-        BufferedReader br = new BufferedReader(new InputStreamReader(is));
-        String cdxLine;
-        while ((cdxLine = br.readLine()) != null) {
-            CDXLine line = cdxLineFactory.createStandardCDXLine(cdxLine);
-            // This could be a revisit record, but the hash should always be the
-            // original payload hash, so use it:
-            if (line.getOriginalUrl().equals(qurl)) {
-                timestamp = line.getTimestamp();
-                hash = line.getDigest();
-                break;
+        try {
+            // Perform the query:
+            response = this.getCDX(qurl, 100, true);
+            if (response == null) {
+                return null;
             }
-        }
+            // Get the entity
+            entity = response.getEntity();
 
-        // Shut down input stream
-        ArchiveUtils.closeQuietly(br);
-        if (is != null)
-            ArchiveUtils.closeQuietly(is);
+            // read CDX lines, recover the most recent (first) hash and
+            // timestamp:
+            // Only permit exact URL matches, skip revisit records.
+            br = new BufferedReader(
+                    new InputStreamReader(entity.getContent()));
+            String cdxLine;
+            while ((cdxLine = br.readLine()) != null) {
+                CDXLine line = cdxLineFactory.createStandardCDXLine(cdxLine);
+                // This could be a revisit record, but the hash should always be
+                // the
+                // original payload hash, so use it:
+                if (line.getOriginalUrl().equals(qurl)) {
+                    timestamp = line.getTimestamp();
+                    hash = line.getDigest();
+                    break;
+                }
+            }
+        } finally {
+            // Shut down cleanly:
+            if (entity != null)
+                EntityUtils.consume(entity);
+            if (response != null)
+                ArchiveUtils.closeQuietly(response);
+            if (br != null)
+                ArchiveUtils.closeQuietly(br);
+        }
 
         // Put into usable form:
         HashMap<String, Object> info = new HashMap<String, Object>();
@@ -394,7 +414,7 @@ public class OutbackCDXClient {
         logger.fine("POSTING: " + cdx11);
 
         // Use the shared client:
-        HttpClient client = getHttpClient();
+        CloseableHttpClient client = getHttpClient();
 
         // Retry loop in case of service problems:
         boolean retry = true;
@@ -407,24 +427,30 @@ public class OutbackCDXClient {
                 StringEntity userEntity = new StringEntity(cdx11, "UTF-8");
                 postRequest.setEntity(userEntity);
                 // Perform the POST
-                HttpResponse httpResponse = client.execute(postRequest);
+                CloseableHttpResponse httpResponse = client
+                        .execute(postRequest);
                 // Get the result:
                 int statusCode = httpResponse.getStatusLine().getStatusCode();
                 // Including the body, to ensure the connection can be released:
                 String apiOutput = EntityUtils
-                        .toString(httpResponse.getEntity());
+                        .toString(httpResponse.getEntity(), "UTF-8");
                 // Report if all went well:
                 if (statusCode == 200) {
                     logger.finest("Sent the record, got: " + apiOutput);
                     // It worked! No need to retry:
                     retry = false;
-                    this.totalSentRecords += 1;
                 } else {
                     logger.warning("Got response code: " + statusCode);
                 }
+                // Report metric for monitoring:
+                requestTotals.labels("post", "" + statusCode).inc();
+                httpResponse.close();
 
             } catch (Exception e) {
                 logger.log(Level.WARNING, "POSTing failed with ", e);
+                requestTotals
+                        .labels("post", "Exception: " + e.getClass().getName())
+                        .inc();
                 try {
                     Thread.sleep(1000 * 10);
                 } catch (InterruptedException e1) {
