@@ -447,11 +447,13 @@ public class OutbackCDXClient {
                 httpResponse.close();
 
             } catch (Exception e) {
-                logger.log(Level.WARNING, "POSTing failed with ", e);
+                logger.log(Level.WARNING, "POSTing results for " + curi.getURI()
+                        + " failed with exception:", e);
                 requestTotals
                         .labels("post", "Exception: " + e.getClass().getName())
                         .inc();
                 try {
+                    // Sleep before trying again...
                     Thread.sleep(1000 * 10);
                 } catch (InterruptedException e1) {
                     // TODO Auto-generated catch block
