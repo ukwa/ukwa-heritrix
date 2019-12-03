@@ -325,8 +325,8 @@ public class WrenderProcessor extends Processor implements
                     + " failed with unexpected exception: " + e, e);
         }
         // Either we hit an exception, or got a FetchStatus of 0, so:
-        // Defer for retry:
-        curi.setFetchStatus(FetchStatusCodes.S_DEFERRED);
+        // Set CONNECTION FAILED so we get to retry:
+        curi.setFetchStatus(FetchStatusCodes.S_CONNECT_FAILED);
         return false;
     }
 
