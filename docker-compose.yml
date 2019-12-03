@@ -56,29 +56,6 @@ services:
     volumes_from:
       - dvc:rw  
 
-  # Crawl control console
-  control:
-    image: ukwa/ukwa-manage
-    #build: ../ukwa-manage
-    ports:
-      - 9118:8000
-    environment:
-      - "HERITRIX_USERNAME=heritrix"
-      - "HERITRIX_PASSWORD=heritrix"
-      - "CRAWL_JOBS_FILE=/crawl-jobs.json"
-      - "WEBHDFS_PREFIX=http://warc-server:8000/by-filename/"
-      - "CDX_SERVER=http://cdxserver:8080/fc"
-      - "KAFKA_BOOTSTRAP_SERVERS=kafka:9092"
-      - "KAFKA_CRAWLED_TOPIC=fc.crawled"
-      - "KAFKA_SEEK_TO_BEGINNING=true"
-    volumes:
-      - ./integration-test/crawl-jobs.json:/crawl-jobs.json
-    depends_on:
-      - heritrix
-      - kafka
-      - cdxserver
-      - warc-server
-
   # Data Volume Container for crawler job definitions and outputs
   dvc:
     image: busybox
@@ -134,7 +111,7 @@ services:
 
   # Web page rendering service
   webrender:
-    image: ukwa/webrender-api
+    image: ukwa/webrender-api:1.0.7
     environment: # DOCKER_HOST could be used to run rendering on a dedicated service.
       - "WARCPROX=warcprox:8000"
       - "DOCKER_NETWORK=ukwa-heritrix_default" # warcprox network, to attach renderer containers to
@@ -171,7 +148,7 @@ services:
 
   # tinycdxserver
   cdxserver:
-    image: nlagovau/outbackcdx:0.5.1
+    image: nlagovau/outbackcdx:0.6.1
     # Verbose form logs submissions:
     #command: "java -jar outbackcdx.jar -v -d /cdx-data -p 8080 -b 0.0.0.0"
     ports:
