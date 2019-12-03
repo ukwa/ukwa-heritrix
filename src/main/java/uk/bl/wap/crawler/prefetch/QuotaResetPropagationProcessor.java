@@ -8,6 +8,12 @@ import org.archive.modules.Processor;
 import org.archive.modules.extractor.Hop;
 
 /**
+ * 
+ * This ensures any quota reset annotation is propagated to pre-requisites or
+ * redirects. i.e. if a seed should have it's quota reset, then any direct
+ * redirects should do, and it should also be done before getting robots.txt to
+ * ensure the quota's don't prevent prequisites being fetched.
+ * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
@@ -19,8 +25,10 @@ public class QuotaResetPropagationProcessor extends Processor {
     @Override
     protected boolean shouldProcess(CrawlURI uri) {
         // Does the URL we are one hop from have a quota reset annotation?
-        if (uri.getFullVia().getAnnotations()
-                .contains(QuotaResetProcessor.RESET_QUOTAS)) {
+        if (uri.getFullVia() != null
+                && uri.getFullVia().getAnnotations() != null
+                && uri.getFullVia().getAnnotations()
+                        .contains(QuotaResetProcessor.RESET_QUOTAS)) {
             // AND
             // Is this new URI a pre-requisite or a redirect?
             if (uri.getLastHop().equals(Hop.PREREQ.getHopString())
