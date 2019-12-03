@@ -21,7 +21,7 @@ public class OutbackCDXPersistStoreProcessor
         extends OutbackCDXPersistLoadProcessor {
 
     private static final Logger logger = Logger
-            .getLogger(OutbackCDXPersistLoadProcessor.class.getName());
+            .getLogger(OutbackCDXPersistStoreProcessor.class.getName());
 
     @Override
     protected ProcessResult innerProcessResult(CrawlURI curi)
