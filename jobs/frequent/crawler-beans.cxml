@@ -744,7 +744,7 @@
 		-->
 		<property name="snoozeLongMs" value="60000" />
 		<property name="retryDelaySeconds" value="20" />
-		<property name="maxRetries" value="5" />
+		<property name="maxRetries" value="#{systemEnvironment['MAX_RETRIES'] ?: 10 }" />
 		<property name="recoveryLogEnabled" value="false" />
 		<property name="maxOutlinks" value="6000" /> <!-- this is ignored by the sitemap extractor -->
 		<property name="dumpPendingAtClose" value="false" />
