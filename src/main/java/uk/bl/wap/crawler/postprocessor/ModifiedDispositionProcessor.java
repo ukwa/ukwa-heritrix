@@ -8,6 +8,7 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_CONNECT_LOST;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DEEMED_NOT_FOUND;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_DEFERRED;
 import static org.archive.modules.fetcher.FetchStatusCodes.S_OUT_OF_SCOPE;
+import static org.archive.modules.fetcher.FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR;
 
 import java.util.logging.Logger;
 
@@ -22,6 +23,9 @@ import org.archive.modules.net.IgnoreRobotsPolicy;
  * This takes the original disposition processor and modifies it to cope with
  * the case where robots.txt is not re-crawled because it's been seen too
  * recently.
+ * 
+ * Also modifies politenessDelay handling, so slow WebRender events do not lead
+ * to long post-WebRender delays.
  * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
@@ -58,7 +62,7 @@ public class ModifiedDispositionProcessor extends DispositionProcessor {
             try {
                 if ("/robots.txt".equals(curi.getUURI().getPath())
                         && curi.getFetchStatus() != S_DEFERRED
-                        && curi.getFetchStatus() != S_OUT_OF_SCOPE) {
+                        && curi.getFetchStatus() != S_OUT_OF_SCOPE) { // <<<
                     // shortcut retries w/ DEEMED when ignore-all
                     if (metadata
                             .getRobotsPolicy() instanceof IgnoreRobotsPolicy) {
@@ -79,7 +83,12 @@ public class ModifiedDispositionProcessor extends DispositionProcessor {
         }
 
         // set politeness delay
-        curi.setPolitenessDelay(politenessDelayFor(curi));
+        // ANJ: but only if one hasn't been set elsewhere
+        if (curi.getFetchStatus() == S_BLOCKED_BY_CUSTOM_PROCESSOR) {
+            curi.setPolitenessDelay(getMinDelayMs());
+        } else {
+            curi.setPolitenessDelay(politenessDelayFor(curi));
+        }
 
         // consider operator-set force-retire
         if (getForceRetire()) {
