@@ -451,4 +451,30 @@
       </property>
    </bean>
 
+   <!-- Sheets to support running parallel queue for some hosts -->
+   <bean id="parallel-queues-2" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="queueAssignmentPolicy.parallelQueues" value="2" />
+            <entry key="queueAssignmentPolicy.parallelQueuesRandomAssignment" value="true" />
+         </map>
+      </property>
+   </bean>
+   <bean id="parallel-queues-4" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="queueAssignmentPolicy.parallelQueues" value="4" />
+            <entry key="queueAssignmentPolicy.parallelQueuesRandomAssignment" value="true" />
+         </map>
+      </property>
+   </bean>
+   <bean id="parallel-queues-8" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="queueAssignmentPolicy.parallelQueues" value="8" />
+            <entry key="queueAssignmentPolicy.parallelQueuesRandomAssignment" value="true" />
+         </map>
+      </property>
+   </bean>
+
 </beans>

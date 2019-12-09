@@ -111,7 +111,7 @@ services:
 
   # Web page rendering service
   webrender:
-    image: ukwa/webrender-api:1.0.7
+    image: ukwa/webrender-api:1.0.10
     environment: # DOCKER_HOST could be used to run rendering on a dedicated service.
       - "WARCPROX=warcprox:8000"
       - "DOCKER_NETWORK=ukwa-heritrix_default" # warcprox network, to attach renderer containers to
