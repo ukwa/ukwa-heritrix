@@ -13,6 +13,8 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_RUNTIME_EXCEPTION;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,8 +23,10 @@ import javax.management.openmbean.CompositeData;
 import org.archive.crawler.datamodel.UriUniqFilter;
 import org.archive.crawler.event.CrawlURIDispositionEvent;
 import org.archive.crawler.frontier.AbstractFrontier;
+import org.archive.crawler.frontier.WorkQueue;
 import org.archive.modules.CrawlURI;
 import org.archive.spring.KeyedProperties;
+import org.archive.util.ObjectIdentityCache;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -499,6 +503,30 @@ public class RedisFrontier extends AbstractFrontier
             }
             this.f.reschedule(curi, fetchTime);
         }
+    }
+
+    @Override
+    public long exportPendingUris(PrintWriter writer) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public ObjectIdentityCache<WorkQueue> getAllQueues() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public BlockingQueue<String> getReadyClassQueues() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Set<WorkQueue> getInProcessQueues() {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

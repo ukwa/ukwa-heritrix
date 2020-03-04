@@ -456,7 +456,6 @@
       <property name="map">
          <map>
             <entry key="queueAssignmentPolicy.parallelQueues" value="2" />
-            <entry key="queueAssignmentPolicy.parallelQueuesRandomAssignment" value="true" />
          </map>
       </property>
    </bean>
@@ -464,7 +463,6 @@
       <property name="map">
          <map>
             <entry key="queueAssignmentPolicy.parallelQueues" value="4" />
-            <entry key="queueAssignmentPolicy.parallelQueuesRandomAssignment" value="true" />
          </map>
       </property>
    </bean>
@@ -472,7 +470,6 @@
       <property name="map">
          <map>
             <entry key="queueAssignmentPolicy.parallelQueues" value="8" />
-            <entry key="queueAssignmentPolicy.parallelQueuesRandomAssignment" value="true" />
          </map>
       </property>
    </bean>

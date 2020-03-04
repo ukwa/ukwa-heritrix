@@ -46,7 +46,6 @@ import org.archive.modules.CrawlURI;
 import org.archive.modules.Processor;
 import org.archive.modules.net.ServerCache;
 import org.archive.modules.postprocessor.CrawlLogJsonBuilder;
-import org.archive.modules.postprocessor.KafkaCrawlLogFeed;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.Lifecycle;
@@ -62,7 +61,8 @@ import com.google.common.hash.Hashing;
  * Sends messages with a key (the CrawlURI classKey by default).
  * 
  * 
- * @see KafkaCrawlLogFeed (which this implementation is based upon)
+ * @see org.archive.modules.postprocessor.KafkaCrawlLogFeed (which this
+ *      implementation is based upon)
  * @see UriProcessingFormatter
  * @author nlevitt, anjackson
  */

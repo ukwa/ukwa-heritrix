@@ -817,7 +817,7 @@
 		<property name="forceQueueAssignment" value="" />
 		<property name="deferToPrevious" value="true" />
 		<property name="parallelQueues" value="1" />
-        <property name="parallelQueuesRandomAssignment" value="true"/>
+        <property name="parallelQueuesRandomAssignment" value="true" />
 	</bean>
 	
 	<!-- URI PRECEDENCE POLICY -->

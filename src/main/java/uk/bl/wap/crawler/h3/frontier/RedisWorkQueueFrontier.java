@@ -3,8 +3,11 @@
  */
 package uk.bl.wap.crawler.h3.frontier;
 
+import java.io.PrintWriter;
 import java.util.Queue;
+import java.util.Set;
 import java.util.SortedMap;
+import java.util.concurrent.BlockingQueue;
 
 import javax.management.openmbean.CompositeData;
 
@@ -12,6 +15,7 @@ import javax.management.openmbean.CompositeData;
 import org.archive.crawler.frontier.WorkQueue;
 import org.archive.crawler.frontier.WorkQueueFrontier;
 import org.archive.modules.CrawlURI;
+import org.archive.util.ObjectIdentityCache;
 
 import com.sleepycat.je.DatabaseException;
 
@@ -106,6 +110,30 @@ public class RedisWorkQueueFrontier extends WorkQueueFrontier {
     @Override
     protected boolean workQueueDataOnDisk() {
         return true;
+    }
+
+    @Override
+    public long exportPendingUris(PrintWriter writer) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public ObjectIdentityCache<WorkQueue> getAllQueues() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public BlockingQueue<String> getReadyClassQueues() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Set<WorkQueue> getInProcessQueues() {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }
