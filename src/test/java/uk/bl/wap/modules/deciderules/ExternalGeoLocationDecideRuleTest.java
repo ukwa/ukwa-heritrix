@@ -2,6 +2,7 @@ package uk.bl.wap.modules.deciderules;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.channels.Channels;
@@ -24,16 +25,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class ExternalGeoLocationDecideRuleTest {
-    public static final String GEOLITE_CITY = "http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz";
     private ExternalGeoLookup lookup = new ExternalGeoLookup();
 
     @Before
     public void setup() throws Exception {
 	File temp = File.createTempFile("act", ".tmp", new File("./"));
 	temp.deleteOnExit();
-	URL geo = new URL(GEOLITE_CITY);
-	HttpURLConnection connection = (HttpURLConnection) geo.openConnection();
-	GZIPInputStream input = new GZIPInputStream(connection.getInputStream());
+        //
+	InputStream input = this.getClass().getResourceAsStream("/GeoLite2-City_20200303/GeoLite2-City.mmdb");
 	ReadableByteChannel channel = Channels.newChannel(input);
 	FileOutputStream output = new FileOutputStream(temp);
 	output.getChannel().transferFrom(channel, 0, Long.MAX_VALUE);

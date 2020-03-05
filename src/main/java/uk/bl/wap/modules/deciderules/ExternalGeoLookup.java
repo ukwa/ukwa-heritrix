@@ -39,7 +39,7 @@ public class ExternalGeoLookup implements ExternalGeoLookupInterface {
     public void setDatabase(String path) throws IOException {
 	database = path;
 	LOGGER.info("Database: " + database);
-	reader = new DatabaseReader.Builder(new File(database)).build();
+        reader = new DatabaseReader.Builder(new File(database)).build();
     }
 
     @Override
