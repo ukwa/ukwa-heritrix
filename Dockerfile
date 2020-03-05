@@ -4,10 +4,11 @@ MAINTAINER Andrew Jackson "anj@anjackson.net"
 
 # Install extra software and resources:
 RUN \
-  curl -L -O http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz && \
-  gunzip GeoLite2-City.mmdb.gz && \
   curl -L -O https://download.elastic.co/beats/filebeat/filebeat_1.0.0-rc1_amd64.deb && \
   dpkg -i filebeat_1.0.0-rc1_amd64.deb
+
+# Copy GeoLite2 DB into place
+COPY src/main/resources/GeoLite2-City_20200303/GeoLite2-City.mmdb .
 
 # Add in the UKWA modules.
 #
