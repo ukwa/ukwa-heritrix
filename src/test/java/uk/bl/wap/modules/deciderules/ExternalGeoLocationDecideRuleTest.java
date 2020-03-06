@@ -29,7 +29,8 @@ public class ExternalGeoLocationDecideRuleTest {
 
     @Before
     public void setup() throws Exception {
-	File temp = File.createTempFile("act", ".tmp", new File("./"));
+        File temp = File.createTempFile("geolite2-city-", ".tmp",
+                new File("./"));
 	temp.deleteOnExit();
         //
 	InputStream input = this.getClass().getResourceAsStream("/GeoLite2-City_20200303/GeoLite2-City.mmdb");
