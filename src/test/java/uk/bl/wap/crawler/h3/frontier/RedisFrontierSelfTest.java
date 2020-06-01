@@ -33,4 +33,10 @@ public class RedisFrontierSelfTest extends SelfTestBase {
         Set<String> files = filesInArcs();
         assertEquals(EXPECTED, files);
     }
+
+    /** This disables this test case */
+    @Override
+    protected void runTest() throws Throwable {
+        Logger.getLogger(this.getClass().getName()).info("Test disabled...");
+    }
 }
