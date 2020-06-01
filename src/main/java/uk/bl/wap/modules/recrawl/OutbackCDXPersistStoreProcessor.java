@@ -50,6 +50,9 @@ public class OutbackCDXPersistStoreProcessor
         //
         // org.archive.crawler.frontier.AbstractFrontier.needsReenqueuing(CrawlURI)
         //
+        // However, note that outcomes not recorded in OutbackCDX will allow
+        // URLs to get re-enqueued and re-tried if they are re-discovered.
+        //
 
         if (curi.getFetchStatus() != FetchStatusCodes.S_BLOCKED_BY_CUSTOM_PROCESSOR
                 && curi.getFetchStatus() != FetchStatusCodes.S_DEFERRED
