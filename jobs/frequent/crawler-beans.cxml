@@ -188,7 +188,7 @@
 		<property name="maxHops" value="#{systemEnvironment['MAX_HOPS_DEFAULT'] ?: 20}" />
 	</bean>
 	<!-- ...and REJECT those from a configurable (initially empty) set of URI regexes... -->
-	<bean id="listRegexFilterOut" class="org.archive.modules.deciderules.MatchesListRegexDecideRule">
+	<bean id="listRegexFilterOut" class="uk.bl.wap.modules.deciderules.MatchesListRegexDecideRule">
 		<property name="decision" value="REJECT" />
 		<property name="listLogicalOr" value="true" />
         <property name="regexList" ref="scopeExcludesList"/>
