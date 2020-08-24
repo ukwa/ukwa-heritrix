@@ -92,29 +92,6 @@ public class MatchesListRegexDecideRule extends PredicatedDecideRule {
     }
 
     /**
-     * Helper class to avoid problem with Spring and lambdas...
-     * 
-     * @author Andrew Jackson <Andrew.Jackson@bl.uk>
-     *
-     */
-    static class MatcherTask implements Callable<Boolean> {
-
-        Pattern p;
-        InterruptibleCharSequence interruptible;
-
-        MatcherTask(Pattern p, InterruptibleCharSequence interruptible) {
-            this.p = p;
-            this.interruptible = interruptible;
-        }
-
-        @Override
-        public Boolean call() throws Exception {
-            return p.matcher(interruptible).matches();
-        }
-
-    }
-
-    /**
      * Evaluate whether given object's string version matches configured regexes
      */
     @Override
@@ -135,7 +112,13 @@ public class MatchesListRegexDecideRule extends PredicatedDecideRule {
                 InterruptibleCharSequence interruptible = new InterruptibleCharSequence(
                         str);
                 FutureTask<Boolean> matchesFuture = new FutureTask<>(
-                        new MatcherTask(p, interruptible));
+                        new Callable<Boolean>() {
+                            // We can't use a lambda as our ancient version of
+                            // Spring can't cope (see #337)
+                            public Boolean call() {
+                                return p.matcher(interruptible).matches();
+                            }
+                        });
                 ForkJoinPool.commonPool().submit(matchesFuture);
                 try {
                     matches = matchesFuture.get(getTimeoutPerRegexSeconds(),
