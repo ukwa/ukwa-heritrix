@@ -327,67 +327,85 @@ public class KafkaUrlReceiver
 
     public class KafkaConsumerRunner implements Runnable {
         private final AtomicBoolean closed = new AtomicBoolean(false);
-        private final KafkaConsumer<String, byte[]> consumer;
+        private KafkaConsumer<String, byte[]> consumer = null;
 
-        public KafkaConsumerRunner(boolean seekToBeginning) {
-            logger.info("Setting up KafkaConsumerRunner...");
-            Properties props = new Properties();
-            props.put("bootstrap.servers", getBootstrapServers());
-            props.put("client.id", getGroupId());
-            props.put("group.id", getGroupId()); // Manual partitioning, so
-                                                 // separate group.id for each
-                                                 // client.
-            props.put("enable.auto.commit", "true"); // NOTE This is ignored
-                                                     // because we are manually
-                                                     // assigning partitions.
-            props.put("auto.commit.interval.ms", "1000");
-            props.put("session.timeout.ms", "60000");
-            props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG,
-                    256 * 1024); // Default is 50MB
-            props.put("max.poll.records", "" + maxPollRecords);
-            props.put("auto.offset.reset", "earliest");
-            props.put("key.deserializer", StringDeserializer.class.getName());
-            props.put("value.deserializer",
-                    ByteArrayDeserializer.class.getName());
-            consumer = new KafkaConsumer<String, byte[]>(props);
+        public KafkaConsumerRunner() {
+        }
+
+        private synchronized void ensureConsumer() {
+            // Check if there is a consumer setup already:
+            if (consumer == null) {
+                logger.info("Setting up KafkaConsumer...");
+                Properties props = new Properties();
+                props.put("bootstrap.servers", getBootstrapServers());
+                props.put("client.id", getGroupId());
+                props.put("group.id", getGroupId()); // Manual partitioning, so
+                                                     // separate group.id for
+                                                     // each
+                                                     // client.
+                props.put("enable.auto.commit", "true"); // NOTE This is ignored
+                                                         // because we are
+                                                         // manually
+                                                         // assigning
+                                                         // partitions.
+                props.put("auto.commit.interval.ms", "1000");
+                props.put("session.timeout.ms", "60000");
+                props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG,
+                        256 * 1024); // Default is 50MB
+                props.put("max.poll.records", "" + maxPollRecords);
+                props.put("auto.offset.reset", "earliest");
+                props.put("key.deserializer",
+                        StringDeserializer.class.getName());
+                props.put("value.deserializer",
+                        ByteArrayDeserializer.class.getName());
+
+                consumer = new KafkaConsumer<String, byte[]>(props);
+            }
+            // Check if the partition assignement is set up:
+            if (consumer.assignment() == null
+                    || consumer.assignment().size() == 0) {
+
+                logger.info("Running KafkaConsumer... :: bootstrapServers = "
+                        + getBootstrapServers());
+                logger.info(
+                        "Running KafkaConsumer... :: topic = " + getTopic());
+                logger.info("Running KafkaConsumer... :: group_id = "
+                        + getGroupId());
+
+                // Assign the partitions:
+                int numPartitions = consumer.partitionsFor(getTopic()).size();
+                List<TopicPartition> parts = new ArrayList<TopicPartition>();
+                int range = numPartitions / getConsumerGroupSize();
+                int lo = (getConsumerId() - 1) * range;
+                int hi = getConsumerId() * range;
+                logger.info("Assigning partitions " + lo + "-" + (hi - 1) + "/"
+                        + numPartitions + " to consumer " + getConsumerId()
+                        + "/" + getConsumerGroupSize());
+                for (int p = lo; p < hi; p++) {
+                    parts.add(new TopicPartition(getTopic(), p));
+                }
+                consumer.assign(parts);
+                // Rewind if requested:
+                if (seekToBeginning) {
+                    logger.warning("Rewinding to the beginning of the "
+                            + getTopic() + " URL queue.");
+                    seekToBeginning();
+                } else {
+                    logger.info("Resuming consumption of the " + getTopic()
+                            + " URL queue.");
+                }
+            }
         }
 
         public void run() {
-            logger.info("Running KafkaConsumer... :: bootstrapServers = "
-                    + getBootstrapServers());
-            logger.info("Running KafkaConsumer... :: topic = " + getTopic());
-            logger.info(
-                    "Running KafkaConsumer... :: group_id = " + getGroupId());
-
-            // Assign the partitions:
-            int numPartitions = consumer.partitionsFor(getTopic()).size();
-            List<TopicPartition> parts = new ArrayList<TopicPartition>();
-            int range = numPartitions / getConsumerGroupSize();
-            int lo = (getConsumerId() - 1) * range;
-            int hi = getConsumerId() * range;
-            logger.info("Assigning partitions " + lo + "-" + (hi - 1) + "/"
-                    + numPartitions + " to consumer " + getConsumerId() + "/"
-                    + getConsumerGroupSize());
-            for (int p = lo; p < hi; p++) {
-                parts.add(new TopicPartition(getTopic(), p));
-            }
-            consumer.assign(parts);
-            // Rewind if requested:
-            if (seekToBeginning) {
-                logger.warning("Rewinding to the beginning of the " + getTopic()
-                        + " URL queue.");
-                seekToBeginning();
-            } else {
-                logger.info("Resuming consumption of the " + getTopic()
-                        + " URL queue.");
-            }
-
-            // Until the end...
+            // Keep trying to start and use the Consumer:
             try {
                 long count = 0;
-                // And now poll for records:
                 while (!closed.get()) {
                     try {
+                        // Get the consumer if necessary:
+                        ensureConsumer();
+                        // And now poll for records:
                         ConsumerRecords<String, byte[]> records = consumer
                                 .poll(pollTimeout);
                         if (records.count() > 0) {
@@ -674,7 +692,7 @@ public class KafkaUrlReceiver
                 executorService = Executors.newFixedThreadPool(1,
                         threadFactory);
                 logger.info("Requesting launch of the KafkaURLReceiver...");
-                kafkaConsumer = new KafkaConsumerRunner(seekToBeginning);
+                kafkaConsumer = new KafkaConsumerRunner();
                 executorService.execute(kafkaConsumer);
                 this.isRunning = true;
 
