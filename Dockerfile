@@ -8,7 +8,7 @@ RUN \
   dpkg -i filebeat_1.0.0-rc1_amd64.deb
 
 # Copy GeoLite2 DB into place
-COPY src/main/resources/GeoLite2-City_20200303/GeoLite2-City.mmdb .
+COPY src/main/resources/GeoLite2-City_20200908/GeoLite2-City.mmdb .
 
 # Add in the UKWA modules.
 #

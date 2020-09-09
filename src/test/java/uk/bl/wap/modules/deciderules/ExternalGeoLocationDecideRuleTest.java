@@ -33,7 +33,7 @@ public class ExternalGeoLocationDecideRuleTest {
                 new File("./"));
 	temp.deleteOnExit();
         //
-	InputStream input = this.getClass().getResourceAsStream("/GeoLite2-City_20200303/GeoLite2-City.mmdb");
+	InputStream input = this.getClass().getResourceAsStream("/GeoLite2-City_20200908/GeoLite2-City.mmdb");
 	ReadableByteChannel channel = Channels.newChannel(input);
 	FileOutputStream output = new FileOutputStream(temp);
 	output.getChannel().transferFrom(channel, 0, Long.MAX_VALUE);
