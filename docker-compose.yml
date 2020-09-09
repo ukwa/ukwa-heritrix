@@ -3,6 +3,7 @@ version: '2'
 services:
   # UKWA Heritrix
   heritrix:
+    user: ${UID}
     build: .
     hostname: "h3w" # Set the hostname so the persistent files are in consistent locations
     ports:
@@ -52,7 +53,7 @@ services:
       - ./docker/heritrix-jmx-config.yml:/jmx-config.yml
       # Override to use a different uriUniqFilter:
       - ./jobs/frequent/uriuniqfilter-bloom.xml:/jobs/frequent/uriuniqfilter.xml
-      #- ./docker/shared:/shared
+      - ./docker/shared:/shared
     volumes_from:
       - dvc:rw  
 
@@ -63,7 +64,7 @@ services:
       - ./target/testing/heritrix/output:/heritrix/output
       - ./target/testing/heritrix/state:/heritrix/state
       - ./target/testing/heritrix/wren:/heritrix/wren
-  #    - ./target/testing/heritrix/scratch:/heritrix/scratch
+      - ./target/testing/heritrix/scratch:/heritrix/scratch
   #    - ./jobs:/jobs
 
   # Clamd virus scanning Service

@@ -51,5 +51,13 @@ VOLUME /output
 
 #STOPSIGNAL TERM # Which is the default
 
+# Set the runtime user (with no password and no sudo)
+RUN useradd -m heritrix
+RUN mkdir /heritrix && chmod -R a+rwx /h3-bin /jobs /output
+USER heritrix
+WORKDIR /home/heritrix
+# Maven happiness (https://github.com/carlossg/docker-maven#running-as-non-root-not-supported-on-windows):
+ENV MAVEN_CONFIG=/home/heritrix/.m2
+
 # Hook in H3 runner script:
 CMD [ "/h3-bin/bin/start" ]
