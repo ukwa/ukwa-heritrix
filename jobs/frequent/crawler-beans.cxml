@@ -211,7 +211,9 @@
        <!-- if false, we will only run this rule if it could change the current decision, 
          i.e. if it could REJECT a URI that is not already REJECTED. CDX lookup is expensive 
          so lets skip it. Note that this will prevent de-duplication of otherwise out-of-scope pre-requisites (if there are any). -->
-       <property name="lookupEveryUri" value="#{systemEnvironment['RECENTLY_SEEN_LOOKUP_EVERY_URI'] ?: false}"/>       
+       <property name="lookupEveryUri" value="#{systemEnvironment['RECENTLY_SEEN_LOOKUP_EVERY_URI'] ?: false}"/>
+       <!-- Whether to support the launchTimestamp annotation for controlling recrawls -->
+       <property name="useLaunchTimestamp" value="#{systemEnvironment['RECENTLY_SEEN_USE_LAUNCH_TIMESTAMP'] ?: true}"/>
    </bean>
  
 	<!-- 
@@ -883,22 +885,22 @@
          Therefore, the same value should be used for all modules to that it definately gets set to the right value. -->
   <bean id="bdbFrontierBdb" class="org.archive.bdb.BdbModule">
     <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/frontier"/>
-    <property name="cachePercent" value="30"/>
+    <property name="cachePercent" value="10"/>
     <property name="expectedConcurrency" value="100"/>
   </bean>
   <bean id="bdbStatisticsBdb" class="org.archive.bdb.BdbModule">
     <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/statistics"/>
-    <property name="cachePercent" value="30"/>
+    <property name="cachePercent" value="10"/>
     <property name="expectedConcurrency" value="100"/>
   </bean>
   <bean id="bdbCookieStoreBdb" class="org.archive.bdb.BdbModule">
     <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/cookies"/>
-    <property name="cachePercent" value="30"/>
+    <property name="cachePercent" value="10"/>
     <property name="expectedConcurrency" value="100"/>
   </bean>
   <bean id="bdbServerCacheBdb" class="org.archive.bdb.BdbModule">
     <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/serverCache"/>
-    <property name="cachePercent" value="30"/>
+    <property name="cachePercent" value="10"/>
     <property name="expectedConcurrency" value="100"/>
   </bean>
 	

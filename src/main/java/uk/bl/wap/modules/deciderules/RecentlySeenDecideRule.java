@@ -69,6 +69,9 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule
     // not-recently-seen.
     private boolean obeyForceFetch = false;
 
+    // Whether to implement the launchTimestamp behaviour (used for recrawls):
+    private boolean useLaunchTimestamp = true;
+
     protected KeyedProperties kp = new KeyedProperties();
 
     public KeyedProperties getKeyedProperties() {
@@ -154,6 +157,21 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule
      */
     public void setObeyForceFetch(boolean obeyForceFetch) {
         this.obeyForceFetch = obeyForceFetch;
+    }
+
+    /**
+     * @return the useLaunchTimestamp
+     */
+    public boolean isUseLaunchTimestamp() {
+        return useLaunchTimestamp;
+    }
+
+    /**
+     * @param useLaunchTimestamp
+     *            the useLaunchTimestamp to set
+     */
+    public void setUseLaunchTimestamp(boolean useLaunchTimestamp) {
+        this.useLaunchTimestamp = useLaunchTimestamp;
     }
 
     /**
@@ -358,7 +376,7 @@ public abstract class RecentlySeenDecideRule extends PredicatedDecideRule
             LOGGER.finest("Got elapsed: " + (currentTime - ts) + " versus TTL "
                     + ttl_s + " hence NOT recently seen " + curi);
             return false;
-        } else if (launch_ts > 0 && ts < launch_ts) {
+        } else if (useLaunchTimestamp && launch_ts > 0 && ts < launch_ts) {
             LOGGER.finest("Got recrawl time: " + ts + " versus launch time "
                     + launch_ts + " hence NOT recently seen " + curi);
             return false;
