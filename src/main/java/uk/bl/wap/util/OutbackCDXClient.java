@@ -5,15 +5,10 @@ package uk.bl.wap.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.IDN;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.text.ParseException;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -21,17 +16,15 @@ import java.util.logging.Logger;
 
 import org.apache.commons.httpclient.URIException;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
@@ -111,7 +104,7 @@ public class OutbackCDXClient {
         return contentDigestScheme;
     }
 
-    private int socketTimeout = 10000;
+    private int socketTimeout = 30000;
 
     /**
      * socket timeout (SO_TIMEOUT) for HTTP client in milliseconds.
@@ -124,7 +117,7 @@ public class OutbackCDXClient {
         return socketTimeout;
     }
 
-    private int connectionTimeout = 10000;
+    private int connectionTimeout = 30000;
 
     /**
      * connection timeout for HTTP client in milliseconds.
@@ -162,10 +155,13 @@ public class OutbackCDXClient {
         return cumulativeFetchTime.get();
     }
 
-    /*
+    /**
      * Set up a connection manager using the required settings:
+     * 
+     * @return
      */
-    private PoolingHttpClientConnectionManager getConnectionManager() {
+    private HttpClientConnectionManager getConnectionManager() {
+
         if (cm == null) {
             cm = new PoolingHttpClientConnectionManager();
             cm.setDefaultMaxPerRoute(maxConnections);
@@ -175,25 +171,26 @@ public class OutbackCDXClient {
     }
 
     /*
-     * Get a shared HttpClient instance with the appropriate settings and
-     * connection pool
+     * Return a separate client for every connection:
      */
     private CloseableHttpClient getHttpClient() {
         if (this.client == null) {
             // Allow client to look up system properties for proxy settings etc.
             // Defaults to false as this can lead to thread contention.
             if (useSystemProperties) {
-                this.client = HttpClients.custom()
+                client = HttpClients.custom()
                         .setConnectionManager(getConnectionManager())
+                        // .disableConnectionState()
                         .disableCookieManagement().useSystemProperties()
                         .build();
             } else {
-                this.client = HttpClients.custom()
+                client = HttpClients.custom()
                         .setConnectionManager(getConnectionManager())
+                        // .disableConnectionState()
                         .disableCookieManagement().build();
             }
         }
-        return this.client;
+        return client;
     }
 
     private long queryRangeSecs = 6L * 30 * 24 * 3600;
@@ -226,14 +223,16 @@ public class OutbackCDXClient {
         return uriBuilder.build().toString();
     }
 
-    private CloseableHttpResponse getCDX(String qurl, int limit,
+    private CDXLine getCDXLine(String qurl, int limit,
             boolean mostRecentFirst)
             throws InterruptedException, IOException, URISyntaxException {
         final String url = buildURL(qurl, limit, mostRecentFirst);
         logger.fine("GET " + url);
-        HttpGet m = new HttpGet(url);
-        m.setConfig(RequestConfig.custom().setConnectTimeout(connectionTimeout)
-                .setSocketTimeout(socketTimeout).build());
+        //
+        CloseableHttpResponse resp = null;
+        HttpEntity entity = null;
+        BufferedReader br = null;
+        //
         int attempts = 0;
         do {
             if (Thread.interrupted())
@@ -242,14 +241,18 @@ public class OutbackCDXClient {
                 Thread.sleep(5000);
             }
             try {
+                HttpGet m = new HttpGet(url);
+                m.setConfig(RequestConfig.custom()
+                        .setConnectTimeout(connectionTimeout)
+                        .setSocketTimeout(socketTimeout).build());
                 long t0 = System.currentTimeMillis();
-                CloseableHttpResponse resp = getHttpClient().execute(m);
+                resp = getHttpClient().execute(m);
                 cumulativeFetchTime.addAndGet(System.currentTimeMillis() - t0);
                 StatusLine sl = resp.getStatusLine();
                 requestTotals.labels("query", "" + sl.getStatusCode()).inc();
+                // Get the entity
+                entity = resp.getEntity();
                 if (sl.getStatusCode() != 200) {
-                    HttpEntity entity = resp.getEntity();
-                    EntityUtils.consume(entity);
                     if (sl.getStatusCode() == 404) {
                         logger.info(
                                 "Got a 404: the collection has probably not been created yet.");
@@ -261,17 +264,43 @@ public class OutbackCDXClient {
                     }
                     continue;
                 } else {
-                    return resp;
+                    // read CDX lines, recover the most recent (first) hash and
+                    // timestamp. Only permit exact URL matches, skip revisit
+                    // records.
+                    br = new BufferedReader(
+                            new InputStreamReader(entity.getContent()));
+                    String cdxLine;
+                    while ((cdxLine = br.readLine()) != null) {
+                        CDXLine line = cdxLineFactory
+                                .createStandardCDXLine(cdxLine);
+                        // This could be a revisit record, but the hash should
+                        // always be the original payload hash, so use it:
+                        if (line.getOriginalUrl().equals(qurl)) {
+                            return line;
+                        }
+                    }
+                    // The lookup worked, but no match:
+                    return null;
                 }
             } catch (IOException ex) {
                 logger.severe(
                         "GET " + url + " failed with error " + ex.getMessage());
+                ex.printStackTrace();
                 requestTotals.labels("query", "IOException").inc();
             } catch (Exception ex) {
                 logger.log(Level.SEVERE, "GET " + url + " failed with error ",
                         ex);
+                ex.printStackTrace();
                 requestTotals.labels("query",
                         "Exception: " + ex.getClass().getName()).inc();
+            } finally {
+                // Shut down cleanly:
+                if (entity != null)
+                    EntityUtils.consumeQuietly(entity);
+                if (br != null)
+                    ArchiveUtils.closeQuietly(br);
+                if (resp != null)
+                    ArchiveUtils.closeQuietly(resp);
             }
         } while (++attempts < 3);
 
@@ -303,45 +332,13 @@ public class OutbackCDXClient {
             return null;
         }
         
-        CloseableHttpResponse response = null;
-        HttpEntity entity = null;
-        BufferedReader br = null;
         String hash = null;
         String timestamp = null;
-        try {
-            // Perform the query:
-            response = this.getCDX(qurl, 100, true);
-            if (response == null) {
-                return null;
-            }
-            // Get the entity
-            entity = response.getEntity();
 
-            // read CDX lines, recover the most recent (first) hash and
-            // timestamp:
-            // Only permit exact URL matches, skip revisit records.
-            br = new BufferedReader(
-                    new InputStreamReader(entity.getContent()));
-            String cdxLine;
-            while ((cdxLine = br.readLine()) != null) {
-                CDXLine line = cdxLineFactory.createStandardCDXLine(cdxLine);
-                // This could be a revisit record, but the hash should always be
-                // the
-                // original payload hash, so use it:
-                if (line.getOriginalUrl().equals(qurl)) {
-                    timestamp = line.getTimestamp();
-                    hash = line.getDigest();
-                    break;
-                }
-            }
-        } finally {
-            // Shut down cleanly:
-            if (entity != null)
-                EntityUtils.consume(entity);
-            if (response != null)
-                ArchiveUtils.closeQuietly(response);
-            if (br != null)
-                ArchiveUtils.closeQuietly(br);
+        CDXLine line = this.getCDXLine(qurl, 100, true);
+        if (line != null) {
+            timestamp = line.getTimestamp();
+            hash = line.getDigest();
         }
 
         // Put into usable form:
@@ -416,6 +413,10 @@ public class OutbackCDXClient {
         // Use the shared client:
         CloseableHttpClient client = getHttpClient();
 
+        // Resources to clear:
+        CloseableHttpResponse httpResponse = null;
+        HttpEntity entity = null;
+
         // Retry loop in case of service problems:
         boolean retry = true;
         while (retry) {
@@ -427,15 +428,14 @@ public class OutbackCDXClient {
                 StringEntity userEntity = new StringEntity(cdx11, "UTF-8");
                 postRequest.setEntity(userEntity);
                 // Perform the POST
-                CloseableHttpResponse httpResponse = client
-                        .execute(postRequest);
+                httpResponse = client.execute(postRequest);
                 // Get the result:
                 int statusCode = httpResponse.getStatusLine().getStatusCode();
                 // Including the body, to ensure the connection can be released:
-                String apiOutput = EntityUtils
-                        .toString(httpResponse.getEntity(), "UTF-8");
+                entity = httpResponse.getEntity();
                 // Report if all went well:
                 if (statusCode == 200) {
+                    String apiOutput = EntityUtils.toString(entity, "UTF-8");
                     logger.finest("Sent the record, got: " + apiOutput);
                     // It worked! No need to retry:
                     retry = false;
@@ -459,6 +459,12 @@ public class OutbackCDXClient {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
+            } finally {
+                // Shut down cleanly:
+                if (entity != null)
+                    EntityUtils.consumeQuietly(entity);
+                if (httpResponse != null)
+                    ArchiveUtils.closeQuietly(httpResponse);
             }
         }
 
@@ -537,7 +543,7 @@ public class OutbackCDXClient {
     }
 
     /**
-     * main entry point for quick test.
+     * main entry point for a quick test.
      * 
      * @param args
      */
