@@ -152,7 +152,7 @@ services:
   cdxserver:
     image: nlagovau/outbackcdx:0.7.0
     # Verbose form logs submissions:
-    #command: "java -jar outbackcdx.jar -v -d /cdx-data -p 8080 -b 0.0.0.0"
+    command: "java -Xmx2g -jar outbackcdx.jar -u -d /cdx-data -p 8080 -b 0.0.0.0 -t 2000"
     ports:
       - "9090:8080"
   #  volumes:
