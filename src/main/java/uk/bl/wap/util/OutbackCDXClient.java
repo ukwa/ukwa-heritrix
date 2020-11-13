@@ -10,6 +10,7 @@ import java.net.IDN;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,9 +57,7 @@ public class OutbackCDXClient {
 
     private PoolingHttpClientConnectionManager pcm = null;
 
-    private ThreadLocal<BasicHttpClientConnectionManager> cm = new ThreadLocal<BasicHttpClientConnectionManager>();
-
-    private CloseableHttpClient client = null;
+    private ThreadLocal<CloseableHttpClient> client = new ThreadLocal<CloseableHttpClient>();
 
     private String endpoint = "http://localhost:9090/fc";// ?url=";//
                                                          // "http://crawl-index/timeline?url=";
@@ -191,10 +190,7 @@ public class OutbackCDXClient {
             return pcm;
 
         } else {
-            if (cm.get() == null) {
-                cm.set(new BasicHttpClientConnectionManager());
-            }
-            return cm.get();
+            return new BasicHttpClientConnectionManager();
         }
     }
 
@@ -202,23 +198,23 @@ public class OutbackCDXClient {
      * Return a separate client for every connection:
      */
     private CloseableHttpClient getHttpClient() {
-        if (this.client == null) {
+        if (this.client.get() == null) {
             // Allow client to look up system properties for proxy settings etc.
             // Defaults to false as this can lead to thread contention.
             if (useSystemProperties) {
-                client = HttpClients.custom()
+                client.set(HttpClients.custom()
                         .setConnectionManager(getConnectionManager())
                         // .disableConnectionState()
                         .disableCookieManagement().useSystemProperties()
-                        .build();
+                        .build());
             } else {
-                client = HttpClients.custom()
+                client.set(HttpClients.custom()
                         .setConnectionManager(getConnectionManager())
                         // .disableConnectionState()
-                        .disableCookieManagement().build();
+                        .disableCookieManagement().build());
             }
         }
-        return client;
+        return client.get();
     }
 
     private long queryRangeSecs = 6L * 30 * 24 * 3600;

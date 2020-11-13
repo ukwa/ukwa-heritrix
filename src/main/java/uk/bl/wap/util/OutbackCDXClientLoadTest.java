@@ -37,14 +37,14 @@ public class OutbackCDXClientLoadTest {
     // 500 3103 6.206 0 50000
     // 1000 7581 7.581 0 100000
     //
-    // Using ThreadLocal BasicHttpClientConnectionManager:
+    // Using ThreadLocal Client w/ BasicHttpClientConnectionManager:
     //
-    // 10 792 79.2 0 1000
-    // 50 549 10.98 0 5000
-    // 100 1182 11.82 0 10000
-    // 250 2244 8.976 0 25000
-    // 500 3611 7.222 0 50000
-    // 1000 7862 7.862 0 100000
+    // 10 1232 123.2 0 1000
+    // 50 1086 21.72 0 5000
+    // 100 1713 17.13 0 10000
+    // 250 2391 9.564 0 25000
+    // 500 5496 10.992 0 50000
+    // 1000 8508 8.508 0 100000
 
     /**
      * @param args
