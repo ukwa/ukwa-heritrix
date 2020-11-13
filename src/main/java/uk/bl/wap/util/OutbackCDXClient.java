@@ -26,6 +26,7 @@ import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.archive.format.cdx.CDXLine;
@@ -53,7 +54,9 @@ public class OutbackCDXClient {
     private static final Logger logger = Logger
             .getLogger(OutbackCDXPersistLoadProcessor.class.getName());
 
-    private PoolingHttpClientConnectionManager cm = null;
+    private PoolingHttpClientConnectionManager pcm = null;
+
+    private ThreadLocal<BasicHttpClientConnectionManager> cm = new ThreadLocal<BasicHttpClientConnectionManager>();
 
     private CloseableHttpClient client = null;
 
@@ -142,6 +145,24 @@ public class OutbackCDXClient {
         this.maxConnections = maxConnections;
     }
 
+    private boolean usePooledConnectionManager = false;
+
+    /**
+     * @return the usePooledConnectionManager
+     */
+    public boolean isUsePooledConnectionManager() {
+        return usePooledConnectionManager;
+    }
+
+    /**
+     * @param usePooledConnectionManager
+     *            the usePooledConnectionManager to set
+     */
+    public void setUsePooledConnectionManager(
+            boolean usePooledConnectionManager) {
+        this.usePooledConnectionManager = usePooledConnectionManager;
+    }
+
     private AtomicLong cumulativeFetchTime = new AtomicLong();
 
     /**
@@ -161,13 +182,20 @@ public class OutbackCDXClient {
      * @return
      */
     private HttpClientConnectionManager getConnectionManager() {
+        if (usePooledConnectionManager) {
+            if (pcm == null) {
+                pcm = new PoolingHttpClientConnectionManager();
+                pcm.setDefaultMaxPerRoute(maxConnections);
+                pcm.setMaxTotal(Math.max(pcm.getMaxTotal(), maxConnections));
+            }
+            return pcm;
 
-        if (cm == null) {
-            cm = new PoolingHttpClientConnectionManager();
-            cm.setDefaultMaxPerRoute(maxConnections);
-            cm.setMaxTotal(Math.max(cm.getMaxTotal(), maxConnections));
+        } else {
+            if (cm.get() == null) {
+                cm.set(new BasicHttpClientConnectionManager());
+            }
+            return cm.get();
         }
-        return cm;
     }
 
     /*

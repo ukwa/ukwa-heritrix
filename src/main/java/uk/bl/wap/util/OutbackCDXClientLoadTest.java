@@ -20,10 +20,31 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 /**
  * A multi-threaded load test to understand contention issues.
  * 
+ * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
 public class OutbackCDXClientLoadTest {
+
+    // Some results running against an undockerised OutbackCDX on the Mac
+    // laptop.
+    //
+    // Using a pooling client connection manager:
+    // 10 751 75.1 0 1000
+    // 50 596 11.92 0 5000
+    // 100 947 9.47 0 10000
+    // 250 1694 6.776 0 25000
+    // 500 3103 6.206 0 50000
+    // 1000 7581 7.581 0 100000
+    //
+    // Using ThreadLocal BasicHttpClientConnectionManager:
+    //
+    // 10 792 79.2 0 1000
+    // 50 549 10.98 0 5000
+    // 100 1182 11.82 0 10000
+    // 250 2244 8.976 0 25000
+    // 500 3611 7.222 0 50000
+    // 1000 7862 7.862 0 100000
 
     /**
      * @param args
@@ -38,7 +59,6 @@ public class OutbackCDXClientLoadTest {
         olt.runWithThreads(100, workload);
         olt.runWithThreads(250, workload);
         olt.runWithThreads(500, workload);
-        olt.runWithThreads(750, workload);
         olt.runWithThreads(1000, workload);
     }
 
