@@ -45,6 +45,10 @@ public class OutbackCDXClientLoadTest {
     // 250 2391 9.564 0 25000
     // 500 5496 10.992 0 50000
     // 1000 8508 8.508 0 100000
+    //
+    // So in a raw load test, the latter is a bit slower, but avoids any pool
+    // contention issues.
+    //
 
     /**
      * @param args
