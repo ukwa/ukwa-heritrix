@@ -681,10 +681,10 @@
 	</bean>
     <!-- Modified DispositionProcessor so robots.txt doesn't get trashed accidentally. -->
 	<bean id="disposition" class="uk.bl.wap.crawler.postprocessor.ModifiedDispositionProcessor">
-		<property name="delayFactor" value="2.0" />
+		<property name="delayFactor" value="1.0" />
 		<property name="minDelayMs" value="500" />
 		<property name="respectCrawlDelayUpToSeconds" value="300" />
-		<property name="maxDelayMs" value="30000" />
+		<property name="maxDelayMs" value="10000" />
 		<property name="maxPerHostBandwidthUsageKbSec" value="0" />
 		
 	</bean>

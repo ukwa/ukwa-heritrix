@@ -308,6 +308,30 @@
          </map>
       </property>
    </bean>
+   <!-- extra fast downloads, two per second, no delayFactor backoff -->
+   <bean id="fast-2ps" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="disposition.delayFactor" value="1.0" />
+            <entry key="disposition.minDelayMs" value="500" />
+            <entry key="disposition.maxDelayMs" value="500" />
+            <entry key="disposition.respectCrawlDelayUpToSeconds"
+               value="1" />
+         </map>
+      </property>
+   </bean>
+   <!-- extra fast downloads, ten per second, no delayFactor backoff -->
+   <bean id="fast-10ps" class="org.archive.spring.Sheet">
+      <property name="map">
+         <map>
+            <entry key="disposition.delayFactor" value="1.0" />
+            <entry key="disposition.minDelayMs" value="100" />
+            <entry key="disposition.maxDelayMs" value="100" />
+            <entry key="disposition.respectCrawlDelayUpToSeconds"
+               value="1" />
+         </map>
+      </property>
+   </bean>
    <!-- extra polite downloads, no more than 1 every ten seconds -->
    <bean id="extraPolite" class="org.archive.spring.Sheet">
       <property name="map">
