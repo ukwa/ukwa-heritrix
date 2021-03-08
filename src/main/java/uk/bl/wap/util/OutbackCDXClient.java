@@ -240,6 +240,8 @@ public class OutbackCDXClient {
         URIBuilder uriBuilder = new URIBuilder(this.endpoint);
         uriBuilder.addParameter("limit", "" + limit);
         uriBuilder.addParameter("matchType", "exact");
+        // Don't use crawl failures for recentlySeen check/digest fetch:
+        uriBuilder.addParameter("filter", "!mimetype:failure-status-code.*");
         if (mostRecentFirst) {
             uriBuilder.addParameter("sort", "reverse");
         }
