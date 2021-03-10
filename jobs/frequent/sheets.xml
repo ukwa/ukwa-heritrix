@@ -274,10 +274,10 @@
    <bean id="ignoreRobots" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
+            <!-- This doesn't work as links marked as nofollow don't get extracted under the usual Obey policy
             <entry key="preconditions.calculateRobotsOnly" value="true" />
-            <!-- 
+            -->
             <entry key="metadata.robotsPolicyName" value="ignore" />
-             -->
          </map>
       </property>
    </bean>
