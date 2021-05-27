@@ -394,7 +394,8 @@
 		<property name="digestContent" value="true" />
 		<property name="digestAlgorithm" value="sha1" />
 	</bean>
-	<bean id="extractorHttp" class="org.archive.modules.extractor.ExtractorHTTP">
+	<bean id="extractorHttp" class="uk.bl.wap.modules.extractor.ExtractorHTTPWellKnownURIs">
+		<!-- Uses UKWA extended version of ExtractorHTTP that adds other well-known URIs -->
 		<property name="inferRootPage" value="true" />
 	</bean>
         <!--
