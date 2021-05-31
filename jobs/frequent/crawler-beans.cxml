@@ -948,6 +948,9 @@
     <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/frontier"/>
     <property name="cachePercent" value="10"/>
     <property name="expectedConcurrency" value="100"/>
+    <property name="cleanerThreads" value="#{systemEnvironment['FRONTIER_JE_CLEANER_THREADS'] ?: 1}"/>
+    <property name="evictorCoreThreads" value="#{systemEnvironment['FRONTIER_JE_EVICTOR_CORE_THREADS'] ?: 1}"/>
+    <property name="evictorMaxThreads" value="#{systemEnvironment['FRONTIER_JE_EVICTOR_MAX_THREADS'] ?: 10}"/>
   </bean>
   <bean id="bdbStatisticsBdb" class="org.archive.bdb.BdbModule">
     <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/statistics"/>

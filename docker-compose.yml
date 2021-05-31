@@ -41,6 +41,7 @@ services:
        - "SURTS_SOURCE_FILE=/shared/surts.txt"
        #- "QUOTA_SERVER_MAX_SUCCESS_KB=1"
        - "URI_FORGETTING_ENABLED=false"
+       - "FRONTIER_JE_CLEANER_THREADS=2"
     links:
       - clamd
       - kafka
