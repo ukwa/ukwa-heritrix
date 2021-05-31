@@ -53,7 +53,7 @@ VOLUME /output
 
 # Set the runtime user (with no password and no sudo)
 RUN useradd -m heritrix
-RUN mkdir /heritrix && chmod -R a+rwx /h3-bin /jobs /output
+RUN mkdir /heritrix && mkdir /output && chmod -R a+rwx /h3-bin /jobs /output
 USER heritrix
 WORKDIR /home/heritrix
 # Maven happiness (https://github.com/carlossg/docker-maven#running-as-non-root-not-supported-on-windows):
