@@ -3,6 +3,9 @@
  */
 package org.archive.modules.warc;
 
+import static org.archive.format.warc.WARCConstants.HEADER_KEY_IP;
+import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
+
 import java.io.IOException;
 import java.net.URI;
 
@@ -29,6 +32,12 @@ public class HttpResponseViralRecordBuilder extends HttpResponseRecordBuilder {
 		// Setup record based on a straightforward Response record:
 		WARCRecordInfo recordInfo = super.buildRecord(curi, concurrentTo);
 		
+        // Add in IP address if known:
+        String ip = this.getHostAddress(curi);
+        if (ip != null && ip.length() > 0) {
+            recordInfo.addExtraHeader(HEADER_KEY_IP, ip);
+        }
+
 		// Turn it into a conversion record with an XORd stream:
 		recordInfo.setType(WARCRecordType.conversion);		
 		ReplayInputStream ris = curi.getRecorder().getRecordedInput()

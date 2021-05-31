@@ -622,6 +622,7 @@
 	  -->
 	</bean>
 	<bean id="warcWriterViral" class="org.archive.modules.writer.WARCWriterChainProcessor">
+      <property name="shouldProcessRule">
 			<bean class="org.archive.modules.deciderules.DecideRuleSequence">
 				<property name="rules">
 					<list>
@@ -639,6 +640,7 @@
 					</list>
 				</property>
 			</bean>
+         </property>
 	  <!-- <property name="compress" value="true" /> -->
 		<property name="prefix" value="#{systemEnvironment['WARC_PREFIX'] ?: 'BL'}-VIRAL" />
 		<property name="maxFileSizeBytes" value="1006632959" />
