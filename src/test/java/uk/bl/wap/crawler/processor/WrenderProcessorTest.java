@@ -28,10 +28,10 @@ public class WrenderProcessorTest {
     @Test
     public void testProcessHar() throws JSONException, IOException {
         // String wrenderUrl =
-        // "http://127.0.0.1:8000/render?url=http://example.org/&warc_prefix=wrender";
+        // "http://127.0.0.1:8000/render?url=http://example.com/&warc_prefix=wrender";
 
         CrawlURI curi = new CrawlURI(
-                UURIFactory.getInstance("http://example.org/"));
+                UURIFactory.getInstance("http://example.com/"));
 
         // WrenderProcessor wp = new WrenderProcessor();
         // wp.process(curi);
@@ -39,7 +39,7 @@ public class WrenderProcessorTest {
         File wrjson = new File("src/test/resources/wrender-example.json");
         JSONObject har = WrenderProcessor
                 .readJsonFromUrl(wrjson.toURI().toURL(), 5, 5);
-        WrenderProcessor.processHar(har, curi);
+        WrenderProcessor.processJson(har, curi);
 
         assertEquals("Status code was not found!",
                 200,
@@ -48,9 +48,7 @@ public class WrenderProcessorTest {
                 curi.getOutLinks().size());
         CrawlURI l = curi.getOutLinks().iterator().next();
         assertEquals("Can't find expected outlink!",
-                "http://www.iana.org/domains/example", l.getURI());
-
-        // Another test that has SVG-style hrefs in it.
+                "https://www.iana.org/domains/example", l.getURI());
 
     }
 
@@ -70,21 +68,21 @@ public class WrenderProcessorTest {
                 "src/test/resources/wrender-svg-hrefs-example.json");
         JSONObject har = WrenderProcessor
                 .readJsonFromUrl(wrjson.toURI().toURL(), 5, 5);
-        WrenderProcessor.processHar(har, curi);
+        WrenderProcessor.processJson(har, curi);
 
         // This is a redirect, which is not directly recorded in the
         // request/response chain:
-        assertEquals("Status code was not found!", 0, curi.getFetchStatus());
-        assertEquals("CrawlURIs not as expected!", 523,
+        assertEquals("Status code was not found!", 200, curi.getFetchStatus());
+        assertEquals("CrawlURIs not as expected!", 333,
                 curi.getOutLinks().size());
         // Extract links into a simple String array:
         List<String> links = new ArrayList<String>();
         for (CrawlURI l : curi.getOutLinks()) {
             links.add(l.getURI());
         }
-        // Check the special link was there:
+        // Check and outlink was there:
         boolean found = links.contains(
-                "https://img4.sentifi.com/enginev1.11041653/images/widget_livemonitor/chart_bg.png");
+                "https://www.thisismoney.co.uk/money/podcast/article-8875705/Has-V-shaped-recovery-turned-double-dip-Money-podcast.html");
         assertEquals("Can't find expected outlink!", true, found);
 
     }

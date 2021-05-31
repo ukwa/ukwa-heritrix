@@ -534,7 +534,7 @@
 		</property>
 	</bean>
    -->
-	<bean id="warcWriterViral" class="uk.bl.wap.modules.writer.WARCViralWriterProcessor">
+	<bean id="warcWriterViralOld" class="uk.bl.wap.modules.writer.WARCViralWriterProcessor">
 		<property name="shouldProcessRule">
 			<bean class="org.archive.modules.deciderules.DecideRuleSequence">
 				<property name="rules">
@@ -555,7 +555,7 @@
 			</bean>
 		</property>
 		<property name="compress" value="true" />
-		<property name="prefix" value="#{systemEnvironment['WARC_PREFIX'] ?: 'BL'}-VIRAL" />
+		<property name="prefix" value="#{systemEnvironment['WARC_PREFIX'] ?: 'BL'}-VIRAL-OLD" />
 		<property name="maxFileSizeBytes" value="1006632959" />
 		<property name="poolMaxActive" value="#{systemEnvironment['WARC_VIRAL_WRITER_POOL_SIZE'] ?: 5}" />
 		<property name="skipIdenticalDigests" value="false" />
@@ -591,22 +591,81 @@
 				</property>
 			</bean>
 		</property>
-		<property name="compress" value="true" />
+	  <!-- <property name="compress" value="true" /> -->
 		<property name="prefix" value="#{systemEnvironment['WARC_PREFIX'] ?: 'BL'}" />
 		<property name="maxFileSizeBytes" value="1006632959" />
 		<property name="poolMaxActive" value="#{systemEnvironment['WARC_WRITER_POOL_SIZE'] ?: 10}" />
-		<property name="skipIdenticalDigests" value="false" />
-		<property name="maxTotalBytesToWrite" value="0" />
-		<property name="directory" value="." />
+	  <!-- <property name="MaxWaitForIdleMs" value="500" /> -->
+	  <!-- <property name="skipIdenticalDigests" value="false" /> -->
+	  <!-- <property name="maxTotalBytesToWrite" value="0" /> -->
+	  <!-- <property name="directory" value="${launchId}" /> -->
 		<property name="storePaths">
 			<list>
 				<value>/heritrix/output/#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/${launchId}/warcs/</value>
 			</list>
 		</property>
-		<property name="writeRequests" value="true" />
-		<property name="writeMetadata" value="true" />
-		<property name="writeRevisitForIdenticalDigests" value="true" />
-		<property name="writeRevisitForNotModified" value="false" />
+	  <!-- <property name="template" value="${prefix}-${timestamp17}-${serialno}-${heritrix.pid}~${heritrix.hostname}~${heritrix.port}" /> -->
+	  <!-- <property name="startNewFilesOnCheckpoint" value="true" /> -->
+	  <!--
+	  <property name="chain">
+	   <list>
+	    <bean class="org.archive.modules.warc.DnsResponseRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.HttpResponseRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.WhoisResponseRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.FtpControlConversationRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.FtpResponseRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.RevisitRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.HttpRequestRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.MetadataRecordBuilder"/>
+	   </list>
+	  </property>
+	  -->
+	</bean>
+	<bean id="warcWriterViral" class="org.archive.modules.writer.WARCWriterChainProcessor">
+			<bean class="org.archive.modules.deciderules.DecideRuleSequence">
+				<property name="rules">
+					<list>
+						<!-- Begin by REJECTing all... -->
+						<bean class="org.archive.modules.deciderules.RejectDecideRule"/>
+						<!-- ...then ACCEPT those with viral annotations... -->
+						<bean class="uk.bl.wap.modules.deciderules.AnnotationMatchesListRegexDecideRule">
+							<property name="decision" value="ACCEPT"/>
+							<property name="regexList">
+								<list>
+									<value>^.*stream:.+FOUND.*$</value>
+								</list>
+							</property>
+						</bean>
+					</list>
+				</property>
+			</bean>
+	  <!-- <property name="compress" value="true" /> -->
+		<property name="prefix" value="#{systemEnvironment['WARC_PREFIX'] ?: 'BL'}-VIRAL" />
+		<property name="maxFileSizeBytes" value="1006632959" />
+		<property name="poolMaxActive" value="#{systemEnvironment['WARC_VIRAL_WRITER_POOL_SIZE'] ?: 5}" />
+	  <!-- <property name="MaxWaitForIdleMs" value="500" /> -->
+	  <!-- <property name="skipIdenticalDigests" value="false" /> -->
+	  <!-- <property name="maxTotalBytesToWrite" value="0" /> -->
+	  <!-- <property name="directory" value="${launchId}" /> -->
+		<property name="storePaths">
+			<list>
+				<value>/heritrix/output/#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/${launchId}/viral/</value>
+			</list>
+		</property>
+	  <!-- <property name="template" value="${prefix}-${timestamp17}-${serialno}-${heritrix.pid}~${heritrix.hostname}~${heritrix.port}" /> -->
+	  <!-- <property name="startNewFilesOnCheckpoint" value="true" /> -->
+	  <property name="chain">
+	   <list>
+	    <bean class="org.archive.modules.warc.DnsResponseRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.HttpResponseViralRecordBuilder"/> <!-- Switch to viral (xor) record writer -->
+	    <bean class="org.archive.modules.warc.WhoisResponseRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.FtpControlConversationRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.FtpResponseRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.RevisitRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.HttpRequestRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.MetadataRecordBuilder"/>
+	   </list>
+	  </property>
 	</bean>
     <!-- This provides a crawl log feed to a queue - note that you'll need to set up a binding that matches these parameters to a queue -->
     <bean id="crawlLogFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedCrawlLogFeed">
@@ -701,6 +760,7 @@
                 <ref bean="skipDispositionChain"/>
 				<!-- write viral content to aggregate archival files... -->
 				<ref bean="warcWriterViral"/>
+				<ref bean="warcWriterViralOld"/>
 				<!-- write to aggregate archival files... -->
 				<ref bean="warcWriterDefault"/>
 				<!-- update the persist store -->

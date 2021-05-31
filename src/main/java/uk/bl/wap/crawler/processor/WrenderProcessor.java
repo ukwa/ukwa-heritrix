@@ -43,19 +43,18 @@ import org.springframework.context.ApplicationListener;
  * on using an external HTTP service to aid isolation and load-balancing.
  * 
  * The HTTP endpoint implementation is here:
- * {@link https://github.com/ukwa/webrender-phantomjs}
+ * {@link https://github.com/ukwa/webrender-puppeteer}
  * 
- * Expects the browser rendering process to handle archiving the downloaded
- * resource e.g. via warcprox.
+ * Expects the browser rendering process to handle archiving the transcluded resources e.g. via warcprox.
+ * 
+ * If successful, returns ProcessResult.FINISH to skip the rest of the chain.  
+ * If not successful, allows the rest of the chain to complete as normal, with H3 attempting to download.
+ * 
+ * Success results in a -ve FetchStatus which means no WARC records are written.
  * 
  * TODO consider adding a downloadViaHeritrix option for those without warcprox
  * to hand.
  * 
- * TODO Use the H3 retry/deferral logic, as per
- * org.archive.crawler.frontier.AbstractFrontier.needsReenqueuing(CrawlURI)
- * rather than retrying directly (which recrawls a lot). Instead, use annotation
- * to note number of retries and when browser rendering keeps failing, allow
- * FetchHTTP to handle it instead.
  * 
  */
 public class WrenderProcessor extends Processor implements
@@ -308,9 +307,9 @@ public class WrenderProcessor extends Processor implements
             builder = builder.queryParam("warc_prefix", warcPrefix);
             URL wrenderUrl = builder.build().toURL();
             // Read render result as JSON:
-            JSONObject har = readJsonFromUrl(wrenderUrl, this.connectTimeout,
+            JSONObject json = readJsonFromUrl(wrenderUrl, this.connectTimeout,
                     this.readTimeout);
-            processHar(har, curi);
+            processJson(json, curi);
 
             // If we find status code, assume rendering worked:
             if (curi.getFetchStatus() != 0) {
@@ -341,8 +340,9 @@ public class WrenderProcessor extends Processor implements
      * @param har
      * @param curi
      */
-    protected static void processHar(JSONObject har, CrawlURI curi) {
+    protected static void processJson(JSONObject json, CrawlURI curi) {
         // Find the request for the curi:
+    	JSONObject har = json.getJSONObject("har");
         JSONArray entries = har.getJSONObject("log").getJSONArray("entries");
         for (int i = 0; i < entries.length(); i++) {
             JSONObject entry = entries.getJSONObject(i);
@@ -374,42 +374,26 @@ public class WrenderProcessor extends Processor implements
         }
         
         // Add discovered outlinks to be enqueued:
-        JSONArray pages = har.getJSONObject("log").getJSONArray("pages");
-        for (int i = 0; i < pages.length(); i++) {
-            JSONObject page = pages.getJSONObject(i);
-            LOGGER.finest("JSON for PAGE " + page);
-            // Get the content, if present:
-            // JSONObject rc = page.getJSONObject("renderedContent");
-            // String responseBody = rc.getString("text");
-            // responseBody = Base64.base64Decode(responseBody);
-            //
-            // Not that easy to set up.
-            //
-            // ExtractorHTML uses
-            // ReplayCharSequence cs =
-            // curi.getRecorder().getContentReplayCharSequence();
-            //
-            // Process the link map:
-            JSONArray map = page.getJSONArray("map");
-            LOGGER.finest("JSON for MAP " + map);
-            for (int j = 0; j < map.length(); j++) {
-                JSONObject mapi = map.getJSONObject(j);
-                // Not all map entries have a 'href' (e.g. 'onclick'):
-                if (mapi.has("href")) {
-                    Object href = mapi.get("href");
-                    // Most hrefs are simple strings:
-                    if (href instanceof String) {
-                        String newUri = (String) href;
-                        enqueueLink(newUri, curi);
-                    }
-                    // But some are dictionaries with URLs under 'animVal' and
-                    // 'baseVal' keys.
-                    // See https://github.com/ukwa/python-shepherd/issues/15
-                    else if (href instanceof JSONObject) {
-                        JSONObject jhref = (JSONObject) href;
-                        for (String href_key : JSONObject.getNames(jhref)) {
-                            enqueueLink(jhref.getString(href_key), curi);
-                        }
+        //LOGGER.warning(""+json.getJSONObject("urls"));
+        JSONArray map = json.getJSONObject("urls").getJSONArray("map");
+        LOGGER.finest("JSON for MAP " + map);
+        for (int j = 0; j < map.length(); j++) {
+            JSONObject mapi = map.getJSONObject(j);
+            // Not all map entries have a 'href' (e.g. 'onclick'):
+            if (mapi.has("href")) {
+                Object href = mapi.get("href");
+                // Most hrefs are simple strings:
+                if (href instanceof String) {
+                    String newUri = (String) href;
+                    enqueueLink(newUri, curi);
+                }
+                // But some are dictionaries with URLs under 'animVal' and
+                // 'baseVal' keys.
+                // See https://github.com/ukwa/python-shepherd/issues/15
+                else if (href instanceof JSONObject) {
+                    JSONObject jhref = (JSONObject) href;
+                    for (String href_key : JSONObject.getNames(jhref)) {
+                        enqueueLink(jhref.getString(href_key), curi);
                     }
                 }
             }
