@@ -553,7 +553,7 @@ public class OutbackCDXClient {
         sb.append(" ");
         sb.append(fetch_status);
         sb.append(" ");
-        sb.append(curi.getContentDigestSchemeString());
+        sb.append(curi.getContentDigestString());
         sb.append(" ");
         sb.append(curi.flattenVia());
         sb.append(" ");
