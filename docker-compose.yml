@@ -118,9 +118,11 @@ services:
     init: true
     environment:
       - "PORT=8010"
-      - "HTTP_PROXY=warcprox:8000"
+      - "HTTP_PROXY=http://warcprox:8000/"
       - "LC_ALL=en_US.utf8"
       - "NODE_ENV=production"
+      - "WARCPROX_PROXY=true"
+      - "PUPPETEER_CLUSTER_SIZE=2"
     ports:
       - "8010:8010"
     links:
@@ -152,7 +154,7 @@ services:
 
   # tinycdxserver
   cdxserver:
-    image: nlagovau/outbackcdx:0.7.0
+    image: nlagovau/outbackcdx:0.10.0
     # Verbose form logs submissions:
     command: "java -Xmx2g -jar outbackcdx.jar -u -d /cdx-data -p 8080 -b 0.0.0.0 -t 1000"
     ports:

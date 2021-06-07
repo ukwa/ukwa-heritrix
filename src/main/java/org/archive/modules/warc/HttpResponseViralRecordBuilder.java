@@ -4,7 +4,6 @@
 package org.archive.modules.warc;
 
 import static org.archive.format.warc.WARCConstants.HEADER_KEY_IP;
-import static org.archive.modules.CoreAttributeConstants.A_DNS_SERVER_IP_LABEL;
 
 import java.io.IOException;
 import java.net.URI;
