@@ -3,7 +3,7 @@ version: '2'
 services:
   # UKWA Heritrix
   heritrix:
-    user: ${UID}
+    user: ${USER}
     build: .
     hostname: "h3w" # Set the hostname so the persistent files are in consistent locations
     ports:
