@@ -24,7 +24,9 @@ jobs:
       - name: Build the containers
         run: docker-compose build
       - name: Set up output folders
-        run: mkdir -p target/testing && chmod -R a+rwx target
+        run: |
+            mkdir -p target/testing
+            chmod -R a+rwx target
       - name: Spin up the crawler
         run: docker-compose up -d heritrix
       - name: Show what is running
@@ -37,3 +39,4 @@ jobs:
         with:
           name: robot-ci-results
           path: integration-test/results/
+          if-no-files-found: error
