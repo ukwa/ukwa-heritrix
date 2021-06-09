@@ -3,6 +3,9 @@ on: push
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Set up a UID variable as the Docker Compose setup uses that when running:
+    env:
+      UID: 1001
     steps:
       - uses: actions/checkout@v2
       - name: Build the containers
