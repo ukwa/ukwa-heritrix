@@ -35,6 +35,7 @@ jobs:
       - name: Show what is running
         run: docker ps
       - run: ps -auxw
+      - run: docker-compose exec -T heritrix id
       - run: docker-compose exec -T heritrix ls -l
       - run: docker-compose exec -T heritrix ls -l /
       - run: docker-compose exec -T heritrix ls -lR /heritrix
