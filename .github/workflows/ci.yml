@@ -1,0 +1,11 @@
+name: docker-compose-actions-workflow
+on: push
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build and spin up the crawler
+        run: docker-compose up -d heritrix
+      - name: Run integration tests
+        run: docker-compose run robot
