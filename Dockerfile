@@ -46,21 +46,20 @@ ENV MONITRIX_ENABLE=false \
     HERITRIX_PASSWORD=heritrix \
     JOB_NAME=frequent
 
-# Finish setup:
-EXPOSE 8443
-
-VOLUME /shared
-VOLUME /output
-
 #STOPSIGNAL TERM # Which is the default
 
 # Set the runtime user (with no password and no sudo)
 RUN useradd -m heritrix
-RUN mkdir -p /heritrix && mkdir -p /output && chmod -R a+rwx /h3-bin /jobs /output
+RUN mkdir -p /heritrix && mkdir -p /output && mkdir -p /home/heritrix && chmod -R a+rwx /h3-bin /jobs /output /heritrix /home/heritrix
 USER heritrix
 WORKDIR /home/heritrix
 # Maven happiness (https://github.com/carlossg/docker-maven#running-as-non-root-not-supported-on-windows):
 ENV MAVEN_CONFIG=/home/heritrix/.m2
+
+# Finish setup:
+EXPOSE 8443
+VOLUME /shared
+VOLUME /output
 
 # Hook in H3 runner script:
 CMD [ "/h3-bin/bin/start" ]
