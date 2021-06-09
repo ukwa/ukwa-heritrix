@@ -14,7 +14,7 @@ ${url}=   https://heritrix:8443/engine/job/frequent
 # TODO add tests that check these against expected values:
 # http://localhost:9090/fc?fl=urlkey,original,mimetype,statuscode,digest,length&matchType=prefix&urlkey=uk,org,webarchive,crawl-test-site)/
 # http://localhost:9090/fc?fl=urlkey,original,mimetype,statuscode,digest,length&matchType=prefix&urlkey=com,matkelly,acid)/
-
+# Similar tests for urlkey=screenshot: etc.
 
 *** Test Cases ***
 Wait For Crawler To Be Ready
