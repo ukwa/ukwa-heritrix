@@ -1,25 +1,26 @@
 name: publish-docker-image
 on:
-  release:
-    types: [published]
-
+  push:
+    tags:
+      - 'v*'
   workflow_run:
     workflows: ["crawler-integration-tests"]
     branches: [master]
     types: 
       - completed
-
 jobs:
   push_to_registries:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
-    permissions:
-      packages: write
-      contents: read
     steps:
+      - name: Set up Docker metadata
+        uses: docker/metadata-action@v3
+        with:
+          images: ukwa/heritrix-worker    
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
@@ -27,5 +28,6 @@ jobs:
       - name: Push to Docker Hub
         uses: docker/build-push-action@v2
         with:
-          push: true
-          tags: ukwa/heritrix-worker:${{ github.ref }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
