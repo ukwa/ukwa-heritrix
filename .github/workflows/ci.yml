@@ -23,12 +23,14 @@ jobs:
         run: docker-compose config
       - name: Build the containers
         run: docker-compose build
+      - name: Set up output folders
+        run: mkdir -p target/testing && chmod -R a+rwx target
       - name: Spin up the crawler
         run: docker-compose up -d heritrix
       - name: Show what is running
         run: docker ps
       - name: Run integration tests
-        run: docker-compose run robot
+        run: docker-compose run robot --exitonfailure
       # Make integration test results available
       - uses: actions/upload-artifact@v2
         with:
