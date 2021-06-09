@@ -44,7 +44,8 @@ Check Crawler Status
 	${user_pass}=   Evaluate   (${user}, ${pass},)
 	Create Digest Session	h3session	${url}    auth=${user_pass}   headers=${headers}		verify=${false}	disable_warnings=1
 	${resp}=    Get On Session    h3session	${url}    headers=${headers}		verify=${false}
-	Log To Console	${resp.text}
+	# this can help when debugging: 
+	#Log To Console	${resp.text}
 	${status}=	Get Element Text	${resp.text}	crawlControllerState
 	Log To Console	${status}
 	Should Match	${status}    ${expected}

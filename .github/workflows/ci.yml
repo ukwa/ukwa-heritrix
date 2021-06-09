@@ -1,13 +1,23 @@
-name: docker-compose-actions-workflow
-on: push
+name: crawler-integration-tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
 jobs:
   test:
     runs-on: ubuntu-latest
     # Set up a UID variable as the Docker Compose setup uses that when running:
     env:
-      UID: 0
+      UID: 1000
     steps:
       - uses: actions/checkout@v2
+      - name: Report which UID is in use (must match the UID env var):
+        run: id
       - name: Build the containers
         run: docker-compose build
       - name: Spin up the crawler
