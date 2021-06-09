@@ -5,24 +5,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Modify Maven repo settings as HTTP is blocked by default
-        uses: s4u/maven-settings-action@v2.4.0
-        with:
-          mirrors: |
-            [{
-                "id": "builds.archive.org,maven2,mirror",
-                "name": "builds.archive.org,maven2,mirror",
-                "mirrorOf": "builds.archive.org,maven2",
-                "url": "http://builds.archive.org/maven2",
-                "blocked": false
-            },
-            {
-                "id": "oracleReleases,mirror",
-                "name": "oracleReleases,mirror",
-                "mirrorOf": "oracleReleases",
-                "url": "https://download.oracle.com/maven",
-                "blocked": false
-            }]
       - name: Build the containers
         run: docker-compose build
       - name: Spin up the crawler
