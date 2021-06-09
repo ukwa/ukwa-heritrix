@@ -26,7 +26,7 @@ Launch crawl-test-site Crawl
 Launch acid-test Crawl
 	Launch Crawl	http://acid.matkelly.com/
 
-Wait For Crawl To Run
+Wait For Crawl To Begin
 	Wait Until Keyword Succeeds	1 min	10 sec	Check Crawler Status	RUNNING
 
 Wait For Crawl To Finish
