@@ -16,12 +16,12 @@ jobs:
                 "url": "http://builds.archive.org/maven2",
                 "blocked": false
             },
+            {
                 "id": "oracleReleases,mirror",
                 "name": "oracleReleases,mirror",
                 "mirrorOf": "oracleReleases",
                 "url": "https://download.oracle.com/maven",
                 "blocked": false
-            {
             }]
       - name: Build the containers
         run: docker-compose build
