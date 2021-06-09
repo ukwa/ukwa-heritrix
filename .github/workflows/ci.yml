@@ -27,9 +27,9 @@ jobs:
         run: |
             mkdir -p target/testing
             chmod -R a+rwx target
-            ls -lR
-      - run: chmod -R a+rwx .
-      - run: ls -lR
+            chmod a+g target
+            ls -l
+      - run: ls -lR target
       - name: Spin up the crawler
         run: docker-compose up -d heritrix
       - name: Show what is running
