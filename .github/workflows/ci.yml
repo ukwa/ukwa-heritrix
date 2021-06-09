@@ -16,7 +16,7 @@ jobs:
       UID: 1000
     steps:
       - uses: actions/checkout@v2
-      - name: Report which UID is in use (must match the UID env var):
+      - name: Report which UID is in use (must match the UID env var)
         run: id
       - name: Build the containers
         run: docker-compose build
