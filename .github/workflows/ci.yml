@@ -16,9 +16,11 @@ jobs:
       - name: Report which UID is in use (must match the UID env var)
         run: id
       - name: Setup the UID env var
-        run: echo "UID=$(id -u)" >> $UID
+        run: echo "UID=$(id -u)" >> $CRAWL_UID
       - name: Check the UID
-        run: echo $UID $USER
+        run: echo $CRAWL_UID
+      - name: Check the Docker Compose config
+        run: docker-compose config
       - name: Build the containers
         run: docker-compose build
       - name: Spin up the crawler
