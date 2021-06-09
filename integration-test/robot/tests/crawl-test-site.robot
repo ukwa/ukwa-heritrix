@@ -14,7 +14,7 @@ ${url}=   https://heritrix:8443/engine/job/frequent
 
 *** Test Cases ***
 Wait For Crawler To Be Ready
-	Wait Until Keyword Succeeds	5 min	10 sec	Check Crawler Status	EMPTY
+	Wait Until Keyword Succeeds	3 min	10 sec	Check Crawler Status	EMPTY
 
 Launch first test crawl
 	${result}=	Run Process	submit -k kafka:9092 -S -R fc.tocrawl -p 2 http://crawl-test-site.webarchive.org.uk	shell=yes
@@ -41,9 +41,10 @@ Wait For Crawl To Finish
 *** Keywords ***
 Check Crawler Status
 	[Arguments]    ${expected}
-    ${user_pass}=   Evaluate   (${user}, ${pass},)
-    Create Digest Session	h3session	${url}    auth=${user_pass}   headers=${headers}		verify=${false}	disable_warnings=1
-    ${resp}=    Get On Session    h3session	${url}    headers=${headers}		verify=${false}
-    ${status}=	Get Element Text	${resp.text}	crawlControllerState
-    Log To Console	${status}
+	${user_pass}=   Evaluate   (${user}, ${pass},)
+	Create Digest Session	h3session	${url}    auth=${user_pass}   headers=${headers}		verify=${false}	disable_warnings=1
+	${resp}=    Get On Session    h3session	${url}    headers=${headers}		verify=${false}
+	Log To Console	${resp.text}
+	${status}=	Get Element Text	${resp.text}	crawlControllerState
+	Log To Console	${status}
 	Should Match	${status}    ${expected}
