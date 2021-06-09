@@ -16,7 +16,7 @@ jobs:
       - name: Report which UID is in use (must match the UID env var)
         run: id
       - name: Setup the UID env var
-        run: echo "UID=$(id -u)" >> $CRAWL_UID
+        run: echo "CRAWL_UID=$(id -u)" >> $CRAWL_UID
       - name: Check the UID
         run: echo $CRAWL_UID
       - name: Check the Docker Compose config
