@@ -13,35 +13,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Report which UID is in use (must match the UID env var)
-        run: id
       - name: Setup the UID env var
         run: echo "CRAWL_UID=$(id -u)" >> $GITHUB_ENV
-      - name: Check the UID
-        run: echo $CRAWL_UID
       - name: Check the Docker Compose config
         run: docker-compose config
       - name: Build the containers
         run: docker-compose build
-      - name: Set up output folders
+      - name: Set up output folders so that permissions are correct
         run: |
             mkdir -p target/testing/heritrix/output
             mkdir -p target/testing/heritrix/scratch
             mkdir -p target/testing/heritrix/state
             mkdir -p target/testing/heritrix/wren
-            chmod -R a+rwx target
-            chmod a+g target
-            ls -l
-      - run: ls -lR target
       - name: Spin up the crawler
         run: docker-compose up -d heritrix
       - name: Show what is running
         run: docker ps
-      - run: ps -auxw
-      - run: docker-compose exec -T heritrix id
-      - run: docker-compose exec -T heritrix ls -l
-      - run: docker-compose exec -T heritrix ls -l /
-      - run: docker-compose exec -T heritrix ls -lR /heritrix
       - name: Run integration tests
         run: docker-compose run robot
       - name: Show what Heritrix logged, even if the tests failed

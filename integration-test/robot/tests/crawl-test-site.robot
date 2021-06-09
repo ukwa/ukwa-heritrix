@@ -20,10 +20,10 @@ ${url}=   https://heritrix:8443/engine/job/frequent
 Wait For Crawler To Be Ready
 	Wait Until Keyword Succeeds	3 min	20 sec	Check Crawler Status	EMPTY
 
-Launch first test crawl
+Launch crawl-test-site Crawl
 	Launch Crawl	http://crawl-test-site.webarchive.org.uk
 
-Launch second test crawl
+Launch acid-test Crawl
 	Launch Crawl	http://acid.matkelly.com/
 
 Wait For Crawl To Run
