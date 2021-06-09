@@ -61,6 +61,7 @@ services:
   # Data Volume Container for crawler job definitions and outputs
   dvc:
     image: busybox
+    user: ${CRAWL_UID}
     volumes:
       - ./target/testing/heritrix/output:/heritrix/output
       - ./target/testing/heritrix/state:/heritrix/state
@@ -130,6 +131,7 @@ services:
 
 # WARC Proxy, with de-duplication disabled and a rapid rollover:
   warcprox:
+    user: ${CRAWL_UID}
     image: ukwa/warcprox:2.4.17
     command: "warcprox -b 0.0.0.0 -d /heritrix/wren --base32 --gzip --rollover-idle-time 600 --dedup-db-file /dev/null --stats-db-file /dev/null --quiet --plugin warcprox-plugins.listeners.KafkaCaptureFeed --plugin warcprox-plugins.listeners.UpdateOutbackCDX"
     environment:
