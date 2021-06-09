@@ -31,8 +31,9 @@ jobs:
         run: docker ps
       - name: Run integration tests
         run: docker-compose run robot --exitonfailure
-      # Make integration test results available
+      # Make integration test results available, even if the tests failed
       - uses: actions/upload-artifact@v2
+        if: ${{ always() }}
         with:
           name: robot-ci-results
           path: integration-test/results/
