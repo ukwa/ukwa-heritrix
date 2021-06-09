@@ -27,17 +27,17 @@ jobs:
         run: |
             mkdir -p target/testing
             chmod -R a+rwx target
-            ls -l
+            ls -lR
       - run: chmod -R a+rwx .
-      - run: ls -l
+      - run: ls -lR
       - name: Spin up the crawler
         run: docker-compose up -d heritrix
       - name: Show what is running
         run: docker ps
+      - run: ps -auxw
       - run: docker-compose exec -T heritrix ls -l
       - run: docker-compose exec -T heritrix ls -l /
-      - run: docker-compose exec -T heritrix ls -l /heritrix
-      - run: docker-compose exec -T heritrix ls -l /heritrix/output
+      - run: docker-compose exec -T heritrix ls -lR /heritrix
       - name: Run integration tests
         run: docker-compose run robot
       - name: Show what Heritrix logged, even if the tests failed
