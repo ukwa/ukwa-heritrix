@@ -11,13 +11,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    # Set up a UID variable as the Docker Compose setup uses that when running:
-    env:
-      UID: 1000
     steps:
       - uses: actions/checkout@v2
       - name: Report which UID is in use (must match the UID env var)
         run: id
+      - name: Setup the UID env var
+        run: echo "UID=$(id -u)" >> $UID
+      - name: Check the UID
+        run: echo $UID
       - name: Build the containers
         run: docker-compose build
       - name: Spin up the crawler
