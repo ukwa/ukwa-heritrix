@@ -11,10 +11,14 @@ ${pass}=    "heritrix"
 ${url}=   https://heritrix:8443/engine/job/frequent
 &{headers}=   content-type=application/xml   accept=application/xml
 
+# TODO add tests that check these against expected values:
+# http://localhost:9090/fc?fl=urlkey,original,mimetype,statuscode,digest,length&matchType=prefix&urlkey=uk,org,webarchive,crawl-test-site)/
+# http://localhost:9090/fc?fl=urlkey,original,mimetype,statuscode,digest,length&matchType=prefix&urlkey=com,matkelly,acid)/
+
 
 *** Test Cases ***
 Wait For Crawler To Be Ready
-	Wait Until Keyword Succeeds	3 min	10 sec	Check Crawler Status	EMPTY
+	Wait Until Keyword Succeeds	3 min	20 sec	Check Crawler Status	EMPTY
 
 Launch first test crawl
 	Launch Crawl	http://crawl-test-site.webarchive.org.uk
@@ -23,10 +27,10 @@ Launch second test crawl
 	Launch Crawl	http://acid.matkelly.com/
 
 Wait For Crawl To Run
-	Wait Until Keyword Succeeds	1 min	5 sec	Check Crawler Status	RUNNING
+	Wait Until Keyword Succeeds	1 min	10 sec	Check Crawler Status	RUNNING
 
 Wait For Crawl To Finish
-	Wait Until Keyword Succeeds	5 min	10 sec	Check Crawler Status	EMPTY
+	Wait Until Keyword Succeeds	5 min	20 sec	Check Crawler Status	EMPTY
 	Log	Crawl has completed.
 
 

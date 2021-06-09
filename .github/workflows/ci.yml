@@ -33,6 +33,9 @@ jobs:
         run: docker ps
       - name: Run integration tests
         run: docker-compose run robot
+      - name: Show what Heritrix logged, even if the tests failed
+        if: ${{ always() }}
+        run: docker-compose logs heritrix
       # Make integration test results available, even if the tests failed
       - uses: actions/upload-artifact@v2
         if: ${{ always() }}
