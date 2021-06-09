@@ -34,6 +34,10 @@ jobs:
         run: docker-compose up -d heritrix
       - name: Show what is running
         run: docker ps
+      - run: docker-compose exec heritrix ls -l
+      - run: docker-compose exec heritrix ls -l /
+      - run: docker-compose exec heritrix ls -l /heritrix
+      - run: docker-compose exec heritrix ls -l /heritrix/output
       - name: Run integration tests
         run: docker-compose run robot
       - name: Show what Heritrix logged, even if the tests failed
