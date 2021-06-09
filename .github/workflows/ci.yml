@@ -25,7 +25,10 @@ jobs:
         run: docker-compose build
       - name: Set up output folders
         run: |
-            mkdir -p target/testing
+            mkdir -p target/testing/heritrix/output
+            mkdir -p target/testing/heritrix/scratch
+            mkdir -p target/testing/heritrix/state
+            mkdir -p target/testing/heritrix/wren
             chmod -R a+rwx target
             chmod a+g target
             ls -l
