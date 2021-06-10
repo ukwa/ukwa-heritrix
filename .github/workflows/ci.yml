@@ -25,6 +25,7 @@ jobs:
             mkdir -p target/testing/heritrix/scratch
             mkdir -p target/testing/heritrix/state
             mkdir -p target/testing/heritrix/wren
+            mkdir -p /tmp/webrender
       - name: Spin up the crawler
         run: docker-compose up -d heritrix
       - name: Show what is running
