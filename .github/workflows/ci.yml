@@ -34,6 +34,12 @@ jobs:
       - name: Show what Heritrix logged, even if the tests failed
         if: ${{ always() }}
         run: docker-compose logs heritrix
+      - name: Show what WebRender logged, even if the tests failed
+        if: ${{ always() }}
+        run: docker-compose logs webrender
+      - name: Show what Warcprox logged, even if the tests failed
+        if: ${{ always() }}
+        run: docker-compose logs warcprox
       # Make integration test results available, even if the tests failed
       - uses: actions/upload-artifact@v2
         if: ${{ always() }}
