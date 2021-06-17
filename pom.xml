@@ -7,15 +7,15 @@
    <properties>
       <jdk.version>1.8</jdk.version>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-      <heritrix.version>3.4.0-20210527</heritrix.version>
-      <!-- >heritrix.version>3.4.0-SNAPSHOT</heritrix.version -->
+      <heritrix.version>3.4.0-20210617</heritrix.version>
+      <!-- heritrix.version>3.4.0-SNAPSHOT</heritrix.version -->
    </properties>
    <build>
       <plugins>
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
-            <version>2.3.2</version>
+            <version>3.8.1</version>
             <configuration>
                <source>1.8</source>
                <target>1.8</target>
@@ -41,7 +41,7 @@
         <plugin>
          <groupId>org.apache.maven.plugins</groupId>
          <artifactId>maven-dependency-plugin</artifactId>
-         <version>3.1.1</version>
+         <version>3.2.0</version>
          <executions>
            <execution>
              <id>unpack</id>
