@@ -11,13 +11,13 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
       - name: Set up Docker metadata
         id: meta
         uses: docker/metadata-action@v3
         with:
           images: ukwa/heritrix    
-      - name: Check out the repo
-        uses: actions/checkout@v2
       - name: Log in to Docker Hub
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v1
