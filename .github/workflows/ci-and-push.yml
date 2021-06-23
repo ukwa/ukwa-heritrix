@@ -1,4 +1,4 @@
-name: crawler-integration-tests
+name: Run CI then push to Docker Hub
 
 on:
   push:
@@ -15,7 +15,8 @@ jobs:
     name: Run CI tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Check out the repo
+        uses: actions/checkout@v2
       - name: Setup the UID env var
         run: echo "CRAWL_UID=$(id -u)" >> $GITHUB_ENV
       - name: Check the Docker Compose config

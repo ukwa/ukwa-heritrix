@@ -1,20 +1,44 @@
 UKWA Heritrix
 =============
 
+This repository is takes [Heritrix3]() and adds in code and configuration specific to the UK Web Archive. It is used to build a Docker image that us used to run our crawls.
 
-To run a test crawl:
+Local Development
+-----------------
+
+If you are modifying the Java code and want compile it and run the unit tests, you can use:
+
+    $ mvn clean install
+
+However, as the crawler is a multi-component system, you'll also want to run integration tests.
+
+Continuous Integration Testing
+------------------------------
+
+All tags, pushes and pull-requests on the main `ukwa-heritrix` repository will run integration testing before pushing an updated Docker container image. See the workflow in <./github/workflows/ci-and-push.yml>.
+
+However, it is recommended that you understand and run the integration tests locally first.
+
+Local Integration Testing
+-------------------------
+
+The supplied Docker Compose file can be used for local testing.  First, build the images:
+
+    $ docker-compose build
+
+This builds `ukwa-heritix` but also builds a `robot` image that uses the Python [Robot Framework](https://robotframework.org/) to run some integration tests.
+
+To run the integration tests:
 
     $ docker-compose up
 
-and somewhere else
+Alternatively, to launch the crawler for manual testing, use:
 
-    $ cat testdata/seed.json | kafka-console-producer --broker-list localhost:9092 --topic uris-to-crawl
+    $ docker-compose up heritrix
+
+and use a secondary terminal to e.g. launch crawls.
 
 
-    $ kafka-console-consumer --bootstrap-server kafka:9092 --topic uris-to-crawl --from-beginning
-    
-    
-    $ kafka-console-consumer --bootstrap-server kafka:9092 --topic frequent-crawl-log --from-beginning
     
     
 Heritrix3 Crawl Jobs
@@ -26,9 +50,6 @@ We use [Heririx3 Sheets](https://webarchive.jira.com/wiki/spaces/Heritrix/pages/
 Summary of Heritrix3 Modules
 ----------------------------
 
-To test and build:
-
-    mvn clean install assembly:single
 
 Modules for Heritrix 3.4.+
 
@@ -54,8 +75,6 @@ kafka-console-consumer --bootstrap-server kafka:9092 --topic uris-to-crawl --fro
 
 kafka-console-consumer --bootstrap-server kafka:9092 --topic frequent-crawl-log --from-beginning
 
-
-
 https://webarchive.jira.com/wiki/spaces/Heritrix/pages/5735014/Heritrix+3.x+API+Guide
 
 Release Process
@@ -71,7 +90,9 @@ is sufficient to tag a version and initiate a Docker container build.  Note that
 Changes
 -------
 
-
+* 2.7.11:
+    * Based on Heritrix 3.4.0-20210621
+    * ...
 * 2.7.0-BETA:
     * Update Heritrix3 to version based on BDB-JE 7.
     * Stop using addPersistentDataMapKey because it's been removed from H3.
