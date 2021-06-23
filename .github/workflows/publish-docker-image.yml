@@ -1,8 +1,5 @@
 name: publish-docker-image
 on:
-  push:
-    tags:
-      - '*'
   workflow_run:
     workflows: ["crawler-integration-tests"]
     branches: [master]
