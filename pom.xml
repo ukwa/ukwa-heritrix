@@ -10,6 +10,28 @@
       <heritrix.version>3.4.0-20210621</heritrix.version>
       <!-- heritrix.version>3.4.0-SNAPSHOT</heritrix.version -->
    </properties>
+   <licenses>
+      <license>
+         <name>The Apache Software License, Version 2.0</name>
+         <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+         <distribution>repo</distribution>
+      </license>
+   </licenses>
+   <developers>
+      <developer>
+         <id>anjackson</id>
+         <name>Andrew Jackson</name>
+         <email>Andrew.Jackson@bl.uk</email>
+      </developer>
+   </developers>
+   <issueManagement>
+      <system>GitHub Issues</system>
+      <url>https://github.com/ukwa/ukwa-heritrix/issues</url>
+   </issueManagement>   <scm>
+      <connection>scm:git:git@github.com:ukwa/ukwa-heritrix.git</connection>
+      <developerConnection>scm:git:git@github.com:ukwa/ukwa-heritrix.git</developerConnection>
+      <url>git@github.com:ukwa/ukwa-heritrix.git</url>
+   </scm>   
    <build>
       <plugins>
          <plugin>
