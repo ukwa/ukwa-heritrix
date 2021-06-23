@@ -15,14 +15,18 @@ However, as the crawler is a multi-component system, you'll also want to run int
 Continuous Integration Testing
 ------------------------------
 
-All tags, pushes and pull-requests on the main `ukwa-heritrix` repository will run integration testing before pushing an updated Docker container image. See the workflow in <./github/workflows/ci-and-push.yml>.
+All tags, pushes and pull-requests on the main `ukwa-heritrix` repository will run integration testing before pushing an updated Docker container image. See the workflow [here](./github/workflows/ci-and-push.yml).
 
 However, it is recommended that you understand and run the integration tests locally first.
 
 Local Integration Testing
 -------------------------
 
-The supplied Docker Compose file can be used for local testing.  First, build the images:
+The supplied Docker Compose file can be used for local testing. The system spins up many services, including a local Wayback service for inspecting the results
+
+[![Docker Compose ensemble visualisation](./docker-compose.svg)](./docker-compose.svg)
+
+To run the tests locally, build the images:
 
     $ docker-compose build
 
@@ -32,12 +36,27 @@ To run the integration tests:
 
     $ docker-compose up
 
-Alternatively, to launch the crawler for manual testing, use:
+Alternatively, to launch the crawler for manual testing, use e.g. (listing `heritrix warcprox webrender` we make sure we see logs from those three containers):
 
-    $ docker-compose up heritrix
+    $ docker-compose up heritrix warcprox webrender
 
-and use a secondary terminal to e.g. launch crawls.
+and use a secondary terminal to e.g. launch crawls. Note that `ukwa-heritrix` is configured to wait a few seconds before auto-launching the `frequent` crawl job.
 
+After running tests, it's recommended to run:
+
+    $ docker-compose rm -f
+    $ mvn clean
+
+This deletes all the crawl output and state files, thus ensuring that subsequent runs start from a clean slate.
+
+### Manual testing
+
+    $ docker run --net host ukwa/crawl-streams submit -k localhost:9092 fc.tocrawl -S http://acid.matkelly.com/
+    $ docker run --net host ukwa/crawl-streams submit -k localhost:9092 fc.tocrawl -S http://data.webarchive.org.uk/crawl-test-site/
+
+### Automated testing
+
+...RF....
 
     
     
