@@ -65,11 +65,8 @@ We only need tagged builds, so
 
     mvn release:clean release:prepare
 
-is sufficient to tag a version and initiate a Docker container build.
+is sufficient to tag a version and initiate a Docker container build.  Note that the SCM/git tag should be of the form X.Y.Z.
 
-Afterwards, we can set the version up for the next time, using the SNAPSHOT suffix to indicate this is not a tagged version. e.g. if we just tagged version 2.7.10, we can set the next version up as:
-
-    mvn versions:set -DnewVersion=2.7.11-SNAPSHOT
 
 Changes
 -------
