@@ -13,7 +13,7 @@ services:
     environment:
        - "JAVA_OPTS=-Xmx2g -javaagent:/jmx_prometheus_javaagent-0.3.1.jar=9101:/jmx-config.yml"
        - "CRAWL_NAME=npld-fc"
-       - "MAX_TOE_THREADS=2"
+       - "MAX_TOE_THREADS=10"
        - "LAUNCH_AUTOMATICALLY=true"
        - "PAUSE_AT_START=false"
        - "WARC_PREFIX=BL-NPLD-TEST"
@@ -42,7 +42,7 @@ services:
        #- "QUOTA_SERVER_MAX_SUCCESS_KB=1"
        - "URI_FORGETTING_ENABLED=false"
        - "FRONTIER_JE_CLEANER_THREADS=2"
-    links:
+    depends_on:
       - clamd
       - kafka
       - webrender
@@ -55,19 +55,9 @@ services:
       # Override to use a different uriUniqFilter:
       - ./jobs/frequent/uriuniqfilter-bloom.xml:/jobs/frequent/uriuniqfilter.xml
       - ./docker/shared:/shared
-    volumes_from:
-      - dvc:rw  
-
-  # Data Volume Container for crawler job definitions and outputs
-  dvc:
-    image: busybox
-    user: ${CRAWL_UID}
-    volumes:
-      - ./target/testing/heritrix/output:/heritrix/output
-      - ./target/testing/heritrix/state:/heritrix/state
-      - ./target/testing/heritrix/wren:/heritrix/wren
-      - ./target/testing/heritrix/scratch:/heritrix/scratch
-  #    - ./jobs:/jobs
+      - heritrix_state:/heritrix/state
+      - heritrix_scratch:/heritrix/scratch
+      - heritrix_output:/heritrix/output
 
   # Clamd virus scanning Service
   clamd:
@@ -111,6 +101,9 @@ services:
       - "9000:9000"
     environment:
       - "ZK_HOST=zookeeper:2181"
+    depends_on:
+      - zookeeper
+      - kafka
 
   # Web page rendering service
   webrender:
@@ -123,7 +116,7 @@ services:
     #  - "DOCKER_RENDERER_IMAGE=ukwa/webrender-puppeteer:1.0.7"
     ports:
       - "8010:8010"
-    links:
+    depends_on:
       - warcprox
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock # Needs to connect to Docker to launch render container
@@ -143,13 +136,15 @@ services:
       - "CDXSERVER_ENDPOINT=http://cdxserver:8080/fc"
     ports:
       - "8000:8000"
-    links:
+    depends_on:
+      - kafka
+      - cdxserver
       - acid.matkelly.com
       - crawl-test-site.webarchive.org.uk
     ulimits:
       nproc: 2000 # See https://github.com/internetarchive/warcprox/blob/2.x/warcprox/warcproxy.py#L413
-    volumes_from:
-      - dvc:rw  
+    volumes:
+      - heritrix_wren:/heritrix/wren
 
   # tinycdxserver
   cdxserver:
@@ -157,7 +152,7 @@ services:
     # Verbose form logs submissions:
     command: "java -Xmx2g -jar outbackcdx.jar -u -d /cdx-data -p 8080 -b 0.0.0.0 -t 1000"
     ports:
-      - "9090:8080"
+      - "9090:8080"    
   #  volumes:
   #    - ./testing/cdx:/cdx-data
 
@@ -171,8 +166,9 @@ services:
       - 8001:8000
     environment:
       - "WARC_PATHS=/heritrix/output,/heritrix/wren"
-    volumes_from:
-      - dvc:ro
+    volumes:
+      - heritrix_output:/heritrix/output
+      - heritrix_wren:/heritrix/wren
 
   # OpenWayback for playback
   openwayback:
@@ -191,6 +187,9 @@ services:
       - "CDX_INDEX_SERVER=http://cdxserver:8080/fc"
       - "WAYBACK_URL_PREFIX=http://localhost:8080"
       - "WAYBACK_URL_HOST=localhost"
+    depends_on:
+      - warc-server
+      - cdxserver
 
   # ----------
   # Test sites and test runner
@@ -218,4 +217,37 @@ services:
     depends_on:
       - kafka
       - cdxserver
+      - heritrix
+
+# ------------
+# Defines volumes here and re-use above:
+# ------------
+volumes:
+
+  # Make WARCs accessible from outside:
+  heritrix_output:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/integration-test/output/heritrix
+      o: bind
+  heritrix_wren:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/integration-test/output/wren
+      o: bind
+  # These also seem to need to be setup like this:
+  heritrix_state:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/integration-test/tmp/state
+      o: bind
+  heritrix_scratch:
+    driver: local
+    driver_opts:
+      type: none
+      device: ${PWD}/integration-test/tmp/scratch
+      o: bind
       
