@@ -2,7 +2,7 @@ name: publish-docker-image
 on:
   push:
     tags:
-      - 'v*'
+      - '*'
   workflow_run:
     workflows: ["crawler-integration-tests"]
     branches: [master]
@@ -12,6 +12,7 @@ jobs:
   push_to_registries:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Set up Docker metadata
         id: meta
