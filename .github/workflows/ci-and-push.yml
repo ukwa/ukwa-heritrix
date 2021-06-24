@@ -19,6 +19,8 @@ jobs:
         uses: actions/checkout@v2
       - name: Setup the UID env var
         run: echo "CRAWL_UID=$(id -u)" >> $GITHUB_ENV
+      - name: Setup storage path env var
+        run: echo "STORAGE_PATH=./target/integration-test-volumes" >> $GITHUB_ENV
       - name: Check the Docker Compose config
         run: docker-compose config
       - name: Build the containers
