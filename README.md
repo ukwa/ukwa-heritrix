@@ -1,7 +1,7 @@
 UKWA Heritrix
 =============
 
-This repository is takes [Heritrix3]() and adds in code and configuration specific to the UK Web Archive. It is used to build a Docker image that us used to run our crawls.
+This repository takes [Heritrix3](https://github.com/internetarchive/heritrix3) and adds in code and configuration specific to the UK Web Archive. It is used to build a Docker image that us used to run our crawls.
 
 Local Development
 -----------------

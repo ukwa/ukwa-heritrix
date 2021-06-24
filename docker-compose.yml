@@ -56,8 +56,8 @@ services:
       - ./jobs/frequent/uriuniqfilter-bloom.xml:/jobs/frequent/uriuniqfilter.xml
       - ./docker/shared:/shared
       - ${STORAGE_PATH}/output:/heritrix/output
-      #- ${STORAGE_PATH}/scratch:/heritrix/scratch
-      #- ${STORAGE_PATH}/state:/heritrix/state
+      - ${STORAGE_PATH}/scratch:/heritrix/scratch
+      - ${STORAGE_PATH}/state:/heritrix/state
  
   # Clamd virus scanning Service
   clamd:
