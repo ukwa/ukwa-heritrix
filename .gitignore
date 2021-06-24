@@ -1,7 +1,6 @@
 .settings
 .classpath
 .project
-.env
 target
 
 /jobs/*/20*

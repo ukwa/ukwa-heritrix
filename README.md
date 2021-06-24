@@ -22,17 +22,32 @@ However, it is recommended that you understand and run the integration tests loc
 Local Integration Testing
 -------------------------
 
-The supplied Docker Compose file can be used for local testing. The system spins up many services, including a local Wayback service for inspecting the results
+The supplied Docker Compose file can be used for local testing. This looks quite complex because the system spins up many services, including ones that are only needed for testing:
+
+- The main crawler, and associated services:
+  - ClamD for virus scanning,
+  - WebRender API and Warcprox for browser-based crawler integration.
+  - A OutbackCDX server for recording crawled URLs with timestamps and checksums for deduplication.
+  - An Apache Kafka topic/log server, and it's associated Zookeeper instance.
+- Two test websites for running test crawls without touching the live web:
+  - A container that simulates http://acid.matkelly.com/
+  - A container that hosts a crawler test site at http://crawl-test-site.webarchive.org.uk (this is not a working public URL)
+- Local Wayback service for inspecting the results:
+  - this talks to the crawler's CDX server, 
+  - and is assisted by a `warc-server` container that makes the crawled WARCs available.
+- A `robot` container that uses the Python [Robot Framework](https://robotframework.org/) to run some integration tests.
 
 [![Docker Compose ensemble visualisation](./docker-compose.svg)](./docker-compose.svg)
+
+__IMPORTANT__ there is a `.env` file that `docker-compose.yml` uses to pick up shared variables. This includes the user UID that is used to run the services. This should be overridden using whatever UID you develop under. e.g.
+
+    export CRAWL_UID=$(id -u)
 
 To run the tests locally, build the images:
 
     $ docker-compose build
 
-This builds `ukwa-heritix` but also builds a `robot` image that uses the Python [Robot Framework](https://robotframework.org/) to run some integration tests.
-
-To run the integration tests:
+This builds the `heritix` and `robot` images. To run the integration tests:
 
     $ docker-compose up
 
@@ -51,24 +66,41 @@ This deletes all the crawl output and state files, thus ensuring that subsequent
 
 ### Manual testing
 
+The separate [crawl-streams](https://github.com/ukwa/crawl-streams) utilities can be used to interact with the logs/streams that feed URLs into the crawl, and document the URLs found and processed by the crawler.  To start crawling the two test sites, we use:
+
     $ docker run --net host ukwa/crawl-streams submit -k localhost:9092 fc.tocrawl -S http://acid.matkelly.com/
-    $ docker run --net host ukwa/crawl-streams submit -k localhost:9092 fc.tocrawl -S http://data.webarchive.org.uk/crawl-test-site/
+    $ docker run --net host ukwa/crawl-streams submit -k localhost:9092 fc.tocrawl -S http://crawl-test-site.webarchive.org.uk/
+
+Note that the `--net host` part means the Docker container can talk to your development machine directly as `localhost`, which is the easiest way to reach your Kafka instance.
+
+The other thing to note is the `-S` flag - this indicates that these URLs are seeds, and that means when the crawler pickes them up, it will widen the scope of the crawl to include any URLs that are on those sites (strictly, those URLs that have this URL as a prefix when expressed in SURT form - _TBA - how to cover this? See also the section below_) Without the `-S` flag, submitted URLs will be ignored unless they are within the current crawler scope.
+
+Note, however, some URLs will be discovered when processing `in scope` URLs, and that appear to be necessary for those URLs to work (e.g. images, CSS, JavaScript etc.). The crawler is configured to fetch these even if they are out of the main crawl scope. i.e. the crawl scope is intended to match up with the HTML pages that are of interest. Any further resources required by those changes will be added if the crawler determines they are needed.
+
+#### Directly interacting with Kafka
+
+It's also possible to interact directly with Kafka by installing and using the standard Kafka tools. This is not recommended at present, but these instructions are left here in case they are helpful:
+
+    cat testdata/seed.json | kafka-console-producer --broker-list kafka:9092 --topic fc.tocrawl
+    kafka-console-consumer --bootstrap-server kafka:9092 --topic fc.tocrawl --from-beginning
+    kafka-console-consumer --bootstrap-server kafka:9092 --topic fc.crawled --from-beginning
 
 ### Automated testing
 
-...RF....
-
-    
+The `robot` container runs test crawls over the two test sites mentioned in the previous section. The actions and expected results are in the [crawl-test-site.robot](integration-test/robot/tests/crawl-test-site.robot) test specification. 
     
 Heritrix3 Crawl Jobs
 --------------------
+
+_TBA - This section should be shifted to focus on `ukwa-heritrix` configuration options/env vars_
+
+_TBA - I think the design details and rationale need to be moved to the overall documentation site_
 
 We use [Heririx3 Sheets](https://webarchive.jira.com/wiki/spaces/Heritrix/pages/5735723/Sheets) as a configuration mechanism to allow the crawler behaviour to change based on URL SURT prefix.
 
 
 Summary of Heritrix3 Modules
 ----------------------------
-
 
 Modules for Heritrix 3.4.+
 
@@ -88,13 +120,6 @@ Modules for Heritrix 3.4.+
 * RobotsTxtSitemapExtractor: Extracts and enqueues sitemap links from robots.txt files.
 * WrenderProcessor: Runs pages through a web-rendering web service rather than the usual H3 processing.
 
-
-cat testdata/seed.json | kafka-console-producer --broker-list kafka:9092 --topic uris-to-crawl
-kafka-console-consumer --bootstrap-server kafka:9092 --topic uris-to-crawl --from-beginning
-
-kafka-console-consumer --bootstrap-server kafka:9092 --topic frequent-crawl-log --from-beginning
-
-https://webarchive.jira.com/wiki/spaces/Heritrix/pages/5735014/Heritrix+3.x+API+Guide
 
 Release Process
 ---------------

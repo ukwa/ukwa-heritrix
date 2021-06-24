@@ -55,10 +55,10 @@ services:
       # Override to use a different uriUniqFilter:
       - ./jobs/frequent/uriuniqfilter-bloom.xml:/jobs/frequent/uriuniqfilter.xml
       - ./docker/shared:/shared
-      - heritrix_state:/heritrix/state
-      - heritrix_scratch:/heritrix/scratch
-      - heritrix_output:/heritrix/output
-
+      - ${STORAGE_PATH}/output:/heritrix/output
+      #- ${STORAGE_PATH}/scratch:/heritrix/scratch
+      #- ${STORAGE_PATH}/state:/heritrix/state
+ 
   # Clamd virus scanning Service
   clamd:
     image: ukwa/clamd
@@ -144,8 +144,8 @@ services:
     ulimits:
       nproc: 2000 # See https://github.com/internetarchive/warcprox/blob/2.x/warcprox/warcproxy.py#L413
     volumes:
-      - heritrix_wren:/heritrix/wren
-
+      - ${STORAGE_PATH}/wren:/heritrix/wren
+ 
   # tinycdxserver
   cdxserver:
     image: nlagovau/outbackcdx:0.7.0
@@ -154,7 +154,7 @@ services:
     ports:
       - "9090:8080"    
   #  volumes:
-  #    - ./testing/cdx:/cdx-data
+  #    - ${STORAGE_PATH}/cdx:/cdx-data
 
 
   # ----------------------------------------------
@@ -167,9 +167,9 @@ services:
     environment:
       - "WARC_PATHS=/heritrix/output,/heritrix/wren"
     volumes:
-      - heritrix_output:/heritrix/output
-      - heritrix_wren:/heritrix/wren
-
+      - ${STORAGE_PATH}/output:/heritrix/output
+      - ${STORAGE_PATH}/wren:/heritrix/wren
+ 
   # OpenWayback for playback
   openwayback:
     image: ukwa/waybacks
@@ -219,35 +219,4 @@ services:
       - cdxserver
       - heritrix
 
-# ------------
-# Defines volumes here and re-use above:
-# ------------
-volumes:
-
-  # Make WARCs accessible from outside:
-  heritrix_output:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/integration-test/output/heritrix
-      o: bind
-  heritrix_wren:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/integration-test/output/wren
-      o: bind
-  # These also seem to need to be setup like this:
-  heritrix_state:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/integration-test/tmp/state
-      o: bind
-  heritrix_scratch:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/integration-test/tmp/scratch
-      o: bind
       
