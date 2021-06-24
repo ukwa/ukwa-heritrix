@@ -41,7 +41,11 @@ The supplied Docker Compose file can be used for local testing. This looks quite
 
 __IMPORTANT__ there is a `.env` file that `docker-compose.yml` uses to pick up shared variables. This includes the user UID that is used to run the services. This should be overridden using whatever UID you develop under. e.g.
 
-    export CRAWL_UID=$(id -u)
+    $ export CRAWL_UID=$(id -u)
+
+There's a little helper script to do this, which you can run like this before running Docker operations:
+
+    $ source source-setup-crawl-uid.sh
 
 To run the tests locally, build the images:
 
