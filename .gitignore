@@ -2,6 +2,7 @@
 .classpath
 .project
 target
+.env
 
 /jobs/*/20*
 /jobs/*/*.dump

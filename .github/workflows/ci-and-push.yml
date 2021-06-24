@@ -19,18 +19,16 @@ jobs:
         uses: actions/checkout@v2
       - name: Setup the UID env var
         run: echo "CRAWL_UID=$(id -u)" >> $GITHUB_ENV
-      - name: Setup storage path env var
-        run: echo "STORAGE_PATH=./target/integration-test-volumes" >> $GITHUB_ENV
       - name: Check the Docker Compose config
         run: docker-compose config
       - name: Build the containers
         run: docker-compose build
       - name: Set up output folders so that permissions are correct
         run: |
-            mkdir -p target/testing/heritrix/output
-            mkdir -p target/testing/heritrix/scratch
-            mkdir -p target/testing/heritrix/state
-            mkdir -p target/testing/heritrix/wren
+            mkdir -p ./target/integration-test-volumes/output
+            mkdir -p ./target/integration-test-volumes/scratch
+            mkdir -p ./target/integration-test-volumes/state
+            mkdir -p ./target/integration-test-volumes/wren
             mkdir -p /tmp/webrender
       - name: Spin up the crawler
         run: docker-compose up -d heritrix
