@@ -68,6 +68,24 @@ After running tests, it's recommended to run:
 
 This deletes all the crawl output and state files, thus ensuring that subsequent runs start from a clean slate.
 
+### Service Endpoints
+
+Once running, these are the most useful services for experimenting with the crawler itself:
+
+| Service  |  Endpoint                                                         | Description                                 |
+| -------- | ----------------------------------------------------------------- | ------------------------------------------- |
+| Heritrix | https://localhost:8443/ (username/password `heritrix`/`heritrix`) | The main Heritrix crawler control interface. |
+
+Note that the [Heritrix REST API documentation](https://heritrix.readthedocs.io/en/latest/api.html) contains some useful examples of how to interact with Heritrix using `curl`.
+
+There are a lot of other services, but these are largely intended for checking or debugging:
+
+| Service  |  Endpoint                                                         | Description                                 |
+| -------- | ----------------------------------------------------------------- | ------------------------------------------- |
+| Heritrix (JMX) | localhost:9101 | Java [JMX](https://docs.oracle.com/javase/tutorial/jmx/overview/index.html) service used to access internal state for monitoring the Kafka client. |
+| Heritrix (Prometheus) | http://localhost:9119/ | Crawler bean used to collect crawler metrics and publish them for Prometheus |
+
+
 ### Manual testing
 
 The separate [crawl-streams](https://github.com/ukwa/crawl-streams) utilities can be used to interact with the logs/streams that feed URLs into the crawl, and document the URLs found and processed by the crawler.  To start crawling the two test sites, we use:
