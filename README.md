@@ -75,6 +75,9 @@ Once running, these are the most useful services for experimenting with the craw
 | Service  |  Endpoint                                                         | Description                                 |
 | -------- | ----------------------------------------------------------------- | ------------------------------------------- |
 | Heritrix | https://localhost:8443/ (username/password `heritrix`/`heritrix`) | The main Heritrix crawler control interface. |
+| Kafka UI | http://localhost:9000/ | A browser UI that lets you look at the Kafka topics. |
+| Crawl CDX | http://localhost:9090/ | An instance of OutbackCDX used to record crawl outcomes for analysis and deduplication.  Can be used to look up what happened to a URL during the crawl. |
+| Wayback | http://localhost:8080/ | An instance of OpenWayback that allows you to play back the pages that have been crawled. Uses the Crawl CDX to look up which WARCs hold the required URLs. |
 
 Note that the [Heritrix REST API documentation](https://heritrix.readthedocs.io/en/latest/api.html) contains some useful examples of how to interact with Heritrix using `curl`.
 
@@ -82,9 +85,9 @@ There are a lot of other services, but these are largely intended for checking o
 
 | Service  |  Endpoint                                                         | Description                                 |
 | -------- | ----------------------------------------------------------------- | ------------------------------------------- |
-| Heritrix (JMX) | localhost:9101 | Java [JMX](https://docs.oracle.com/javase/tutorial/jmx/overview/index.html) service used to access internal state for monitoring the Kafka client. |
+| Heritrix (JMX) | localhost:9101 | Java [JMX](https://docs.oracle.com/javase/tutorial/jmx/overview/index.html) service used to access internal state for monitoring the Kafka client. (DEPRECATED) |
 | Heritrix (Prometheus) | http://localhost:9119/ | Crawler bean used to collect crawler metrics and publish them for Prometheus |
-
+| More TBA |
 
 ### Manual testing
 
