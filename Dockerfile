@@ -50,7 +50,7 @@ ENV MONITRIX_ENABLE=false \
 
 # Set the runtime user (with no password and no sudo)
 RUN useradd -m heritrix
-RUN mkdir -p /heritrix && mkdir -p /output && mkdir -p /home/heritrix && chmod -R a+rwx /h3-bin /jobs /output /heritrix /home/heritrix
+RUN mkdir -p /heritrix && mkdir -p /output && mkdir -p /home/heritrix && chmod -R g+rwx /h3-bin /jobs /output /heritrix /home/heritrix
 USER heritrix
 WORKDIR /home/heritrix
 # Maven happiness (https://github.com/carlossg/docker-maven#running-as-non-root-not-supported-on-windows):
