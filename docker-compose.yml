@@ -4,7 +4,11 @@ services:
   # UKWA Heritrix
   heritrix:
     user: ${CRAWL_UID}
-    build: .
+    build:
+      context: .
+      args:
+        http_proxy: ${HTTP_PROXY}
+        https_proxy: ${HTTPS_PROXY}
     hostname: "h3w" # Set the hostname so the persistent files are in consistent locations
     ports:
       - "8443:8443"
@@ -209,7 +213,11 @@ services:
 
   # This runs the integration tests
   robot:
-    build: integration-test/robot
+    build:
+      context: integration-test/robot
+      args:
+        http_proxy: ${HTTP_PROXY}
+        https_proxy: ${HTTPS_PROXY}
     command: --outputdir /out /tests
     volumes:
       - ./integration-test/robot/tests:/tests:ro
