@@ -51,7 +51,11 @@ To run the tests locally, build the images:
 
     $ docker-compose build
 
-This builds the `heritix` and `robot` images. To run the integration tests:
+This builds the `heritix` and `robot` images. 
+
+Note that the Compose file is set up to pass the `HTTP_PROXY` and `HTTPS_PROXY` environment variables through to the build environment, so as long as those are set, it should build behind a corporate web proxy. If you are not behind a proxy, and these variables are not set, `docker-compose` will warn that the variables are not set, but the build should work nevertheless.
+
+To run the integration tests:
 
     $ docker-compose up
 
