@@ -541,7 +541,7 @@ public class OutbackCDXClient {
         JSONObject jei = curi.getExtraInfo();
         String warc_filename = jei.optString("warcFilename", "-");
         String warc_offset = jei.optString("warcFileOffset", "0");
-        String warc_length = jei.optString("warcRecordLength", "0");
+        String warc_length = jei.optString("warcFileRecordLength", "0");
         // Format as CDX-11:
         StringBuffer sb = new StringBuffer();
         sb.append("- ");
