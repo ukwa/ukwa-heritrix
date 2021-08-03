@@ -3,7 +3,6 @@ version: '2'
 services:
   # UKWA Heritrix
   heritrix:
-    user: ${CRAWL_UID}
     build:
       context: .
       args:
