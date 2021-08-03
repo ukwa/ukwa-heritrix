@@ -49,7 +49,7 @@ ENV MONITRIX_ENABLE=false \
 #STOPSIGNAL TERM # Which is the default
 
 # Set the runtime user (with no password and no sudo)
-RUN useradd -m heritrix
+RUN groupadd -r heritrix && adduser heritrix
 RUN mkdir -p /heritrix && mkdir -p /output && mkdir -p /home/heritrix && chown -R heritrix /h3-bin /jobs /output /heritrix /home/heritrix
 USER heritrix
 WORKDIR /home/heritrix
