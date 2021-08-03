@@ -30,7 +30,7 @@ jobs:
             mkdir -p ./target/integration-test-volumes/state
             mkdir -p ./target/integration-test-volumes/wren
             mkdir -p /tmp/webrender
-            chmod -R a+w ./target/integration-test-volumes
+            chown -R 1001:1001 ./target/integration-test-volumes
       - name: Spin up the crawler
         run: docker-compose up -d heritrix
       - name: Show what is running
