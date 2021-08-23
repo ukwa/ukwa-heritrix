@@ -3,8 +3,11 @@ version: '3.7'
 services:
   # UKWA Heritrix
   heritrix:
-    user: ${UID}
-    build: .
+    build:
+      context: .
+      args:
+        http_proxy: ${HTTP_PROXY}
+        https_proxy: ${HTTPS_PROXY}
     hostname: "h3w" # Set the hostname so the persistent files are in consistent locations
     ports:
       - "8443:8443"
@@ -13,7 +16,7 @@ services:
     environment:
        - "JAVA_OPTS=-Xmx2g -javaagent:/jmx_prometheus_javaagent-0.3.1.jar=9101:/jmx-config.yml"
        - "CRAWL_NAME=npld-fc"
-       - "MAX_TOE_THREADS=2"
+       - "MAX_TOE_THREADS=10"
        - "LAUNCH_AUTOMATICALLY=true"
        - "PAUSE_AT_START=false"
        - "WARC_PREFIX=BL-NPLD-TEST"
@@ -42,7 +45,7 @@ services:
        #- "QUOTA_SERVER_MAX_SUCCESS_KB=1"
        - "URI_FORGETTING_ENABLED=false"
        - "FRONTIER_JE_CLEANER_THREADS=2"
-    links:
+    depends_on:
       - clamd
       - kafka
       - webrender
@@ -55,19 +58,10 @@ services:
       # Override to use a different uriUniqFilter:
       - ./jobs/frequent/uriuniqfilter-bloom.xml:/jobs/frequent/uriuniqfilter.xml
       - ./docker/shared:/shared
-    volumes_from:
-      - dvc:rw  
-
-  # Data Volume Container for crawler job definitions and outputs
-  dvc:
-    image: busybox
-    volumes:
-      - ./target/testing/heritrix/output:/heritrix/output
-      - ./target/testing/heritrix/state:/heritrix/state
-      - ./target/testing/heritrix/wren:/heritrix/wren
-      - ./target/testing/heritrix/scratch:/heritrix/scratch
-  #    - ./jobs:/jobs
-
+      - ./target/integration-test-volumes/output:/heritrix/output
+      - ./target/integration-test-volumes/scratch:/heritrix/scratch
+      - ./target/integration-test-volumes/state:/heritrix/state
+ 
   # Clamd virus scanning Service
   clamd:
     image: ukwa/clamd
@@ -110,6 +104,9 @@ services:
       - "9000:9000"
     environment:
       - "ZK_HOST=zookeeper:2181"
+    depends_on:
+      - zookeeper
+      - kafka
 
   # Web page rendering service
   webrender:
@@ -125,17 +122,17 @@ services:
       - "PUPPETEER_CLUSTER_SIZE=2"
     ports:
       - "8010:8010"
-    links:
+    depends_on:
       - warcprox
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock # Needs to connect to Docker to launch render container
       - /tmp/webrender:/tmp/webrender # Host mount must match internal mount at present!
 
-# WARC Proxy, with de-duplication disabled and a rapid rollover:
+  # WARC Proxy, with de-duplication disabled and a rapid rollover:
   warcprox:
-    #image: ukwa/warcprox:2.4.17
-    image: ukwa/warcprox
-    command: "warcprox -b 0.0.0.0 -d /heritrix/wren --base32 --gzip --rollover-idle-time 600 --dedup-db-file /dev/null --stats-db-file /dev/null --quiet --plugin warcprox-plugins.listeners.KafkaCaptureFeed --plugin warcprox-plugins.listeners.UpdateOutbackCDX"
+    user: ${CRAWL_UID}
+    image: ukwa/warcprox:2.4.17.1
+    command: "warcprox -b 0.0.0.0 -d /heritrix/wren --base32 --gzip --rollover-idle-time 600 --dedup-db-file /dev/null --stats-db-file /dev/null --cacert /heritrix/wren/warcprox-ca.pem --certs-dir /heritrix/wren/warcprox-ca-certs --quiet --plugin warcprox-plugins.listeners.KafkaCaptureFeed --plugin warcprox-plugins.listeners.UpdateOutbackCDX"
     environment:
       - "LC_ALL=en_US.utf8"
       - "TMP=/tmp/warcprox"
@@ -145,23 +142,25 @@ services:
       - "CDXSERVER_ENDPOINT=http://cdxserver:8080/fc"
     ports:
       - "8000:8000"
-    links:
+    depends_on:
+      - kafka
+      - cdxserver
       - acid.matkelly.com
       - crawl-test-site.webarchive.org.uk
     ulimits:
       nproc: 2000 # See https://github.com/internetarchive/warcprox/blob/2.x/warcprox/warcproxy.py#L413
-    volumes_from:
-      - dvc:rw  
-
+    volumes:
+      - ./target/integration-test-volumes/wren:/heritrix/wren
+ 
   # tinycdxserver
   cdxserver:
     image: nlagovau/outbackcdx:0.10.0
     # Verbose form logs submissions:
     command: "java -Xmx2g -jar outbackcdx.jar -u -d /cdx-data -p 8080 -b 0.0.0.0 -t 1000"
     ports:
-      - "9090:8080"
+      - "9090:8080"    
   #  volumes:
-  #    - ./testing/cdx:/cdx-data
+  #    - ./target/integration-test-volumes/cdx:/cdx-data
 
 
   # ----------------------------------------------
@@ -173,9 +172,10 @@ services:
       - 8001:8000
     environment:
       - "WARC_PATHS=/heritrix/output,/heritrix/wren"
-    volumes_from:
-      - dvc:ro
-
+    volumes:
+      - ./target/integration-test-volumes/output:/heritrix/output
+      - ./target/integration-test-volumes/wren:/heritrix/wren
+ 
   # OpenWayback for playback
   openwayback:
     image: ukwa/waybacks
@@ -193,6 +193,9 @@ services:
       - "CDX_INDEX_SERVER=http://cdxserver:8080/fc"
       - "WAYBACK_URL_PREFIX=http://localhost:8080"
       - "WAYBACK_URL_HOST=localhost"
+    depends_on:
+      - warc-server
+      - cdxserver
 
   # ----------
   # Test sites and test runner
@@ -212,7 +215,11 @@ services:
 
   # This runs the integration tests
   robot:
-    build: integration-test/robot
+    build:
+      context: integration-test/robot
+      args:
+        http_proxy: ${HTTP_PROXY}
+        https_proxy: ${HTTPS_PROXY}
     command: --outputdir /out /tests
     volumes:
       - ./integration-test/robot/tests:/tests:ro
@@ -220,4 +227,6 @@ services:
     depends_on:
       - kafka
       - cdxserver
+      - heritrix
+
       
