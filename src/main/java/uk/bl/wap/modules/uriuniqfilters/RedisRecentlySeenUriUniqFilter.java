@@ -7,9 +7,11 @@ import java.util.logging.Logger;
 
 import org.springframework.context.Lifecycle;
 
-import com.lambdaworks.redis.RedisClient;
-import com.lambdaworks.redis.RedisConnection;
-import com.lambdaworks.redis.protocol.SetArgs;
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.SetArgs;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisCommands;
+
 
 /**
  * 
@@ -32,9 +34,11 @@ public class RedisRecentlySeenUriUniqFilter
 
     private int redisDB = 0;
 
-    private RedisConnection<String, String> connection;
+    private RedisClient client;
 
-    private RedisClient redisClient;
+    private StatefulRedisConnection<String, String> connection;
+    
+    private RedisCommands<String, String> commands;
 
     // (v4 API) private RedisCommands<String, String> syncCommands;
 
@@ -76,12 +80,12 @@ public class RedisRecentlySeenUriUniqFilter
      * 
      */
     private void connect() {
-        redisClient = RedisClient.create(redisEndpoint);
-        connection = redisClient
-                .connect();
+        client = RedisClient.create(redisEndpoint);
+        connection = client.connect();
+        commands = connection.sync();
 
         // Select the database to use:
-        connection.select(redisDB);
+        commands.select(redisDB);
 
         System.out.println("Connected to Redis");
     }
@@ -94,7 +98,7 @@ public class RedisRecentlySeenUriUniqFilter
     @Override
     public void stop() {
         connection.close();
-        redisClient.shutdown();
+        client.shutdown();
     }
 
     @Override
@@ -106,13 +110,13 @@ public class RedisRecentlySeenUriUniqFilter
     }
 
     /**
-     * 
+     * (see https://redis.io/commands/set)
      */
     public boolean setAddWithTTL(String key, String uri, int ttl_s) {
-        // Add to the cache, if absent:
+        // Add to the cache, if absent, with the given TTL:
         SetArgs setArgs = SetArgs.Builder.nx().ex(ttl_s);
         // Talk to redis:
-        String result = connection.set(key, uri, setArgs);
+        String result = commands.set(key, uri, setArgs);
         // Check result:
         if (result != null) {
             LOGGER.finest("Cache entry " + uri + " is new.");
@@ -125,14 +129,14 @@ public class RedisRecentlySeenUriUniqFilter
 
     @Override
     protected boolean setRemove(CharSequence key) {
-        long removed = connection.del(key.toString());
+        long removed = commands.del(key.toString());
         return (removed > 0);
     }
 
     @Override
     protected long setCount() {
         if (connection != null && connection.isOpen()) {
-            String result = connection.info("keyspace");
+            String result = commands.info("keyspace");
             LOGGER.finest("Got: " + result);
             return parseKeyspaceInfo(result);
         }

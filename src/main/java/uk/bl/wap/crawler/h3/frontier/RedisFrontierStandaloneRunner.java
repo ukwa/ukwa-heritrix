@@ -5,6 +5,7 @@ package uk.bl.wap.crawler.h3.frontier;
 
 import org.apache.commons.httpclient.URIException;
 import org.archive.crawler.prefetch.FrontierPreparer;
+import org.archive.crawler.spring.SheetOverlaysManager;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURIFactory;
 
@@ -28,6 +29,8 @@ public class RedisFrontierStandaloneRunner {
         RedisFrontier rf = new RedisFrontier();
         rf.setRedisEndpoint("redis://localhost:6379");
         rf.f.connect();
+        
+        rf.setSheetOverlaysManager(new SheetOverlaysManager());
 
         FrontierPreparer fp = new FrontierPreparer();
 
@@ -44,6 +47,7 @@ public class RedisFrontierStandaloneRunner {
         CrawlURI nextCuri = rf.findEligibleURI();
 
         if (nextCuri.equals(curi)) {
+            System.out.println("Got "+nextCuri);
             System.out.println("They match!");
             rf.processFinish(curi);
         }

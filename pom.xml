@@ -209,9 +209,9 @@
          <version>2.10.1</version>
       </dependency>
       <dependency>
-         <groupId>biz.paluch.redis</groupId>
-         <artifactId>lettuce</artifactId>
-         <version>3.4.2.Final</version>
+	    <groupId>io.lettuce</groupId>
+	    <artifactId>lettuce-core</artifactId>
+	    <version>6.1.4.RELEASE</version>
          <exclusions>
             <exclusion>
                <artifactId>guava</artifactId>

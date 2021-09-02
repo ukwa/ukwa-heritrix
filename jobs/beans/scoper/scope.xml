@@ -165,7 +165,9 @@
        <property name="enabled" value="false" />
     </bean>
     
-    <!-- ADDITIONAL SCOPE SUPPORT BEANS -->
+    <!-- ********************************************************** -->
+    <!-- SCOPE BEAN EXTERNAL RESOURCES -->
+    <!-- ********************************************************** -->
    
    <!-- GEO-LOOKUP: specifying location of external database. -->
     <bean id="externalGeoLookup" class="uk.bl.wap.modules.deciderules.ExternalGeoLookup">
@@ -178,6 +180,10 @@
         <property name="socketTimeout" value="30000"/>
     </bean>
  
+    <!-- ********************************************************** -->
+    <!-- ADDITIONAL SCOPE SYSTEM SUPPORT BEANS -->
+    <!-- ********************************************************** -->
+   
    <!-- SHEETOVERLAYMANAGER: manager of sheets of contextual overlays
        Autowired to include any SheetForSurtPrefix or 
        SheetForDecideRuled beans -->
@@ -189,7 +195,7 @@
   <bean id="serverCache" class="org.archive.modules.fetcher.DefaultServerCache">
   </bean>
    
-   <!-- SEEDS FILE: Disabled in this case, as we control seeding with Kafka (below_ -->
+   <!-- SEEDS FILE: Disabled in this case, as we are processing a stream of proposed URLs -->
    <bean id="seeds" class="uk.bl.wap.crawler.modules.seeds.NoOpSeedsModule">
       <property name="sourceTagSeeds" value="true" />
    </bean>
