@@ -58,7 +58,22 @@ public class RedisSimpleFrontier {
 	      return ob;
 	   };
 	};
-    	
+    
+	public class FrontierEmptyException extends Exception {
+
+		/**
+		 * @param string
+		 */
+		public FrontierEmptyException(String string) {
+			super(string);
+		}
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 5194808787216022781L;
+		
+	}
     
 
     /**
@@ -136,7 +151,8 @@ public class RedisSimpleFrontier {
         while (curi == null) {
             try {
                 curi = this.due();
-            } catch (Exception e) {
+            } catch (FrontierEmptyException e) {
+            	// No URLs 	queue at all:
                 return null;
             }
             // Sleep if there's nothing due...
@@ -168,7 +184,7 @@ public class RedisSimpleFrontier {
      * @return
      * @throws Exception
      */
-    public synchronized CrawlURI due() throws Exception {
+    public synchronized CrawlURI due() throws FrontierEmptyException {
     	// Look for the first scheduled queue that is due:
         long now = System.currentTimeMillis();
         logger.finest("Looking for active queues, due for processing at " + now
@@ -182,8 +198,8 @@ public class RedisSimpleFrontier {
             if ((totalScheduled + totalActive) > 0) {
                 return null;
             } else {
-                logger.finer("No queues scheduled to run.");
-                throw new Exception("No more URLs scheduled!");
+                logger.finest("No queues scheduled to run.");
+                throw new FrontierEmptyException("No more URLs scheduled!");
             }
         }
         
@@ -209,7 +225,7 @@ public class RedisSimpleFrontier {
         logger.fine("Got URI " + uri);
         CrawlURI curi = getCrawlURIFromRedis(uri.get(0));
         if (curi == null) {
-            throw new Exception("Frontier damaged, CrawlURI for " + uri
+            throw new RuntimeException("Frontier damaged, CrawlURI for " + uri
                     + " cannot be found!");
         }
         return curi;
@@ -222,14 +238,14 @@ public class RedisSimpleFrontier {
         // Store the URI itself:
         String result = this.commands.set(urlKey,
                 Base64.encode(caUriToKryo(curi)));
-        logger.finest("RES " + result + " stored " + curi);
+        logger.finer("Object " + result + " stored " + curi);
 
         // Enqueue it, if the URL is already there, only update it if 
         // the new score is less than the current score:
         // (see https://redis.io/commands/ZADD)
         long added = this.commands.zadd(getKeyForQueue(curi), ZAddArgs.Builder.lt(),
                 calculateScore(curi),  curi.getURI());
-        logger.finest("ADDED " + added + " for " + curi);
+        logger.finer("Queue added " + added + " for " + curi);
 
         // Add to available queues set, if not already active:
         Double due = this.commands.zscore(KEY_QS_SCHEDULED, queue);
@@ -238,9 +254,9 @@ public class RedisSimpleFrontier {
         if (null == due) {
             due = (double) System.currentTimeMillis();
             Long count = this.commands.zadd(KEY_QS_SCHEDULED, due, queue);
-            logger.finest("ADD " + count + " for uri " + curi);
+            logger.finer("Queue was not due, set " + count + " for uri " + curi);
         }
-        logger.finest("Enqueued URI is due " + (long) due.doubleValue());
+        logger.finer("Enqueued URI "+ curi + "  is due " + (long) due.doubleValue());
 
         return added > 0;
     }
@@ -260,14 +276,15 @@ public class RedisSimpleFrontier {
                     ZAddArgs.Builder.ch(), fetchTime,
                     curi.getClassKey());
             this.commands.zrem(KEY_QS_ACTIVE, curi.getClassKey());
-            logger.finest("Updated count: " + count + " with " + fetchTime);
+            logger.finer("Updated count: " + count + " with " + fetchTime);
             String result = this.commands.set("u:object:" + curi.getURI(),
                     Base64.encode(caUriToKryo(curi)));
-            logger.finest("RES " + result + " updated object for " + curi);
+            logger.finer("Reschedule " + result + " updated object for " + curi);
         }
     }
 
     public synchronized void dequeue(String q, String uri) {
+    	logger.finest("Dequeuing "+  uri + " from queue " + q);
         // Remove from frontier queue
     	this.commands.multi();
         this.commands.del("u:object:" + uri);
@@ -280,7 +297,7 @@ public class RedisSimpleFrontier {
         this.commands.zrem(KEY_QS_ACTIVE, q);
         Long count = this.commands.zadd(KEY_QS_SCHEDULED,
                 ZAddArgs.Builder.ch(), nextFetch, q);
-        logger.finest(
+        logger.finer(
                 "ReleaseQueue updated count: " + count + " until " + nextFetch);
     }
 
@@ -290,7 +307,7 @@ public class RedisSimpleFrontier {
         this.commands.zrem(KEY_QS_SCHEDULED, q);
         this.commands.set(KEY_QS_RETIRED, q);
         this.commands.exec();
-        logger.info("Queue " + q + " retired.");
+        logger.finer("Queue " + q + " retired.");
         // TODO 'disown' the queue properly ???:
     }
 

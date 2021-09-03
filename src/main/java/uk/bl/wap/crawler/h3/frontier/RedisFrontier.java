@@ -12,6 +12,7 @@ import static org.archive.modules.fetcher.FetchStatusCodes.S_RUNTIME_EXCEPTION;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -176,9 +177,13 @@ public class RedisFrontier extends AbstractFrontier
 
     @Override
     public void deleted(CrawlURI curi) {
-        // TODO Auto-generated method stub
-        new Exception().printStackTrace();
-
+        //treat as disregarded
+        appCtx.publishEvent(
+            new CrawlURIDispositionEvent(this,curi,DISREGARDED));
+        log(curi);
+        incrementDisregardedUriCount();
+        curi.stripToMinimal();
+        curi.processingCleanup();
     }
 
     @Override
@@ -213,8 +218,31 @@ public class RedisFrontier extends AbstractFrontier
     @Override
     public Map<String, Object> shortReportMap() {
         // TODO Auto-generated method stub
-        new Exception().printStackTrace();
-        return null;
+    	/*
+        int allCount = allQueues.size();
+        int inProcessCount = inProcessQueues.size();
+        int readyCount = readyClassQueues.size();
+        int snoozedCount = getSnoozedCount();
+        int activeCount = inProcessCount + readyCount + snoozedCount;
+        int inactiveCount = getTotalEligibleInactiveQueues();
+        int ineligibleCount = getTotalIneligibleInactiveQueues();
+        int retiredCount = getRetiredQueues().size();
+        int exhaustedCount = allCount - activeCount - inactiveCount - retiredCount;
+        */
+
+        Map<String,Object> map = new LinkedHashMap<String, Object>();
+        map.put("totalQueues", 0);
+        map.put("inProcessQueues", 0);
+        map.put("readyQueues", 0);
+        map.put("snoozedQueues", 0);
+        map.put("activeQueues", 0);
+        map.put("inactiveQueues", 0);
+        map.put("ineligibleQueues", 0);
+        map.put("retiredQueues", 0);
+        map.put("exhaustedQueues", 0);
+        map.put("lastReachedState", lastReachedState);
+        map.put("queueReadiedCount", queueReadiedCount.get());
+        return map;
     }
 
     @Override
@@ -262,11 +290,11 @@ public class RedisFrontier extends AbstractFrontier
     protected CrawlURI findEligibleURI() {
         CrawlURI curi = this.f.next();
 
-        logger.finest("Returning: " + curi);
         // Set the number 'inFlight' to zero, so the crawl can end.
         if (curi == null) {
             this.inFlight = 0;
         } else {
+            logger.finest("Returning: " + curi);
             // Ensure sheet overlays are applied (is appears these are not
             // persisted - the original BDB-based implementation does this too.)
             sheetOverlaysManager.applyOverlaysTo(curi);
@@ -362,6 +390,8 @@ public class RedisFrontier extends AbstractFrontier
         // Curi will definitely be disposed of without retry, so remove from
         // queue
         this.delete(curi);
+        // Turns out the Frontier is also responsible for emitting the crawl log:
+        log(curi);
 
         if (curi.isSuccess()) {
             logger.finest("SUCCESS " + curi);
