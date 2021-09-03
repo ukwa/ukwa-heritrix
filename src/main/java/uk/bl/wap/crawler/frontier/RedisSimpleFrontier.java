@@ -34,6 +34,7 @@ import io.lettuce.core.api.sync.RedisCommands;
  * TODO Current version is rather too closely tied to H3 via the CrawlURI.
  * TODO Scan Redis on start up and make sure we know whatever numbers/stats we need, and make sure all the known queues are in one of scheduled/active/retired/exhausted.
  * TODO Add the distinction between exausted and retired (over quota).
+ * TODO Consider switching to some kind of q:status:uk,bl, = {ACTIVE|RETIRED|ETC} so queues don't end up with mixed-up statuses.
  * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
@@ -185,6 +186,8 @@ public class RedisSimpleFrontier {
      * FIXME Race-conditions, as in Redis could end up inconsistent if this
      * method dies mid-flow.
      * 
+     * SCHEDULED -> ACTIVE
+     * 
      * @return
      * @throws Exception
      */
@@ -215,8 +218,8 @@ public class RedisSimpleFrontier {
                 Range.create(-10.0, 1.0e10), Limit.create(0, 1));
         if (uri.size() == 0) {
             logger.info("No uris for queue " + q + " exhausting the queue.");
-            this.commands.sadd(KEY_QS_EXHAUSTED, q);
             this.commands.zrem(KEY_QS_SCHEDULED, q);
+            this.commands.sadd(KEY_QS_EXHAUSTED, q);
             return null;
         }
         // Okay to go, so activate queue (removing from scheduled, add to
@@ -235,6 +238,12 @@ public class RedisSimpleFrontier {
         return curi;
     }
 
+    /**
+     * TODO Wrap all this in a transaction?
+     * 
+     * @param curi
+     * @return
+     */
     public synchronized boolean enqueue(CrawlURI curi) {
         String urlKey = KEY_OP_URI + curi.getURI();
         String queue = curi.getClassKey();
@@ -263,11 +272,24 @@ public class RedisSimpleFrontier {
             logger.finer("Queue new, set due " + due + " for queue " + queue);
         	// Add to a list of all known queues:
         	this.commands.sadd(KEY_QS_KNOWN, queue);
+        } else {
+            // Remove this queue from other sets, if it's there:
+        	this.commands.srem(KEY_QS_RETIRED, queue);
+        	this.commands.srem(KEY_QS_EXHAUSTED, queue);
         }
 
         return added > 0;
     }
 
+    /**
+     * 
+     * ACTIVE -> RETIRED
+     * or
+     * ACTIVE -> SCHEDULED
+     * 
+     * @param curi
+     * @param fetchTime
+     */
     public synchronized void reschedule(CrawlURI curi, long fetchTime) {
         if (curi.includesRetireDirective()) {
             // Remove the queue from the fetch list:
@@ -276,7 +298,6 @@ public class RedisSimpleFrontier {
             this.commands.sadd(KEY_QS_RETIRED, curi.getClassKey());
             this.commands.exec();
             logger.info("Queue " + curi.getClassKey() + " retired.");
-            // TODO 'disown' the queue properly ???:
         } else {
         	// TODO Wrap this in a transaction?
             Long count = this.commands.zadd(KEY_QS_SCHEDULED,
@@ -299,6 +320,13 @@ public class RedisSimpleFrontier {
         this.commands.exec();
     }
 
+    /**
+     * 
+     * ACTIVE -> SCHEDULED
+     * 
+     * @param q
+     * @param nextFetch
+     */
     public synchronized void releaseQueue(String q, Long nextFetch) {
     	// TODO Wrap this in a transaction?
         this.commands.zrem(KEY_QS_ACTIVE, q);
@@ -308,10 +336,16 @@ public class RedisSimpleFrontier {
                 "ReleaseQueue updated count: " + count + " until " + nextFetch);
     }
 
+    /**
+     * {ANY} -> RETIRED
+     * 
+     * @param q
+     */
     public synchronized void retireQueue(String q) {
     	this.commands.multi();
         this.commands.zrem(KEY_QS_ACTIVE, q);
         this.commands.zrem(KEY_QS_SCHEDULED, q);
+        this.commands.zrem(KEY_QS_EXHAUSTED, q);
         this.commands.sadd(KEY_QS_RETIRED, q);
         this.commands.exec();
         logger.finer("Queue " + q + " retired.");

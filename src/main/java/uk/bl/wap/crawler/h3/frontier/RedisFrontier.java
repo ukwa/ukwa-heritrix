@@ -379,8 +379,6 @@ public class RedisFrontier extends AbstractFrontier
         curi.incrementFetchAttempts();
         logNonfatalErrors(curi);
 
-        int holderCost = curi.getHolderCost();
-        
         // Record that an in-flight CrawlURI has landed:
         this.inFlight.decrementAndGet();
 
@@ -435,7 +433,6 @@ public class RedisFrontier extends AbstractFrontier
                 appCtx.publishEvent(
                     new CrawlURIDispositionEvent(this, curi, DISREGARDED));
             }
-            holderCost = 0; // no charge for disregarded URIs
             // TODO: consider reinstating forget-URI capability, so URI could be
             // re-enqueued if discovered again
             doJournalDisregarded(curi);
@@ -460,8 +457,6 @@ public class RedisFrontier extends AbstractFrontier
                 doJournalFinishedFailure(curi);
             }
         }
-
-        // wq.expend(holderCost); // successes & failures charge cost to queue
 
         // Update the queue next-fetch time for this queue:
         long delay_ms = curi.getPolitenessDelay();
