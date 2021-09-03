@@ -338,6 +338,7 @@ public class RedisFrontier extends AbstractFrontier
 
         this.discoveredUrisCount++;
         this.inFlight++;
+        this.queuedUriCount.incrementAndGet();
         this.f.enqueue(curi);
     }
 
@@ -468,6 +469,7 @@ public class RedisFrontier extends AbstractFrontier
 
     protected void delete(CrawlURI curi) {
         this.f.dequeue(curi.getClassKey(), curi.getURI());
+        this.queuedUriCount.decrementAndGet();
     }
 
     /* ------- ------- ------- ------- ------- ------- ------- ------- */
@@ -482,7 +484,7 @@ public class RedisFrontier extends AbstractFrontier
      */
     @Override
     protected int getInProcessCount() {
-        logger.fine("Current inFlight = " + inFlight);
+        logger.finest("Current inFlight = " + inFlight);
         return inFlight;
     }
 

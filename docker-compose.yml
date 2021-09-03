@@ -50,6 +50,7 @@ services:
       - kafka
       - webrender
       - cdxserver
+      - redis
       - acid.matkelly.com
       - crawl-test-site.webarchive.org.uk
     volumes:
