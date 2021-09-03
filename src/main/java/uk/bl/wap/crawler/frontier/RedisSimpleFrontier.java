@@ -112,14 +112,16 @@ public class RedisSimpleFrontier {
      * 
      */
     public synchronized void connect() {
-        client = RedisClient.create(redisEndpoint);
-        connection = client.connect();
-        commands = connection.sync();
-
-        // Select the database to use:
-        commands.select(redisDB);
-
-        logger.info("Connected to Redis");
+    	if( this.connection == null || !this.connection.isOpen() ) {
+	        client = RedisClient.create(redisEndpoint);
+	        connection = client.connect();
+	        commands = connection.sync();
+	
+	        // Select the database to use:
+	        commands.select(redisDB);
+	
+	        logger.info("Connected to Redis");
+    	}
     }
 
     /* ------- ------- ------- ------- ------- ------- ------- ------- */
@@ -314,6 +316,13 @@ public class RedisSimpleFrontier {
         this.commands.exec();
         logger.finer("Queue " + q + " retired.");
         // TODO 'disown' the queue properly ???:
+    }
+    
+    public boolean isConnected() {
+    	if( this.commands != null && this.commands.isOpen()) {
+    		return true;
+    	}
+    	return false;
     }
     
     public long getTotalQueues() {

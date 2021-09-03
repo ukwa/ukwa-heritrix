@@ -233,17 +233,32 @@ public class RedisFrontier extends AbstractFrontier
         */
 
         Map<String,Object> map = new LinkedHashMap<String, Object>();
-        map.put("totalQueues", this.f.getTotalQueues());
-        map.put("inProcessQueues", this.inFlight.get());
-        map.put("readyQueues", 0);
-        map.put("snoozedQueues", this.f.getScheduledQueues());
-        map.put("activeQueues", this.f.getActiveQueues());
-        map.put("inactiveQueues", 0);
-        map.put("ineligibleQueues", 0);
-        map.put("retiredQueues", this.f.getRetiredQueues());
-        map.put("exhaustedQueues", this.f.getExhaustedQueues());
-        map.put("lastReachedState", lastReachedState);
-        map.put("queueReadiedCount", queueReadiedCount.get());
+        if( this.f.isConnected() ) {
+	        map.put("totalQueues", this.f.getTotalQueues());
+	        map.put("inProcessQueues", this.inFlight.get());
+	        map.put("readyQueues", 0);
+	        map.put("snoozedQueues", this.f.getScheduledQueues());
+	        map.put("activeQueues", this.f.getActiveQueues());
+	        map.put("inactiveQueues", 0);
+	        map.put("ineligibleQueues", 0);
+	        map.put("retiredQueues", this.f.getRetiredQueues());
+	        map.put("exhaustedQueues", this.f.getExhaustedQueues());
+	        map.put("lastReachedState", lastReachedState);
+	        map.put("queueReadiedCount", queueReadiedCount.get());
+        } else {
+        	// This gets called after build, prior to launch, prior to start() (and therefore connect()):
+	        map.put("totalQueues", 0);
+	        map.put("inProcessQueues", this.inFlight.get());
+	        map.put("readyQueues", 0);
+	        map.put("snoozedQueues", 0);
+	        map.put("activeQueues", 0);
+	        map.put("inactiveQueues", 0);
+	        map.put("ineligibleQueues", 0);
+	        map.put("retiredQueues", 0);
+	        map.put("exhaustedQueues", 0);
+	        map.put("lastReachedState", lastReachedState);
+	        map.put("queueReadiedCount", queueReadiedCount.get());
+        }
         return map;
     }
 
