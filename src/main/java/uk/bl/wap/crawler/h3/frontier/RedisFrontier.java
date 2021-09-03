@@ -16,6 +16,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,9 +50,9 @@ public class RedisFrontier extends AbstractFrontier
 
     protected RedisSimpleFrontier f = new RedisSimpleFrontier();
 
-    private int inFlight = 0;
+    protected AtomicInteger inFlight = new AtomicInteger(0);
 
-    private long discoveredUrisCount = 0;
+    protected AtomicLong discoveredUrisCount = new AtomicLong(0);
 
     // ApplicationContextAware implementation, for eventing
     protected AbstractApplicationContext appCtx;
@@ -120,7 +122,7 @@ public class RedisFrontier extends AbstractFrontier
      */
     @Override
     public long discoveredUriCount() {
-        return this.discoveredUrisCount;
+        return this.discoveredUrisCount.get();
     }
 
     /**
@@ -231,15 +233,15 @@ public class RedisFrontier extends AbstractFrontier
         */
 
         Map<String,Object> map = new LinkedHashMap<String, Object>();
-        map.put("totalQueues", 0);
-        map.put("inProcessQueues", 0);
+        map.put("totalQueues", this.f.getTotalQueues());
+        map.put("inProcessQueues", this.inFlight.get());
         map.put("readyQueues", 0);
-        map.put("snoozedQueues", 0);
-        map.put("activeQueues", 0);
+        map.put("snoozedQueues", this.f.getScheduledQueues());
+        map.put("activeQueues", this.f.getActiveQueues());
         map.put("inactiveQueues", 0);
         map.put("ineligibleQueues", 0);
-        map.put("retiredQueues", 0);
-        map.put("exhaustedQueues", 0);
+        map.put("retiredQueues", this.f.getRetiredQueues());
+        map.put("exhaustedQueues", this.f.getExhaustedQueues());
         map.put("lastReachedState", lastReachedState);
         map.put("queueReadiedCount", queueReadiedCount.get());
         return map;
@@ -290,10 +292,9 @@ public class RedisFrontier extends AbstractFrontier
     protected CrawlURI findEligibleURI() {
         CrawlURI curi = this.f.next();
 
-        // Set the number 'inFlight' to zero, so the crawl can end.
-        if (curi == null) {
-            this.inFlight = 0;
-        } else {
+        // If there is one, return it:
+        if (curi != null) {
+        	this.inFlight.incrementAndGet();
             logger.finest("Returning: " + curi);
             // Ensure sheet overlays are applied (is appears these are not
             // persisted - the original BDB-based implementation does this too.)
@@ -336,10 +337,11 @@ public class RedisFrontier extends AbstractFrontier
     protected void processScheduleAlways(CrawlURI curi) {
         assert KeyedProperties.overridesActiveFrom(curi);
 
-        this.discoveredUrisCount++;
-        this.inFlight++;
-        this.queuedUriCount.incrementAndGet();
-        this.f.enqueue(curi);
+        boolean newUrl = this.f.enqueue(curi);
+        if( newUrl ) {
+            this.discoveredUrisCount.incrementAndGet();
+            this.queuedUriCount.incrementAndGet();
+        }
     }
 
     @Override
@@ -363,6 +365,9 @@ public class RedisFrontier extends AbstractFrontier
         logNonfatalErrors(curi);
 
         int holderCost = curi.getHolderCost();
+        
+        // Record that an in-flight CrawlURI has landed:
+        this.inFlight.decrementAndGet();
 
         // FIXME this does not track and reset session/total budgets etc. Really
         // need to rank the 'available' queue to ensure hosts are not
@@ -462,7 +467,6 @@ public class RedisFrontier extends AbstractFrontier
         } else {
             curi.stripToMinimal();
             curi.processingCleanup();
-            inFlight--;
         }
 
     }
@@ -485,7 +489,7 @@ public class RedisFrontier extends AbstractFrontier
     @Override
     protected int getInProcessCount() {
         logger.finest("Current inFlight = " + inFlight);
-        return inFlight;
+        return inFlight.get();
     }
 
     @Override

@@ -167,7 +167,16 @@ services:
     volumes:
       - ./target/integration-test-volumes/redis:/data
 
-
+  # Redis Browser      
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    restart: always
+    environment:
+    - REDIS_HOSTS=redis:redis:6379
+    ports:
+    - "8081:8081"
+    depends_on:
+    - redis
 
 
   # ----------------------------------------------
