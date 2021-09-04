@@ -130,7 +130,6 @@ services:
 
   # WARC Proxy, with de-duplication disabled and a rapid rollover:
   warcprox:
-    user: ${CRAWL_UID}
     image: ukwa/warcprox:2.4.17.1
     command: "warcprox -b 0.0.0.0 -d /heritrix/wren --base32 --gzip --rollover-idle-time 600 --dedup-db-file /dev/null --stats-db-file /dev/null --cacert /heritrix/wren/warcprox-ca.pem --certs-dir /heritrix/wren/warcprox-ca-certs --quiet --plugin warcprox-plugins.listeners.KafkaCaptureFeed --plugin warcprox-plugins.listeners.UpdateOutbackCDX"
     environment:
@@ -159,43 +158,9 @@ services:
     command: "java -Xmx2g -jar outbackcdx.jar -u -d /cdx-data -p 8080 -b 0.0.0.0 -t 1000"
     ports:
       - "9090:8080"    
-  #  volumes:
-  #    - ./target/integration-test-volumes/cdx:/cdx-data
-
-
-  # ----------------------------------------------
-  # Wayback Access
-  # ----------------------------------------------
-  warc-server:
-    image: ukwa/warc-server
-    ports:
-      - 8001:8000
-    environment:
-      - "WARC_PATHS=/heritrix/output,/heritrix/wren"
     volumes:
-      - ./target/integration-test-volumes/output:/heritrix/output
-      - ./target/integration-test-volumes/wren:/heritrix/wren
- 
-  # OpenWayback for playback
-  openwayback:
-    image: ukwa/waybacks
-    ports:
-      - "8080:8080"
-      - "8090:8090"
-    environment:
-      - "UKWA_OWB_VERSION=qa"
-      - "WAYBACK_URL_PORT=8080"
-      - "WAYBACK_PROXY_PORT=8090"
-      - "CDX_WHITELIST="
-      - "WAYBACK_EXCLUDE_FILE=/usr/local/tomcat/webapps/ROOT/WEB-INF/classes/exclude.txt"
-      - "WAYBACK_EMBARGO=0"
-      - "WAYBACK_HTTPFS_PREFIX=http://warc-server:8000/by-filename/"
-      - "CDX_INDEX_SERVER=http://cdxserver:8080/fc"
-      - "WAYBACK_URL_PREFIX=http://localhost:8080"
-      - "WAYBACK_URL_HOST=localhost"
-    depends_on:
-      - warc-server
-      - cdxserver
+      - ./target/integration-test-volumes/cdx:/cdx-data
+
 
   # ----------
   # Test sites and test runner
