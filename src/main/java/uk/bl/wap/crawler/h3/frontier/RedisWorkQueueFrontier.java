@@ -32,16 +32,16 @@ public class RedisWorkQueueFrontier extends WorkQueueFrontier {
     /**
      * @return the redisEndpoint
      */
-    public String getRedisEndpoint() {
-        return this.f.getRedisEndpoint();
+    public String getEndpoint() {
+        return this.f.getEndpoint();
     }
 
     /**
      * @param redisEndpoint
      *            the redisEndpoint to set, defaults to "redis://localhost:6379"
      */
-    public void setRedisEndpoint(String redisEndpoint) {
-        this.f.setRedisEndpoint(redisEndpoint);
+    public void setEndpoint(String redisEndpoint) {
+        this.f.setEndpoint(redisEndpoint);
     }
 
     /**

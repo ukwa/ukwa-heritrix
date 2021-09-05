@@ -728,7 +728,7 @@
 	
 	<!-- FRONTIER: Record of all URIs discovered and queued-for-collection -->
 	<bean id="frontier" class="uk.bl.wap.crawler.h3.frontier.RedisFrontier">
-        <property name="redisEndpoint" value="#{systemEnvironment['REDIS_ENDPOINT'] ?: 'redis://redis:6379' }"/>
+        <property name="endpoint" value="#{systemEnvironment['REDIS_ENDPOINT'] ?: 'redis://redis:6379' }"/>
         <property name="extract404s" value="false" />
 		<property name="retryDelaySeconds" value="20" />
 		<property name="maxRetries" value="#{systemEnvironment['MAX_RETRIES'] ?: 10 }" />

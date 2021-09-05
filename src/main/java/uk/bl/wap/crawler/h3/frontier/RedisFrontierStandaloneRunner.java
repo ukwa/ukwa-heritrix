@@ -27,7 +27,7 @@ public class RedisFrontierStandaloneRunner {
     public static void main(String[] args) throws URIException {
 
         RedisFrontier rf = new RedisFrontier();
-        rf.setRedisEndpoint("redis://localhost:6379");
+        rf.setEndpoint("redis://localhost:6379");
         rf.f.connect();
         
         rf.setSheetOverlaysManager(new SheetOverlaysManager());

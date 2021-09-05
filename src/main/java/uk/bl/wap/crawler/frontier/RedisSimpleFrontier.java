@@ -44,7 +44,7 @@ public class RedisSimpleFrontier {
     private static final Logger logger = Logger
             .getLogger(RedisSimpleFrontier.class.getName());
 
-    private String redisEndpoint = "redis://localhost:6379";
+    private String endpoint = "redis://localhost:6379";
 
     private int redisDB = 0;
 
@@ -82,16 +82,16 @@ public class RedisSimpleFrontier {
     /**
      * @return the redisEndpoint
      */
-    public String getRedisEndpoint() {
-        return redisEndpoint;
+    public String getEndpoint() {
+        return endpoint;
     }
 
     /**
      * @param redisEndpoint
      *            the redisEndpoint to set, defaults to "redis://redis:6379"
      */
-    public void setRedisEndpoint(String redisEndpoint) {
-        this.redisEndpoint = redisEndpoint;
+    public void setEndpoint(String redisEndpoint) {
+        this.endpoint = redisEndpoint;
     }
 
     /**
@@ -114,7 +114,7 @@ public class RedisSimpleFrontier {
      */
     public synchronized void connect() {
     	if( this.connection == null || !this.connection.isOpen() ) {
-	        client = RedisClient.create(redisEndpoint);
+	        client = RedisClient.create(endpoint);
 	        connection = client.connect();
 	        commands = connection.sync();
 	

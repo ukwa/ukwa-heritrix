@@ -163,6 +163,7 @@ services:
   # Redis for the external frontier
   redis:
     image: redis:6
+    command: "redis-server --appendonly yes"
     ports:
       - "6379:6379"
     volumes:
