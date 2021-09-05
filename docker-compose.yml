@@ -56,7 +56,8 @@ services:
       - ./docker/jmx_prometheus_javaagent-0.3.1.jar:/jmx_prometheus_javaagent-0.3.1.jar
       - ./docker/heritrix-jmx-config.yml:/jmx-config.yml
       # Override to use a different uriUniqFilter:
-      - ./jobs/frequent/uriuniqfilter-bloom.xml:/jobs/frequent/uriuniqfilter.xml
+      #- ./jobs/frequent/uriuniqfilter-bloom.xml:/jobs/frequent/uriuniqfilter.xml
+      - ./jobs/frequent/uriuniqfilter-rocksdb.xml:/jobs/frequent/uriuniqfilter.xml
       - ./docker/shared:/shared
       - ./target/integration-test-volumes/output:/heritrix/output
       - ./target/integration-test-volumes/scratch:/heritrix/scratch
@@ -127,7 +128,6 @@ services:
 
   # WARC Proxy, with de-duplication disabled and a rapid rollover:
   warcprox:
-    user: ${CRAWL_UID}
     image: ukwa/warcprox:2.4.17.1
     command: "warcprox -b 0.0.0.0 -d /heritrix/wren --base32 --gzip --rollover-idle-time 600 --dedup-db-file /dev/null --stats-db-file /dev/null --cacert /heritrix/wren/warcprox-ca.pem --certs-dir /heritrix/wren/warcprox-ca-certs --quiet --plugin warcprox-plugins.listeners.KafkaCaptureFeed --plugin warcprox-plugins.listeners.UpdateOutbackCDX"
     environment:
@@ -156,8 +156,8 @@ services:
     command: "java -Xmx2g -jar outbackcdx.jar -u -d /cdx-data -p 8080 -b 0.0.0.0 -t 1000"
     ports:
       - "9090:8080"    
-  #  volumes:
-  #    - ./target/integration-test-volumes/cdx:/cdx-data
+    volumes:
+      - ./target/integration-test-volumes/cdx:/cdx-data
 
 
   # ----------------------------------------------
