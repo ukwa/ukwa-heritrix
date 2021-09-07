@@ -17,7 +17,7 @@
    </bean>
    
    <bean id="rocksDbStorage" class="uk.bl.wap.util.RocksDBStorage">
-       <constructor-arg value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/uriUniqFilter"/>
+       <constructor-arg value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/rocksDbStore"/>
    </bean>
    
 </beans>
