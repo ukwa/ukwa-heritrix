@@ -47,6 +47,10 @@ import uk.bl.wap.crawler.frontier.RedisSimpleFrontier;
  * 
  * FIXME 167 downloaded + -8 queued = 159 total  BUT 175 entries in the crawl log!
  * 
+ * This is a 'flat' frontier with no work queue rotation. Work queues are only used to count stats/tallies/etc.
+ * As things are, the queue-based stats are only stored in memory, so quotas on queues won't work as expected.
+ * 
+ * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */

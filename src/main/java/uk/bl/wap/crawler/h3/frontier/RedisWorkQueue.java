@@ -13,6 +13,11 @@ import org.archive.util.ObjectIdentityMemCache;
 import uk.bl.wap.crawler.frontier.RedisSimpleFrontier;
 
 /**
+ * 
+ * As we are not using WorkQueue in the frontier itself, this is only 
+ * needed to manage queue stats/tallies etc. It is not used to actually 
+ * manage the crawl.
+ * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
