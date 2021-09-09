@@ -731,7 +731,7 @@
     <!-- n.b. uses a separate file so it can be overridden -->
 	
 	<!-- URI UNIQ FILTER: Used by frontier to remember URIs currently in the BDBFrontier -->
-    <import resource="uriuniqfilter.xml"/>
+    <import resource="${URIUNIQFILTER_BEANS_XML:uriuniqfilter-bdb.xml}"/>
     <!-- n.b. uses a separate file so it can be overridden for the domain crawl -->
      
     <!-- Shared OutbackCDX client and configuration -->
