@@ -727,8 +727,8 @@
 	</bean>
 	
 	<!-- FRONTIER: Record of all URIs discovered and queued-for-collection -->
-	<bean id="frontier" class="uk.bl.wap.crawler.h3.frontier.RedisFrontier">
-        <property name="endpoint" value="#{systemEnvironment['REDIS_ENDPOINT'] ?: 'redis://redis:6379' }"/>
+	<bean id="frontier" class="uk.bl.wap.crawler.h3.frontier.SimplifiedFrontierAdaptor">
+	    <property name="simplifiedFrontier" ref="simplifiedFrontier"/>
         <property name="extract404s" value="false" />
 		<property name="retryDelaySeconds" value="20" />
 		<property name="maxRetries" value="#{systemEnvironment['MAX_RETRIES'] ?: 10 }" />
@@ -738,6 +738,9 @@
 			<ref bean="scope" />
 		</property>
     </bean>
+	<bean id="simplifiedFrontier" class="uk.bl.wap.crawler.frontier.RedisSimplifiedFrontier">
+        <property name="endpoint" value="#{systemEnvironment['REDIS_ENDPOINT'] ?: 'redis://redis:6379' }"/>
+	</bean>
 	<!-- 
 	<bean id="frontier" class="org.archive.crawler.frontier.BdbFrontier">
         <property name="bdbModule" ref="bdbFrontierBdb"/>

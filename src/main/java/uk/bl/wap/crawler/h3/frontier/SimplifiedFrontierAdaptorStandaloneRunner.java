@@ -9,6 +9,8 @@ import org.archive.crawler.spring.SheetOverlaysManager;
 import org.archive.modules.CrawlURI;
 import org.archive.net.UURIFactory;
 
+import uk.bl.wap.crawler.frontier.RedisSimplifiedFrontier;
+
 /**
  * 
  * Purpose of this class is to run it standalone and check the working.
@@ -18,18 +20,19 @@ import org.archive.net.UURIFactory;
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
-public class RedisFrontierStandaloneRunner {
+public class SimplifiedFrontierAdaptorStandaloneRunner {
 
     /**
      * @param args
      * @throws URIException
      */
     public static void main(String[] args) throws URIException {
+    	RedisSimplifiedFrontier rsf = new RedisSimplifiedFrontier();
+        rsf.setEndpoint("redis://localhost:6379");
+        rsf.connect();
 
-        RedisFrontier rf = new RedisFrontier();
-        rf.setEndpoint("redis://localhost:6379");
-        rf.f.connect();
-        
+    	SimplifiedFrontierAdaptor rf = new SimplifiedFrontierAdaptor();
+        rf.setSimplifiedFrontier(rsf);        
         rf.setSheetOverlaysManager(new SheetOverlaysManager());
 
         FrontierPreparer fp = new FrontierPreparer();
@@ -57,7 +60,7 @@ public class RedisFrontierStandaloneRunner {
 
         rf.delete(curi);
 
-        rf.f.retireQueue(curi.getClassKey());
+        rsf.retireQueue(curi.getClassKey());
     }
 
 }

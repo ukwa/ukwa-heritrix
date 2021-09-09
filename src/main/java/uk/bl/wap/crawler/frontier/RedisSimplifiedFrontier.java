@@ -39,10 +39,10 @@ import io.lettuce.core.api.sync.RedisCommands;
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
-public class RedisSimpleFrontier {
+public class RedisSimplifiedFrontier implements SimplifiedFrontier {
 
     private static final Logger logger = Logger
-            .getLogger(RedisSimpleFrontier.class.getName());
+            .getLogger(RedisSimplifiedFrontier.class.getName());
 
     private String endpoint = "redis://localhost:6379";
 
@@ -129,7 +129,7 @@ public class RedisSimpleFrontier {
     /* */
     /* ------- ------- ------- ------- ------- ------- ------- ------- */
 
-    public RedisSimpleFrontier() {
+    public RedisSimplifiedFrontier() {
         kryo.autoregister(CrawlURI.class);
     }
 
@@ -138,13 +138,14 @@ public class RedisSimpleFrontier {
     /* */
     /* ------- ------- ------- ------- ------- ------- ------- ------- */
 
-    /**
+	/**
      * Wait for a URL to be due.
      * 
      * If no more are scheduled return null.
      * 
      * @return
      */
+    @Override
     public CrawlURI next() {
         CrawlURI curi = null;
 
@@ -191,7 +192,7 @@ public class RedisSimpleFrontier {
      * @return
      * @throws Exception
      */
-    public synchronized CrawlURI due() throws FrontierEmptyException {
+    private synchronized CrawlURI due() throws FrontierEmptyException {
     	// Look for the first scheduled queue that is due:
         long now = System.currentTimeMillis();
         logger.finest("Looking for active queues, due for processing at " + now
@@ -244,9 +245,9 @@ public class RedisSimpleFrontier {
      * @param curi
      * @return
      */
-    public synchronized boolean enqueue(CrawlURI curi) {
+    @Override
+    public synchronized boolean enqueue(String queue, CrawlURI curi) {
         String urlKey = KEY_OP_URI + curi.getURI();
-        String queue = curi.getClassKey();
 
         // Store the URI itself:
         String result = this.commands.set(urlKey,
@@ -256,7 +257,7 @@ public class RedisSimpleFrontier {
         // Enqueue it, if the URL is already there, only update it if 
         // the new score is less than the current score:
         // (see https://redis.io/commands/ZADD)
-        long added = this.commands.zadd(getKeyForQueue(curi), ZAddArgs.Builder.lt(),
+        long added = this.commands.zadd(getKeyForQueue(queue), ZAddArgs.Builder.lt(),
                 calculateScore(curi),  curi.getURI());
         logger.finer("Queued " + added + " of " + curi);
 
@@ -281,36 +282,7 @@ public class RedisSimpleFrontier {
         return added > 0;
     }
 
-    /**
-     * 
-     * ACTIVE -> RETIRED
-     * or
-     * ACTIVE -> SCHEDULED
-     * 
-     * @param curi
-     * @param fetchTime
-     */
-    public synchronized void reschedule(CrawlURI curi, long fetchTime) {
-        if (curi.includesRetireDirective()) {
-            // Remove the queue from the fetch list:
-        	this.commands.multi();
-            this.commands.zrem(KEY_QS_ACTIVE, curi.getClassKey());
-            this.commands.sadd(KEY_QS_RETIRED, curi.getClassKey());
-            this.commands.exec();
-            logger.info("Queue " + curi.getClassKey() + " retired.");
-        } else {
-        	// TODO Wrap this in a transaction?
-            Long count = this.commands.zadd(KEY_QS_SCHEDULED,
-                    ZAddArgs.Builder.ch(), fetchTime,
-                    curi.getClassKey());
-            this.commands.zrem(KEY_QS_ACTIVE, curi.getClassKey());
-            logger.finer("Updated count: " + count + " with " + fetchTime);
-            String result = this.commands.set(KEY_OP_URI + curi.getURI(),
-                    Base64.encode(caUriToKryo(curi)));
-            logger.finer("Reschedule " + result + " updated object for " + curi);
-        }
-    }
-
+	@Override
     public synchronized void dequeue(String q, String uri) {
     	logger.finest("Dequeuing "+  uri + " from queue " + q);
         // Remove from frontier queue
@@ -325,15 +297,16 @@ public class RedisSimpleFrontier {
      * ACTIVE -> SCHEDULED
      * 
      * @param q
-     * @param nextFetch
+     * @param fetchTime
      */
-    public synchronized void releaseQueue(String q, Long nextFetch) {
+    @Override
+    public synchronized void delayQueue(String q, long fetchTime) {
     	// TODO Wrap this in a transaction?
-        this.commands.zrem(KEY_QS_ACTIVE, q);
         Long count = this.commands.zadd(KEY_QS_SCHEDULED,
-                ZAddArgs.Builder.ch(), nextFetch, q);
-        logger.finer(
-                "ReleaseQueue updated count: " + count + " until " + nextFetch);
+                ZAddArgs.Builder.ch(), fetchTime,
+                q);
+        this.commands.zrem(KEY_QS_ACTIVE, q);
+        logger.finer("Updated count: " + count + " queue " + q + " with " + fetchTime);
     }
 
     /**
@@ -341,6 +314,7 @@ public class RedisSimpleFrontier {
      * 
      * @param q
      */
+	@Override
     public synchronized void retireQueue(String q) {
     	this.commands.multi();
         this.commands.zrem(KEY_QS_ACTIVE, q);
@@ -352,26 +326,32 @@ public class RedisSimpleFrontier {
         // TODO 'disown' the queue properly ???:
     }
     
-    public boolean isConnected() {
+	@Override
+	public boolean isRunning() {
     	if( this.commands != null && this.commands.isOpen()) {
     		return true;
     	}
     	return false;
     }
     
+	@Override
     public long getTotalQueues() {
     	return this.commands.scard(KEY_QS_KNOWN);
     }
     
+    @Override
     public long getActiveQueues() {
     	return this.commands.zcard(KEY_QS_ACTIVE);
     }
+    @Override
     public long getScheduledQueues() {
     	return this.commands.zcard(KEY_QS_SCHEDULED);
     }
+    @Override
     public long getRetiredQueues() {
     	return this.commands.scard(KEY_QS_RETIRED);
     }
+ 	@Override
     public long getExhaustedQueues() {
     	return this.commands.scard(KEY_QS_EXHAUSTED);
     }
@@ -380,11 +360,12 @@ public class RedisSimpleFrontier {
     /* */
     /* ------- ------- ------- ------- ------- ------- ------- ------- */
 
-    /*
+	/*
      * (non-Javadoc)
      * 
      * @see org.archive.crawler.frontier.AbstractFrontier#start()
      */
+    @Override
     public synchronized void start() {
         connect();
     }
@@ -394,6 +375,7 @@ public class RedisSimpleFrontier {
      * 
      * @see org.archive.crawler.frontier.AbstractFrontier#stop()
      */
+    @Override
     public synchronized void stop() {
         if (this.connection != null && this.connection.isOpen()) {
             this.connection.close();
@@ -404,10 +386,6 @@ public class RedisSimpleFrontier {
     /* ------- ------- ------- ------- ------- ------- ------- ------- */
     /* */
     /* ------- ------- ------- ------- ------- ------- ------- ------- */
-
-    private static String getKeyForWorkerInfo() {
-        return "w:1:info";
-    }
 
     private static String KEY_QS_SCHEDULED = "qs:scheduled";
     private static String KEY_QS_ACTIVE = "qs:active";
@@ -421,18 +399,12 @@ public class RedisSimpleFrontier {
         return "q:urls:" + q;
     }
     
-    private static String getQueueKey(CrawlURI curi) {
+    private static String getQueueKey(String q) {
     	// Replace commas with colons in key so they can be interpreted as a tree:
     	// TODO Use this instead of getClassKey.
     	// TODO Is this really a good idea?
-    	return curi.getClassKey().replace(",", ":");
+    	return q.replace(",", ":");
     }
-
-    private static String getKeyForQueue(CrawlURI curi) {
-        logger.finest("Generating key for: " + curi.getClassKey());
-        return "q:urls:" + curi.getClassKey();
-    }
-
 
     private synchronized byte[] caUriToKryo(CrawlURI curi) {
         return obs.get().writeClassAndObject(curi);

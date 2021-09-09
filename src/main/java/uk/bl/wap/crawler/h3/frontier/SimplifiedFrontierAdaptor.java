@@ -41,7 +41,8 @@ import org.springframework.context.support.AbstractApplicationContext;
 
 import com.sleepycat.collections.StoredSortedMap;
 
-import uk.bl.wap.crawler.frontier.RedisSimpleFrontier;
+import uk.bl.wap.crawler.frontier.RedisSimplifiedFrontier;
+import uk.bl.wap.crawler.frontier.SimplifiedFrontier;
 
 /**
  * 
@@ -54,13 +55,13 @@ import uk.bl.wap.crawler.frontier.RedisSimpleFrontier;
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
-public class RedisFrontier extends AbstractFrontier
+public class SimplifiedFrontierAdaptor extends AbstractFrontier
         implements ApplicationContextAware {
 
     private static final Logger logger = Logger
-            .getLogger(RedisFrontier.class.getName());
+            .getLogger(SimplifiedFrontierAdaptor.class.getName());
 
-    protected RedisSimpleFrontier f = new RedisSimpleFrontier();
+    private SimplifiedFrontier simplifiedFrontier;
 
     protected AtomicInteger inFlight = new AtomicInteger(0);
 
@@ -74,44 +75,28 @@ public class RedisFrontier extends AbstractFrontier
         this.appCtx = (AbstractApplicationContext) applicationContext;
     }
 
-    /**
-     * @return the redisEndpoint
-     */
-    public String getEndpoint() {
-        return this.f.getEndpoint();
-    }
-
-    /**
-     * @param redisEndpoint
-     *            the redisEndpoint to set, defaults to "redis://localhost:6379"
-     */
-    public void setEndpoint(String redisEndpoint) {
-        this.f.setEndpoint(redisEndpoint);
-    }
-
-    /**
-     * @return the DB number
-     */
-    public int getDB() {
-        return this.f.getDB();
-    }
-
-    /**
-     * @param DB
-     *            the DB number to use, defaults to 0
-     */
-    public void setDB(int DB) {
-        this.f.setDB(DB);
-    }
-
     /* ------- ------- ------- ------- ------- ------- ------- ------- */
     /* */
     /* ------- ------- ------- ------- ------- ------- ------- ------- */
 
-    public RedisFrontier() {
+    public SimplifiedFrontierAdaptor() {
     }
-
+    
     /**
+	 * @return the simplifiedFrontier
+	 */
+	public SimplifiedFrontier getSimplifiedFrontier() {
+		return simplifiedFrontier;
+	}
+
+	/**
+	 * @param simplifiedFrontier the simplifiedFrontier to set
+	 */
+	public void setSimplifiedFrontier(SimplifiedFrontier simplifiedFrontier) {
+		this.simplifiedFrontier = simplifiedFrontier;
+	}
+
+	/**
      * Number of <i>discovered</i> URIs.
      *
      * <p>
@@ -209,7 +194,7 @@ public class RedisFrontier extends AbstractFrontier
 
     @Override
     public FrontierGroup getGroup(CrawlURI curi) {
-        return new RedisWorkQueue(curi.getClassKey(), f);
+        return new SimplifiedFrontierWorkQueue(curi.getClassKey());
     }
 
     /**
@@ -245,16 +230,16 @@ public class RedisFrontier extends AbstractFrontier
         */
 
         Map<String,Object> map = new LinkedHashMap<String, Object>();
-        if( this.f.isConnected() ) {
-	        map.put("totalQueues", this.f.getTotalQueues());
+        if( this.simplifiedFrontier.isRunning() ) {
+	        map.put("totalQueues", this.simplifiedFrontier.getTotalQueues());
 	        map.put("inProcessQueues", this.inFlight.get());
 	        map.put("readyQueues", 0);
-	        map.put("snoozedQueues", this.f.getScheduledQueues());
-	        map.put("activeQueues", this.f.getActiveQueues());
+	        map.put("snoozedQueues", this.simplifiedFrontier.getScheduledQueues());
+	        map.put("activeQueues", this.simplifiedFrontier.getActiveQueues());
 	        map.put("inactiveQueues", 0);
 	        map.put("ineligibleQueues", 0);
-	        map.put("retiredQueues", this.f.getRetiredQueues());
-	        map.put("exhaustedQueues", this.f.getExhaustedQueues());
+	        map.put("retiredQueues", this.simplifiedFrontier.getRetiredQueues());
+	        map.put("exhaustedQueues", this.simplifiedFrontier.getExhaustedQueues());
 	        map.put("lastReachedState", lastReachedState);
 	        map.put("queueReadiedCount", queueReadiedCount.get());
         } else {
@@ -364,7 +349,7 @@ public class RedisFrontier extends AbstractFrontier
         checkFutures();
 
         // Get the next curi from the frontier:
-        CrawlURI curi = this.f.next();
+        CrawlURI curi = this.simplifiedFrontier.next();
 
         // If there is one, return it:
         if (curi != null) {
@@ -412,7 +397,7 @@ public class RedisFrontier extends AbstractFrontier
         assert KeyedProperties.overridesActiveFrom(curi);
 
     	logger.finer("Adding url "+curi + " to queue "+curi.getClassKey());
-        boolean newUrl = this.f.enqueue(curi);
+        boolean newUrl = this.simplifiedFrontier.enqueue(curi.getClassKey(), curi);
         if( newUrl ) {
         	logger.finer("Added NEW url "+curi + " to queue "+curi.getClassKey());
             this.discoveredUrisCount.incrementAndGet();
@@ -522,7 +507,7 @@ public class RedisFrontier extends AbstractFrontier
         // Update the queue next-fetch time for this queue:
         long delay_ms = curi.getPolitenessDelay();
         // Release the queue:
-        this.f.releaseQueue(curi.getClassKey(),
+        this.simplifiedFrontier.delayQueue(curi.getClassKey(),
                 System.currentTimeMillis() + delay_ms);
         logger.finest("Got delay " + delay_ms);
         logger.finest("Got rescheduleTime " + curi.getRescheduleTime());
@@ -544,7 +529,7 @@ public class RedisFrontier extends AbstractFrontier
 
     protected void delete(CrawlURI curi) {
     	logger.finer("Removing url "+curi + " from queue "+curi.getClassKey());
-        this.f.dequeue(curi.getClassKey(), curi.getURI());
+        this.simplifiedFrontier.dequeue(curi.getClassKey(), curi.getURI());
         this.decrementQueuedCount(1);
     }
 
@@ -587,7 +572,7 @@ public class RedisFrontier extends AbstractFrontier
     public void start() {
         super.start();
         uriUniqFilter.setDestination(this);
-        this.f.start();
+        this.simplifiedFrontier.start();
     }
 
     /*
@@ -598,7 +583,7 @@ public class RedisFrontier extends AbstractFrontier
     @Override
     public void stop() {
         super.stop();
-        this.f.stop();
+        this.simplifiedFrontier.stop();
     }
 
     /* ------- ------- ------- ------- ------- ------- ------- ------- */
@@ -606,7 +591,6 @@ public class RedisFrontier extends AbstractFrontier
     /* ------- ------- ------- ------- ------- ------- ------- ------- */
 
     /**
-     * FIXME This doesn't only delay the queue:
      * 
      * @param curi
      * @param fetchTime
@@ -614,13 +598,13 @@ public class RedisFrontier extends AbstractFrontier
     private void setQueueDelay(CrawlURI curi, long fetchTime) {
         if (curi.includesRetireDirective()) {
             // Remove the queue from the fetch list:
-            this.f.retireQueue(curi.getClassKey());
+            this.simplifiedFrontier.retireQueue(curi.getClassKey());
         } else {
             if (fetchTime == -1) {
                 fetchTime = curi.getRescheduleTime();
             }
             this.incrementQueuedUriCount();
-            this.f.reschedule(curi, fetchTime);
+            this.simplifiedFrontier.delayQueue(curi.getClassKey(), fetchTime);
         }
     }
 
