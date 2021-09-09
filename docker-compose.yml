@@ -47,6 +47,8 @@ services:
        - "FRONTIER_JE_CLEANER_THREADS=2"
        # Needs to be false when using a Bloom filter.
        - "URI_FORGETTING_ENABLED=true" 
+       # Override the frontier implementation:
+       - "FRONTIER_BEANS_XML=frontier-redis.xml"
     depends_on:
       - clamd
       - kafka

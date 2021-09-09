@@ -39,9 +39,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.support.AbstractApplicationContext;
 
-import com.sleepycat.collections.StoredSortedMap;
-
-import uk.bl.wap.crawler.frontier.RedisSimplifiedFrontier;
 import uk.bl.wap.crawler.frontier.SimplifiedFrontier;
 
 /**

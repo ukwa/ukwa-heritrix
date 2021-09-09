@@ -727,7 +727,7 @@
 	</bean>
 	
 	<!-- FRONTIER: Record of all URIs discovered and queued-for-collection -->
-    <import resource="frontier-redis.xml"/>
+    <import resource="${FRONTIER_BEANS_XML:frontier-bdb.xml}"/>
     <!-- n.b. uses a separate file so it can be overridden -->
 	
 	<!-- URI UNIQ FILTER: Used by frontier to remember URIs currently in the BDBFrontier -->
