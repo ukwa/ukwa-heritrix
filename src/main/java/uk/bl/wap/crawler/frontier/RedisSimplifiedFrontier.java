@@ -247,19 +247,20 @@ public class RedisSimplifiedFrontier implements SimplifiedFrontier {
      */
     @Override
     public synchronized boolean enqueue(String queue, CrawlURI curi) {
-        String urlKey = KEY_OP_URI + curi.getURI();
-
-        // Store the URI itself:
-        String result = this.commands.set(urlKey,
-                Base64.encode(caUriToKryo(curi)));
-        logger.finer("Object " + result + " stored " + curi);
-
         // Enqueue it, if the URL is already there, only update it if 
         // the new score is less than the current score:
         // (see https://redis.io/commands/ZADD)
         long added = this.commands.zadd(getKeyForQueue(queue), ZAddArgs.Builder.lt(),
                 calculateScore(curi),  curi.getURI());
         logger.finer("Queued " + added + " of " + curi);
+
+        // Store the CrawlURI data, but only if the update worked:
+        if (added > 0) {
+	        String urlKey = KEY_OP_URI + curi.getURI();
+	        String result = this.commands.set(urlKey,
+	                Base64.encode(caUriToKryo(curi)));
+	        logger.finer("Object " + result + " stored " + curi);
+        }
 
         // Add to available queues set, if not already active:
         Double due = (double) System.currentTimeMillis();

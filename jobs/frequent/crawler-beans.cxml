@@ -727,50 +727,8 @@
 	</bean>
 	
 	<!-- FRONTIER: Record of all URIs discovered and queued-for-collection -->
-	<bean id="frontier" class="uk.bl.wap.crawler.h3.frontier.SimplifiedFrontierAdaptor">
-	    <property name="simplifiedFrontier" ref="simplifiedFrontier"/>
-        <property name="extract404s" value="false" />
-		<property name="retryDelaySeconds" value="20" />
-		<property name="maxRetries" value="#{systemEnvironment['MAX_RETRIES'] ?: 10 }" />
-		<property name="recoveryLogEnabled" value="false" />
-		<property name="maxOutlinks" value="6000" /> <!-- this is ignored by the sitemap extractor -->
-		<property name="scope">
-			<ref bean="scope" />
-		</property>
-    </bean>
-	<bean id="simplifiedFrontier" class="uk.bl.wap.crawler.frontier.RedisSimplifiedFrontier">
-        <property name="endpoint" value="#{systemEnvironment['REDIS_ENDPOINT'] ?: 'redis://redis:6379' }"/>
-	</bean>
-	<!-- 
-	<bean id="frontier" class="org.archive.crawler.frontier.BdbFrontier">
-        <property name="bdbModule" ref="bdbFrontierBdb"/>
-        <property name="extract404s" value="false" />
-		<property name="queueTotalBudget" value="-1" />
-		<property name="balanceReplenishAmount" value="3000" />
-		<property name="errorPenaltyAmount" value="100" />
-		<property name="precedenceFloor" value="255" />
-		<!- - Use this to ensure the deep crawl of many sites does not prevent the
-     		high-priority content from being crawled (although this is just a mitigation
-     		for not having enough crawl capacity) - ->
-    	<property name="queuePrecedencePolicy">
-        	<bean class="org.archive.crawler.frontier.precedence.HighestUriQueuePrecedencePolicy" />
-    	</property>
-    	<!- -
-		<property name="queuePrecedencePolicy">
-			<bean class="org.archive.crawler.frontier.precedence.BaseQueuePrecedencePolicy" />
-		</property>
-		- ->
-		<property name="snoozeLongMs" value="60000" />
-		<property name="retryDelaySeconds" value="20" />
-		<property name="maxRetries" value="#{systemEnvironment['MAX_RETRIES'] ?: 10 }" />
-		<property name="recoveryLogEnabled" value="false" />
-		<property name="maxOutlinks" value="6000" /> <!- - this is ignored by the sitemap extractor - ->
-		<property name="dumpPendingAtClose" value="false" />
-		<property name="scope">
-			<ref bean="scope" />
-		</property>
-	</bean>
-	 -->
+    <import resource="frontier-redis.xml"/>
+    <!-- n.b. uses a separate file so it can be overridden -->
 	
 	<!-- URI UNIQ FILTER: Used by frontier to remember URIs currently in the BDBFrontier -->
     <import resource="uriuniqfilter.xml"/>
@@ -900,14 +858,6 @@
 	<!-- BDBMODULE: BDB-JE disk persistence manager -->
     <!-- By default, the cache is shared across all databases, and the cachePercent specifies the global percentage of heap to use.
          Therefore, the same value should be used for all modules to that it definately gets set to the right value. -->
-  <bean id="bdbFrontierBdb" class="org.archive.bdb.BdbModule">
-    <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/frontier"/>
-    <property name="cachePercent" value="10"/>
-    <property name="expectedConcurrency" value="100"/>
-    <property name="cleanerThreads" value="#{systemEnvironment['FRONTIER_JE_CLEANER_THREADS'] ?: 1}"/>
-    <property name="evictorCoreThreads" value="#{systemEnvironment['FRONTIER_JE_EVICTOR_CORE_THREADS'] ?: 1}"/>
-    <property name="evictorMaxThreads" value="#{systemEnvironment['FRONTIER_JE_EVICTOR_MAX_THREADS'] ?: 10}"/>
-  </bean>
   <bean id="bdbStatisticsBdb" class="org.archive.bdb.BdbModule">
     <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/statistics"/>
     <property name="cachePercent" value="10"/>

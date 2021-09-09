@@ -17,8 +17,8 @@ services:
        - "JAVA_OPTS=-Xmx2g -javaagent:/jmx_prometheus_javaagent-0.3.1.jar=9101:/jmx-config.yml"
        - "CRAWL_NAME=npld-fc"
        - "MAX_TOE_THREADS=10"
-       - "LAUNCH_AUTOMATICALLY=false"
-       - "PAUSE_AT_START=true"
+       - "LAUNCH_AUTOMATICALLY=true"
+       - "PAUSE_AT_START=false"
        - "WARC_PREFIX=BL-NPLD-TEST"
        - "WEBRENDER_WARC_PREFIX=BL-NPLD-WEBRENDER"
        - "SCOPE_LOG_ENABLED=false"
@@ -42,6 +42,7 @@ services:
        - "CLAMD_HOST=clamd"
        #- "SURTS_SOURCE_FILE=domain-surts.txt" # Use the domain SURT scope
        - "SURTS_SOURCE_FILE=/shared/surts.txt"
+       # This can be used to test quota enforcement/resetting:
        #- "QUOTA_SERVER_MAX_SUCCESS_KB=1"
        - "FRONTIER_JE_CLEANER_THREADS=2"
        # Needs to be false when using a Bloom filter.
