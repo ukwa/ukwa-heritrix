@@ -58,7 +58,7 @@ public class SimplifiedFrontierAdaptorStandaloneRunner {
         nextCuri = rf.findEligibleURI();
         rf.processFinish(curi);
 
-        rf.delete(curi);
+        rsf.dequeue(curi.getClassKey(), curi.getURI());
 
         rsf.retireQueue(curi.getClassKey());
     }

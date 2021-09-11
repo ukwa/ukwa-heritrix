@@ -421,20 +421,14 @@ public class SimplifiedFrontierAdaptor extends AbstractFrontier
 
         curi.incrementFetchAttempts();
         logNonfatalErrors(curi);
-
-        // Record that an in-flight CrawlURI has landed:
+        
+        // Finished means no-longer-in-flight:
         this.inFlight.decrementAndGet();
-
-        // FIXME this does not track and reset session/total budgets etc. Really
-        // need to rank the 'available' queue to ensure hosts are not
-        // re-activated quickly.
-        //
-        // wq.setSessionBudget(getBalanceReplenishAmount());
-        // wq.setTotalBudget(getQueueTotalBudget());
 
         // codes/errors which don't consume the URI, leaving it atop queue
         if (needsReenqueuing(curi)) {
-            logger.finest("Re-enqueing " + curi + " " + curi.getFetchStatus());
+            // Re-enqueue (or rather do-not-delete):
+            logger.finest("Re-enqueuing (or at least not dequeuing) " + curi + " " + curi.getFetchStatus());
             if (curi.getFetchStatus() != S_DEFERRED) {
                 // FIXME wq.expend(holderCost); // all retries but DEFERRED cost
             }
@@ -451,7 +445,9 @@ public class SimplifiedFrontierAdaptor extends AbstractFrontier
 
         // Curi will definitely be disposed of without retry, so remove from
         // queue
-        this.delete(curi);
+    	logger.finer("Removing url "+curi + " from queue "+curi.getClassKey());
+        this.simplifiedFrontier.dequeue(curi.getClassKey(), curi.getURI());
+        this.decrementQueuedCount(1);
         // Turns out the Frontier is also responsible for emitting the crawl log:
         log(curi);
 
@@ -524,11 +520,6 @@ public class SimplifiedFrontierAdaptor extends AbstractFrontier
 
     }
 
-    protected void delete(CrawlURI curi) {
-    	logger.finer("Removing url "+curi + " from queue "+curi.getClassKey());
-        this.simplifiedFrontier.dequeue(curi.getClassKey(), curi.getURI());
-        this.decrementQueuedCount(1);
-    }
 
     /* ------- ------- ------- ------- ------- ------- ------- ------- */
     /* */
@@ -600,7 +591,7 @@ public class SimplifiedFrontierAdaptor extends AbstractFrontier
             if (fetchTime == -1) {
                 fetchTime = curi.getRescheduleTime();
             }
-            this.incrementQueuedUriCount();
+            //this.incrementQueuedUriCount();
             this.simplifiedFrontier.delayQueue(curi.getClassKey(), fetchTime);
         }
     }

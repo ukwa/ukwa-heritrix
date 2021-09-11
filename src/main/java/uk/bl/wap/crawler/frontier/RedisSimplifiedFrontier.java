@@ -195,8 +195,6 @@ public class RedisSimplifiedFrontier implements SimplifiedFrontier {
     private synchronized CrawlURI due() throws FrontierEmptyException {
     	// Look for the first scheduled queue that is due:
         long now = System.currentTimeMillis();
-        logger.finest("Looking for active queues, due for processing at " + now
-                + "...");
         List<ScoredValue<String>> qs = this.commands.zrangebyscoreWithScores(
                 KEY_QS_SCHEDULED, Range.create(Double.NEGATIVE_INFINITY, now), Limit.create(0, 1));
         String q = null;
@@ -206,7 +204,6 @@ public class RedisSimplifiedFrontier implements SimplifiedFrontier {
             if ((totalScheduled + totalActive) > 0) {
                 return null;
             } else {
-                logger.finest("No queues scheduled to run.");
                 throw new FrontierEmptyException("No more URLs scheduled!");
             }
         }
@@ -230,7 +227,7 @@ public class RedisSimplifiedFrontier implements SimplifiedFrontier {
         this.commands.zadd(KEY_QS_ACTIVE, score, q);
         this.commands.exec();
         // And log:
-        logger.fine("Got URI " + uri);
+        logger.finer("Got URI " + uri + " from queue " + q);
         CrawlURI curi = getCrawlURIFromRedis(uri.get(0));
         if (curi == null) {
             throw new RuntimeException("Frontier damaged, CrawlURI for " + uri
@@ -262,22 +259,25 @@ public class RedisSimplifiedFrontier implements SimplifiedFrontier {
 	        logger.finer("Object " + result + " stored " + curi);
         }
 
-        // Add to available queues set, if not already active:
-        Double due = (double) System.currentTimeMillis();
-        long addedQ = this.commands.zadd(
-        		KEY_QS_SCHEDULED, 
-        		ZAddArgs.Builder.nx(), // NX == don't update existing elements
-                due, 
-                queue);
-    	// If this is a new queue, it got an immediate start time:
-        if (addedQ > 0) {
+        // Add to known queues, checking if it's new:
+        long addedQ = this.commands.sadd(KEY_QS_KNOWN, queue);
+        // if known, check if it's exhausted:
+        Boolean isExhausted = false;
+        if( addedQ == 0 ) {
+        	isExhausted = this.commands.sismember(KEY_QS_EXHAUSTED, queue);
+        }
+    	// If this is a new queue, or and exhausted queue, schedule it:
+        if (addedQ > 0 || isExhausted) {
+            Double due = (double) System.currentTimeMillis();
             logger.finer("Queue new, set due " + due + " for queue " + queue);
-        	// Add to a list of all known queues:
-        	this.commands.sadd(KEY_QS_KNOWN, queue);
-        } else {
-            // Remove this queue from other sets, if it's there:
-        	this.commands.srem(KEY_QS_RETIRED, queue);
-        	this.commands.srem(KEY_QS_EXHAUSTED, queue);
+        	// Add the schedule:
+    		this.commands.zadd(
+    				KEY_QS_SCHEDULED, 
+    				ZAddArgs.Builder.nx(), // NX == don't update existing elements
+    				due, 
+    				queue);
+    		// Remove queue from exhausted state, in case it was there before this event.
+    		this.commands.srem(KEY_QS_EXHAUSTED, queue);
         }
 
         return added > 0;
