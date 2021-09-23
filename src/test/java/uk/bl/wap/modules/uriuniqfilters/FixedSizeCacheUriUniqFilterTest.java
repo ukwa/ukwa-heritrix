@@ -14,9 +14,6 @@ import org.archive.net.UURIFactory;
 import org.junit.Before;
 import org.junit.Test;
 
-import uk.bl.wap.modules.uriuniqfilters.FixedSizeCacheUriUniqFilter;
-import uk.bl.wap.modules.uriuniqfilters.EhcacheRecentlySeenUriUniqFilterTest.Receiver;
-
 /**
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
@@ -41,6 +38,19 @@ public class FixedSizeCacheUriUniqFilterTest {
     }
 
     /**
+     * Little URL reciever for testing.
+     *
+     */
+    public static class Receiver implements UriUniqFilter.CrawlUriReceiver {
+        boolean received = false;
+
+        @Override
+        public void receive(CrawlURI item) {
+            this.received = true;
+        }
+    }    
+
+    /**
      * 
      * @param uuf
      * @param key
@@ -51,7 +61,7 @@ public class FixedSizeCacheUriUniqFilterTest {
             boolean reciptExpected) throws URIException {
 
         // Setup
-        Receiver rx = new uk.bl.wap.modules.uriuniqfilters.EhcacheRecentlySeenUriUniqFilterTest.Receiver();
+        Receiver rx = new Receiver();
         uuf.setDestination(rx);
 
         // Add

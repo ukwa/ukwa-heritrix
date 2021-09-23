@@ -186,6 +186,8 @@ public class OutbackCDXClient {
                 pcm = new PoolingHttpClientConnectionManager();
                 pcm.setDefaultMaxPerRoute(maxConnections);
                 pcm.setMaxTotal(Math.max(pcm.getMaxTotal(), maxConnections));
+                // OutbackCDX w/ Undertow times-out keep-alive connections after 60*1000ms of quiet, so we validate the connection more often than that:
+                pcm.setValidateAfterInactivity(30*1000);
             }
             return pcm;
 
