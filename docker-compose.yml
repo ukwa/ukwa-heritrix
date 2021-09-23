@@ -42,14 +42,21 @@ services:
        - "CLAMD_HOST=clamd"
        #- "SURTS_SOURCE_FILE=domain-surts.txt" # Use the domain SURT scope
        - "SURTS_SOURCE_FILE=/shared/surts.txt"
+       # This can be used to test quota enforcement/resetting:
        #- "QUOTA_SERVER_MAX_SUCCESS_KB=1"
-       - "URI_FORGETTING_ENABLED=false"
        - "FRONTIER_JE_CLEANER_THREADS=2"
+       # Needs to be false when using a Bloom filter.
+       - "URI_FORGETTING_ENABLED=true" 
+       # Override the frontier implementation:
+       - "FRONTIER_BEANS_XML=frontier-redis.xml"
+       # Override the uriUniqFilter implementation:
+       #- "URIUNIQFILTER_BEANS_XML=uriuniqfilter-rocksdb.xml"
     depends_on:
       - clamd
       - kafka
       - webrender
       - cdxserver
+      - redis
       - acid.matkelly.com
       - crawl-test-site.webarchive.org.uk
     volumes:
@@ -97,6 +104,11 @@ services:
     image: wurstmeister/zookeeper
     ports:
      - "2181:2181"
+    #healthcheck:
+    #  test: ["CMD-SHELL", "echo ruok | nc -w 2 zookeeper 4444"]
+    #  interval: 5s
+    #  timeout: 10s
+    #  retries: 3
 
   # Kafka UI
   kafka-ui:
@@ -161,6 +173,26 @@ services:
       - "9090:8080"    
     volumes:
       - ./target/integration-test-volumes/cdx:/cdx-data
+
+  # Redis for the external frontier
+  redis:
+    image: redis:6
+    command: "redis-server --appendonly yes"
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./target/integration-test-volumes/redis:/data
+
+  # Redis Browser      
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    restart: always
+    environment:
+    - REDIS_HOSTS=redis:redis:6379
+    ports:
+    - "8081:8081"
+    depends_on:
+    - redis
 
 
   # ----------------------------------------------

@@ -10,13 +10,20 @@ import org.archive.crawler.frontier.WorkQueueFrontier;
 import org.archive.modules.CrawlURI;
 import org.archive.util.ObjectIdentityMemCache;
 
-import uk.bl.wap.crawler.frontier.RedisSimpleFrontier;
+import uk.bl.wap.crawler.frontier.RedisSimplifiedFrontier;
 
 /**
+ * 
+ * As we are not using WorkQueue in the frontier itself, this is only 
+ * needed to manage queue stats/tallies etc. It is not used to actually 
+ * manage the crawl.
+ * 
+ * FIXME These stats etc. should really be pushed into the SimplifiedFrontier implementation.
+ * 
  * @author Andrew Jackson <Andrew.Jackson@bl.uk>
  *
  */
-public class RedisWorkQueue extends WorkQueue {
+public class SimplifiedFrontierWorkQueue extends WorkQueue {
 
     private final String queue;
 
@@ -25,12 +32,9 @@ public class RedisWorkQueue extends WorkQueue {
      */
     private static final long serialVersionUID = 7310952064588710312L;
 
-    private final RedisSimpleFrontier f;
-
-    public RedisWorkQueue(String pClassKey, RedisSimpleFrontier rsf) {
+    public SimplifiedFrontierWorkQueue(String pClassKey) {
         super(pClassKey);
         this.queue = pClassKey;
-        this.f = rsf;
         // We don't use this, but the tally() code hits it via
         // org.archive.crawler.frontier.WorkQueue.makeDirty(WorkQueue.java:690)
         this.setIdentityCache(new ObjectIdentityMemCache<WorkQueue>());
@@ -42,7 +46,7 @@ public class RedisWorkQueue extends WorkQueue {
     @Override
     protected void insertItem(WorkQueueFrontier frontier, CrawlURI curi,
             boolean overwriteIfPresent) throws IOException {
-        f.enqueue(curi);
+        new Exception().printStackTrace();
     }
 
     /* (non-Javadoc)
@@ -61,8 +65,7 @@ public class RedisWorkQueue extends WorkQueue {
     @Override
     protected void deleteItem(WorkQueueFrontier frontier, CrawlURI item)
             throws IOException {
-        f.dequeue(queue, item.getURI());
-
+        new Exception().printStackTrace();
     }
 
     /* (non-Javadoc)
@@ -70,16 +73,8 @@ public class RedisWorkQueue extends WorkQueue {
      */
     @Override
     protected CrawlURI peekItem(WorkQueueFrontier frontier) throws IOException {
-        CrawlURI curi = null;
-        
-        try {
-            curi = frontier.next();
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-                
-        return curi;
+        new Exception().printStackTrace();
+        return null;
     }
 
 }
