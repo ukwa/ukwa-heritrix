@@ -110,9 +110,7 @@ services:
 
   # Web page rendering service
   webrender:
-    image: ukwa/webrender-puppeteer:latest
-    command: "node server.js"
-    init: true
+    image: ukwa/webrender-puppeteer:2.0.1
     environment:
       - "PORT=8010"
       - "HTTP_PROXY=http://warcprox:8000/"
@@ -120,13 +118,15 @@ services:
       - "NODE_ENV=production"
       - "WARCPROX_PROXY=true"
       - "PUPPETEER_CLUSTER_SIZE=2"
+      - "WARC_OUTPUT_PATH=/heritrix/wren"
+      - "WARC_PREFIX=BL-WEBRENDERED"
+      - "USER_AGENT_ADDITIONAL=bl.uk_lddc_renderbot/{{version}} (+https://www.bl.uk/legal-deposit/web-archiving)"
     ports:
       - "8010:8010"
     depends_on:
       - warcprox
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # Needs to connect to Docker to launch render container
-      - /tmp/webrender:/tmp/webrender # Host mount must match internal mount at present!
+      - ./target/integration-test-volumes/wren:/heritrix/wren
 
   # WARC Proxy, with de-duplication disabled and a rapid rollover:
   warcprox:
@@ -167,10 +167,15 @@ services:
   # ----------
 
   # Local version of the Archival Acid Test: http://acid.matkelly.com
-  acid.matkelly.com:
-    image: ukwa/archival-acid-test
+  acidtest:
+    image: ukwa/archival-acid-test:master
     ports:
       - "180:80"  
+    networks:
+      default:
+        aliases:
+          - acid.matkelly.com # Appear under original hostname.
+          - www.cs.odu.edu # Emulating the remote host via a simple alias.
 
   # Local version of the UKWA test site: http://data.webarchive.org.uk/crawl-test-site/
   crawl-test-site.webarchive.org.uk:
