@@ -48,9 +48,9 @@ services:
        # Needs to be false when using a Bloom filter.
        - "URI_FORGETTING_ENABLED=true" 
        # Override the frontier implementation:
-       - "FRONTIER_BEANS_XML=frontier-redis.xml"
+       #- "FRONTIER_BEANS_XML=frontier-redis.xml"
        # Override the uriUniqFilter implementation:
-       #- "URIUNIQFILTER_BEANS_XML=uriuniqfilter-rocksdb.xml"
+       - "URIUNIQFILTER_BEANS_XML=uriuniqfilter-rocksdb.xml"
     depends_on:
       - clamd
       - kafka
@@ -62,9 +62,6 @@ services:
     volumes:
       - ./docker/jmx_prometheus_javaagent-0.3.1.jar:/jmx_prometheus_javaagent-0.3.1.jar
       - ./docker/heritrix-jmx-config.yml:/jmx-config.yml
-      # Override to use a different uriUniqFilter:
-      #- ./jobs/frequent/uriuniqfilter-bloom.xml:/jobs/frequent/uriuniqfilter.xml
-      - ./jobs/frequent/uriuniqfilter-rocksdb.xml:/jobs/frequent/uriuniqfilter.xml
       - ./docker/shared:/shared
       - ./target/integration-test-volumes/output:/heritrix/output
       - ./target/integration-test-volumes/scratch:/heritrix/scratch
@@ -214,14 +211,13 @@ services:
   # ----------
 
   # Local version of the Archival Acid Test: http://acid.matkelly.com
-  acidtest:
+  acid.matkelly.com:
     image: ukwa/archival-acid-test:master
     ports:
       - "180:80"  
     networks:
       default:
         aliases:
-          - acid.matkelly.com # Appear under original hostname.
           - www.cs.odu.edu # Emulating the remote host via a simple alias.
 
   # Local version of the UKWA test site: http://data.webarchive.org.uk/crawl-test-site/
