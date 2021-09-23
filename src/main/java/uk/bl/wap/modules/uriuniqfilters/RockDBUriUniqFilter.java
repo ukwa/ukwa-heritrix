@@ -67,7 +67,7 @@ public class RockDBUriUniqFilter extends SetBasedUriUniqFilter {
 				// New!
 				db.put(enqueuedCF, keyb, flagb);
 				this.addedCount.incrementAndGet();
-				LOGGER.info("Added " + key);
+				LOGGER.fine("Added " + key);
 				return true;
 			} else {
 				return false;
@@ -97,6 +97,7 @@ public class RockDBUriUniqFilter extends SetBasedUriUniqFilter {
 				// Known!
 				db.delete(enqueuedCF, keyb);
 				this.setCount.decrementAndGet();
+				LOGGER.fine("Removed " + key);
 				return true;
 			} else {
 				return false;
