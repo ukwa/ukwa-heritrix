@@ -23,7 +23,7 @@
    
 	<!-- CRAWL METADATA: including identification of crawler/operator -->
 	<bean id="metadata" class="org.archive.modules.CrawlMetadata" autowire="byName">
-		<property name="operatorContactUrl" value="http://www.bl.uk/aboutus/legaldeposit/websites/websites/faqswebmaster/index.html"/>
+		<property name="operatorContactUrl" value="https://www.bl.uk/legal-deposit/web-archiving"/>
 		<property name="jobName" value="#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}"/>
 		<property name="description" value="[see override above]"/>
 		<!-- <property name="operator" value=""/> -->
@@ -534,43 +534,6 @@
 		</property>
 	</bean>
    -->
-	<bean id="warcWriterViralOld" class="uk.bl.wap.modules.writer.WARCViralWriterProcessor">
-		<property name="shouldProcessRule">
-			<bean class="org.archive.modules.deciderules.DecideRuleSequence">
-				<property name="rules">
-					<list>
-						<!-- Begin by REJECTing all... -->
-						<bean class="org.archive.modules.deciderules.RejectDecideRule"/>
-						<!-- ...then ACCEPT those with viral annotations... -->
-						<bean class="uk.bl.wap.modules.deciderules.AnnotationMatchesListRegexDecideRule">
-							<property name="decision" value="ACCEPT"/>
-							<property name="regexList">
-								<list>
-									<value>^.*stream:.+FOUND.*$</value>
-								</list>
-							</property>
-						</bean>
-					</list>
-				</property>
-			</bean>
-		</property>
-		<property name="compress" value="true" />
-		<property name="prefix" value="#{systemEnvironment['WARC_PREFIX'] ?: 'BL'}-VIRAL-OLD" />
-		<property name="maxFileSizeBytes" value="1006632959" />
-		<property name="poolMaxActive" value="#{systemEnvironment['WARC_VIRAL_WRITER_POOL_SIZE'] ?: 5}" />
-		<property name="skipIdenticalDigests" value="false" />
-		<property name="maxTotalBytesToWrite" value="0" />
-		<property name="directory" value="." />
-		<property name="storePaths">
-			<list>
-				<value>/heritrix/output/#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/${launchId}/viral/</value>
-			</list>
-		</property>
-		<property name="writeRequests" value="true" />
-		<property name="writeMetadata" value="true" />
-		<property name="writeRevisitForIdenticalDigests" value="false" />
-		<property name="writeRevisitForNotModified" value="false" />
-	</bean>
 	<bean id="warcWriterDefault" class="uk.bl.wap.modules.writer.ExtendedWARCWriterProcessor">
 		<property name="shouldProcessRule">
 			<bean class="org.archive.modules.deciderules.DecideRuleSequence">
@@ -762,7 +725,6 @@
                 <ref bean="skipDispositionChain"/>
 				<!-- write viral content to aggregate archival files... -->
 				<ref bean="warcWriterViral"/>
-				<ref bean="warcWriterViralOld"/>
 				<!-- write to aggregate archival files... -->
 				<ref bean="warcWriterDefault"/>
 				<!-- update the persist store -->
