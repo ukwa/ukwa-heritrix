@@ -120,7 +120,7 @@ services:
 
   # Web page rendering service
   webrender:
-    image: ukwa/webrender-puppeteer:2.0.2
+    image: ukwa/webrender-puppeteer:2.1.0
     environment:
       - "PORT=8010"
       - "HTTP_PROXY=http://warcprox:8000/"
