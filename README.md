@@ -1,12 +1,12 @@
 UKWA Heritrix
 =============
 
-This repository takes [Heritrix3](https://github.com/internetarchive/heritrix3) and adds in code and configuration specific to the UK Web Archive. It is used to build a Docker image that us used to run our crawls.
+This repository takes [Heritrix3](https://github.com/internetarchive/heritrix3) and adds in code and configuration specific to the UK Web Archive. It is used to build a Docker image that is used to run our crawls.
 
 Local Development
 -----------------
 
-If you are modifying the Java code and want compile it and run the unit tests, you can use:
+If you are modifying the Java code and want to compile it and run the unit tests, you can use:
 
     $ mvn clean install
 
@@ -15,7 +15,7 @@ However, as the crawler is a multi-component system, you'll also want to run int
 Continuous Integration Testing
 ------------------------------
 
-All tags, pushes and pull-requests on the main `ukwa-heritrix` repository will run integration testing before pushing an updated Docker container image. See the workflow [here](./github/workflows/ci-and-push.yml).
+All tags, pushes and pull-requests on the main `ukwa-heritrix` repository will run integration testing before pushing an updated Docker container image. See the workflows [here](../../actions).
 
 However, it is recommended that you understand and run the integration tests locally first.
 
@@ -27,12 +27,12 @@ The supplied Docker Compose file can be used for local testing. This looks quite
 - The main crawler, and associated services:
   - ClamD for virus scanning,
   - WebRender API and Warcprox for browser-based crawler integration.
-  - A OutbackCDX server for recording crawled URLs with timestamps and checksums for deduplication.
-  - An Apache Kafka topic/log server, and it's associated Zookeeper instance.
+  - An OutbackCDX server for recording crawled URLs with timestamps and checksums for deduplication.
+  - An Apache Kafka topic/log server, and its associated Zookeeper instance.
 - Two test websites for running test crawls without touching the live web:
   - A container that simulates http://acid.matkelly.com/
   - A container that hosts a crawler test site at http://crawl-test-site.webarchive.org.uk (this is not a working public URL)
-- Local Wayback service for inspecting the results:
+- A local Wayback service for inspecting the results:
   - this talks to the crawler's CDX server, 
   - and is assisted by a `warc-server` container that makes the crawled WARCs available.
 - A `robot` container that uses the Python [Robot Framework](https://robotframework.org/) to run some integration tests.
@@ -51,7 +51,7 @@ To run the tests locally, build the images:
 
     $ docker-compose build
 
-This builds the `heritix` and `robot` images. 
+This builds the `heritrix` and `robot` images. 
 
 Note that the Compose file is set up to pass the `HTTP_PROXY` and `HTTPS_PROXY` environment variables through to the build environment, so as long as those are set, it should build behind a corporate web proxy. If you are not behind a proxy, and these variables are not set, `docker-compose` will warn that the variables are not set, but the build should work nevertheless.
 
@@ -102,9 +102,9 @@ The separate [crawl-streams](https://github.com/ukwa/crawl-streams) utilities ca
 
 Note that the `--net host` part means the Docker container can talk to your development machine directly as `localhost`, which is the easiest way to reach your Kafka instance.
 
-The other thing to note is the `-S` flag - this indicates that these URLs are seeds, and that means when the crawler pickes them up, it will widen the scope of the crawl to include any URLs that are on those sites (strictly, those URLs that have this URL as a prefix when expressed in SURT form - _TBA - how to cover this? See also the section below_) Without the `-S` flag, submitted URLs will be ignored unless they are within the current crawler scope.
+The other thing to note is the `-S` flag - this indicates that these URLs are seeds, and that means when the crawler pickes them up, it will widen the scope of the crawl to include any URLs that are on those sites (strictly, those URLs that have this URL as a prefix when expressed in SURT form. Without the `-S` flag, submitted URLs will be ignored unless they are within the current crawler scope.
 
-Note, however, some URLs will be discovered when processing `in scope` URLs, and that appear to be necessary for those URLs to work (e.g. images, CSS, JavaScript etc.). The crawler is configured to fetch these even if they are out of the main crawl scope. i.e. the crawl scope is intended to match up with the HTML pages that are of interest. Any further resources required by those changes will be added if the crawler determines they are needed.
+Note, however, some extra URLs may be discovered during processing that are necessary for `in scope` URLs to work (e.g. images, CSS, JavaScript etc.). The crawler is configured to fetch these even if they are out of the main crawl scope. i.e. the crawl scope is intended to match up with the HTML pages that are of interest. Any further resources required by those changes will be added if the crawler determines they are needed.
 
 #### Directly interacting with Kafka
 
@@ -118,14 +118,10 @@ It's also possible to interact directly with Kafka by installing and using the s
 
 The `robot` container runs test crawls over the two test sites mentioned in the previous section. The actions and expected results are in the [crawl-test-site.robot](integration-test/robot/tests/crawl-test-site.robot) test specification. 
     
-Heritrix3 Crawl Jobs
---------------------
+Crawl Configuration
+-------------------
 
-_TBA - This section should be shifted to focus on `ukwa-heritrix` configuration options/env vars_
-
-_TBA - I think the design details and rationale need to be moved to the overall documentation site_
-
-We use [Heririx3 Sheets](https://webarchive.jira.com/wiki/spaces/Heritrix/pages/5735723/Sheets) as a configuration mechanism to allow the crawler behaviour to change based on URL SURT prefix.
+We use [Heririx3 Sheets](https://heritrix.readthedocs.io/en/latest/configuring-jobs.html#sheets-site-specific-settings) as a configuration mechanism to allow the crawler behaviour to change based on URL SURT prefix.
 
 
 Summary of Heritrix3 Modules
@@ -134,18 +130,18 @@ Summary of Heritrix3 Modules
 Modules for Heritrix 3.4.+
 
 * AnnotationMatchesListRegexDecideRule: DecideRule for checking against annotations.
-* AsynchronousMQExtractor: publishes messages to an external queue for processing (see '[WebTools](https://github.com/openplanets/wap.git)'; )
+* AsynchronousMQExtractor: publishes messages to an external queue for processing.
 * ClamdScanner: for processing in an external ClamAv daemon.
-* CompressibilityDecideRule: REJECTs highly-compressable (and highly incompressibl) URIs.
+* CompressibilityDecideRule: REJECTs highly-compressible (and highly incompressible) URIs.
 * ConsecutiveFailureDecideRule: REJECTs a URI if both it and its referrer's HTTP status codes are >= 400.
 * CountryCodeAnnotator: adds a country-code annotation to each URI where present.
 * ExternalGeoLookup: implementation of ExternalGeoLookupInterface for use with a ExternalGeoLocationDecideRule; uses MaxMind's [GeoLite2](http://dev.maxmind.com/geoip/geoip2/geolite2/) database.
 * ExtractorJson: extracts URIs from JSON-formatted data.
-* ExtractorPattern: extracts URIs based on regular expressions (*written explicitly for one site; not widely used).
+* ExtractorPattern: extracts URIs based on regular expressions (written explicitly for one site; not widely used).
 * HashingCrawlMapper: intended as a simpler version of the HashCrawlMapper using the Hashing libraries.
 * IpAnnotator: annotates each URI with the IP.
 * ViralContentProcessor: passes incoming URIs to ClamAv.
-* WARCViralWriterProcessor, XorInputStream: workarounds for force-writing of 'conversion' records based on XOR'd version of the original data.
+* WARCViralWriterProcessor, XorInputStream: workarounds for force-writing of 'conversion' records based on XORed version of the original data.
 * RobotsTxtSitemapExtractor: Extracts and enqueues sitemap links from robots.txt files.
 * WrenderProcessor: Runs pages through a web-rendering web service rather than the usual H3 processing.
 
