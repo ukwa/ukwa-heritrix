@@ -186,6 +186,8 @@ public class OutbackCDXClient {
                 pcm = new PoolingHttpClientConnectionManager();
                 pcm.setDefaultMaxPerRoute(maxConnections);
                 pcm.setMaxTotal(Math.max(pcm.getMaxTotal(), maxConnections));
+                // OutbackCDX w/ Undertow times-out keep-alive connections after 60*1000ms of quiet, so we validate the connection more often than that:
+                pcm.setValidateAfterInactivity(30*1000);
             }
             return pcm;
 
@@ -541,7 +543,7 @@ public class OutbackCDXClient {
         JSONObject jei = curi.getExtraInfo();
         String warc_filename = jei.optString("warcFilename", "-");
         String warc_offset = jei.optString("warcFileOffset", "0");
-        String warc_length = jei.optString("warcRecordLength", "0");
+        String warc_length = jei.optString("warcFileRecordLength", "0");
         // Format as CDX-11:
         StringBuffer sb = new StringBuffer();
         sb.append("- ");
@@ -553,7 +555,7 @@ public class OutbackCDXClient {
         sb.append(" ");
         sb.append(fetch_status);
         sb.append(" ");
-        sb.append(curi.getContentDigestSchemeString());
+        sb.append(curi.getContentDigestString());
         sb.append(" ");
         sb.append(curi.flattenVia());
         sb.append(" ");

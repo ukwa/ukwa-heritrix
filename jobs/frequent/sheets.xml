@@ -348,7 +348,6 @@
    <bean id="crawlLimited" class="org.archive.spring.Sheet">
       <property name="map">
          <map>
-            <entry key="frontier.queueTotalBudget" value="25" />
             <entry key="quotaEnforcer.hostMaxFetchResponses"
                value="25" />
          </map>

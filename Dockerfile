@@ -10,6 +10,9 @@ RUN \
 # Copy GeoLite2 DB into place
 COPY src/main/resources/GeoLite2-City_20200908/GeoLite2-City.mmdb .
 
+# Install config to modify Maven settings so HTTP repos don't fail:
+COPY .mvn /bl-heritrix-modules/.mvn
+
 # Add in the UKWA modules.
 #
 # We process the dependencies and source separately, so the JARs can be cached and 
@@ -43,21 +46,20 @@ ENV MONITRIX_ENABLE=false \
     HERITRIX_PASSWORD=heritrix \
     JOB_NAME=frequent
 
-# Finish setup:
-EXPOSE 8443
-
-VOLUME /shared
-VOLUME /output
-
 #STOPSIGNAL TERM # Which is the default
 
 # Set the runtime user (with no password and no sudo)
-RUN useradd -m heritrix
-RUN mkdir /heritrix && chmod -R a+rwx /h3-bin /jobs /output
+RUN addgroup --gid 1001 heritrix && adduser --uid 1001 --ingroup heritrix heritrix
+RUN mkdir -p /heritrix && mkdir -p /output && mkdir -p /home/heritrix && chown -R heritrix /h3-bin /jobs /output /heritrix /home/heritrix
 USER heritrix
 WORKDIR /home/heritrix
 # Maven happiness (https://github.com/carlossg/docker-maven#running-as-non-root-not-supported-on-windows):
 ENV MAVEN_CONFIG=/home/heritrix/.m2
+
+# Finish setup:
+EXPOSE 8443
+VOLUME /shared
+VOLUME /output
 
 # Hook in H3 runner script:
 CMD [ "/h3-bin/bin/start" ]

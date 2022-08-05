@@ -512,7 +512,9 @@ public class KafkaUrlReceiver
         public void shutdown() {
             closed.set(true);
             // Break out of poll() so we can shut down...
-            consumer.wakeup();
+            if( consumer != null) {
+            	consumer.wakeup();
+            }
         }
 
     }

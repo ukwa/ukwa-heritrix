@@ -23,7 +23,7 @@
    
 	<!-- CRAWL METADATA: including identification of crawler/operator -->
 	<bean id="metadata" class="org.archive.modules.CrawlMetadata" autowire="byName">
-		<property name="operatorContactUrl" value="http://www.bl.uk/aboutus/legaldeposit/websites/websites/faqswebmaster/index.html"/>
+		<property name="operatorContactUrl" value="https://www.bl.uk/legal-deposit/web-archiving"/>
 		<property name="jobName" value="#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}"/>
 		<property name="description" value="[see override above]"/>
 		<!-- <property name="operator" value=""/> -->
@@ -394,7 +394,8 @@
 		<property name="digestContent" value="true" />
 		<property name="digestAlgorithm" value="sha1" />
 	</bean>
-	<bean id="extractorHttp" class="org.archive.modules.extractor.ExtractorHTTP">
+	<bean id="extractorHttp" class="uk.bl.wap.modules.extractor.ExtractorHTTPWellKnownURIs">
+		<!-- Uses UKWA extended version of ExtractorHTTP that adds other well-known URIs -->
 		<property name="inferRootPage" value="true" />
 	</bean>
         <!--
@@ -533,43 +534,6 @@
 		</property>
 	</bean>
    -->
-	<bean id="warcWriterViral" class="uk.bl.wap.modules.writer.WARCViralWriterProcessor">
-		<property name="shouldProcessRule">
-			<bean class="org.archive.modules.deciderules.DecideRuleSequence">
-				<property name="rules">
-					<list>
-						<!-- Begin by REJECTing all... -->
-						<bean class="org.archive.modules.deciderules.RejectDecideRule"/>
-						<!-- ...then ACCEPT those with viral annotations... -->
-						<bean class="uk.bl.wap.modules.deciderules.AnnotationMatchesListRegexDecideRule">
-							<property name="decision" value="ACCEPT"/>
-							<property name="regexList">
-								<list>
-									<value>^.*stream:.+FOUND.*$</value>
-								</list>
-							</property>
-						</bean>
-					</list>
-				</property>
-			</bean>
-		</property>
-		<property name="compress" value="true" />
-		<property name="prefix" value="#{systemEnvironment['WARC_PREFIX'] ?: 'BL'}-VIRAL" />
-		<property name="maxFileSizeBytes" value="1006632959" />
-		<property name="poolMaxActive" value="#{systemEnvironment['WARC_VIRAL_WRITER_POOL_SIZE'] ?: 5}" />
-		<property name="skipIdenticalDigests" value="false" />
-		<property name="maxTotalBytesToWrite" value="0" />
-		<property name="directory" value="." />
-		<property name="storePaths">
-			<list>
-				<value>/heritrix/output/#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/${launchId}/viral/</value>
-			</list>
-		</property>
-		<property name="writeRequests" value="true" />
-		<property name="writeMetadata" value="true" />
-		<property name="writeRevisitForIdenticalDigests" value="false" />
-		<property name="writeRevisitForNotModified" value="false" />
-	</bean>
 	<bean id="warcWriterDefault" class="uk.bl.wap.modules.writer.ExtendedWARCWriterProcessor">
 		<property name="shouldProcessRule">
 			<bean class="org.archive.modules.deciderules.DecideRuleSequence">
@@ -590,22 +554,83 @@
 				</property>
 			</bean>
 		</property>
-		<property name="compress" value="true" />
+	  <!-- <property name="compress" value="true" /> -->
 		<property name="prefix" value="#{systemEnvironment['WARC_PREFIX'] ?: 'BL'}" />
 		<property name="maxFileSizeBytes" value="1006632959" />
 		<property name="poolMaxActive" value="#{systemEnvironment['WARC_WRITER_POOL_SIZE'] ?: 10}" />
-		<property name="skipIdenticalDigests" value="false" />
-		<property name="maxTotalBytesToWrite" value="0" />
-		<property name="directory" value="." />
+	  <!-- <property name="MaxWaitForIdleMs" value="500" /> -->
+	  <!-- <property name="skipIdenticalDigests" value="false" /> -->
+	  <!-- <property name="maxTotalBytesToWrite" value="0" /> -->
+	  <!-- <property name="directory" value="${launchId}" /> -->
 		<property name="storePaths">
 			<list>
 				<value>/heritrix/output/#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/${launchId}/warcs/</value>
 			</list>
 		</property>
-		<property name="writeRequests" value="true" />
-		<property name="writeMetadata" value="true" />
-		<property name="writeRevisitForIdenticalDigests" value="true" />
-		<property name="writeRevisitForNotModified" value="false" />
+	  <!-- <property name="template" value="${prefix}-${timestamp17}-${serialno}-${heritrix.pid}~${heritrix.hostname}~${heritrix.port}" /> -->
+	  <!-- <property name="startNewFilesOnCheckpoint" value="true" /> -->
+	  <!--
+	  <property name="chain">
+	   <list>
+	    <bean class="org.archive.modules.warc.DnsResponseRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.HttpResponseRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.WhoisResponseRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.FtpControlConversationRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.FtpResponseRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.RevisitRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.HttpRequestRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.MetadataRecordBuilder"/>
+	   </list>
+	  </property>
+	  -->
+	</bean>
+	<bean id="warcWriterViral" class="org.archive.modules.writer.WARCWriterChainProcessor">
+      <property name="shouldProcessRule">
+			<bean class="org.archive.modules.deciderules.DecideRuleSequence">
+				<property name="rules">
+					<list>
+						<!-- Begin by REJECTing all... -->
+						<bean class="org.archive.modules.deciderules.RejectDecideRule"/>
+						<!-- ...then ACCEPT those with viral annotations... -->
+						<bean class="uk.bl.wap.modules.deciderules.AnnotationMatchesListRegexDecideRule">
+							<property name="decision" value="ACCEPT"/>
+							<property name="regexList">
+								<list>
+									<value>^.*stream:.+FOUND.*$</value>
+								</list>
+							</property>
+						</bean>
+					</list>
+				</property>
+			</bean>
+         </property>
+	  <!-- <property name="compress" value="true" /> -->
+		<property name="prefix" value="#{systemEnvironment['WARC_PREFIX'] ?: 'BL'}-VIRAL" />
+		<property name="maxFileSizeBytes" value="1006632959" />
+		<property name="poolMaxActive" value="#{systemEnvironment['WARC_VIRAL_WRITER_POOL_SIZE'] ?: 5}" />
+	  <!-- <property name="MaxWaitForIdleMs" value="500" /> -->
+	  <!-- <property name="skipIdenticalDigests" value="false" /> -->
+	  <!-- <property name="maxTotalBytesToWrite" value="0" /> -->
+	  <!-- <property name="directory" value="${launchId}" /> -->
+		<property name="storePaths">
+			<list>
+				<value>/heritrix/output/#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}/${launchId}/viral/</value>
+			</list>
+		</property>
+	  <!-- <property name="template" value="${prefix}-${timestamp17}-${serialno}-${heritrix.pid}~${heritrix.hostname}~${heritrix.port}" /> -->
+	  <!-- <property name="startNewFilesOnCheckpoint" value="true" /> -->
+	  <property name="chain">
+	   <list>
+	    <bean class="org.archive.modules.warc.DnsResponseRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.HttpResponseViralRecordBuilder"/> <!-- Switch to viral (xor) record writer -->
+	    <bean class="org.archive.modules.warc.WhoisResponseRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.FtpControlConversationRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.FtpResponseRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.RevisitRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.HttpRequestRecordBuilder"/>
+	    <bean class="org.archive.modules.warc.MetadataRecordBuilder"/>
+	   </list>
+	  </property>
 	</bean>
     <!-- This provides a crawl log feed to a queue - note that you'll need to set up a binding that matches these parameters to a queue -->
     <bean id="crawlLogFeed" class="uk.bl.wap.crawler.postprocessor.KafkaKeyedCrawlLogFeed">
@@ -726,37 +751,11 @@
 	</bean>
 	
 	<!-- FRONTIER: Record of all URIs discovered and queued-for-collection -->
-	<bean id="frontier" class="org.archive.crawler.frontier.BdbFrontier">
-        <property name="bdbModule" ref="bdbFrontierBdb"/>
-        <property name="extract404s" value="false" />
-		<property name="queueTotalBudget" value="-1" />
-		<property name="balanceReplenishAmount" value="3000" />
-		<property name="errorPenaltyAmount" value="100" />
-		<property name="precedenceFloor" value="255" />
-		<!-- Use this to ensure the deep crawl of many sites does not prevent the
-     		high-priority content from being crawled (although this is just a mitigation
-     		for not having enough crawl capacity) -->
-    	<property name="queuePrecedencePolicy">
-        	<bean class="org.archive.crawler.frontier.precedence.HighestUriQueuePrecedencePolicy" />
-    	</property>
-    	<!--
-		<property name="queuePrecedencePolicy">
-			<bean class="org.archive.crawler.frontier.precedence.BaseQueuePrecedencePolicy" />
-		</property>
-		-->
-		<property name="snoozeLongMs" value="60000" />
-		<property name="retryDelaySeconds" value="20" />
-		<property name="maxRetries" value="#{systemEnvironment['MAX_RETRIES'] ?: 10 }" />
-		<property name="recoveryLogEnabled" value="false" />
-		<property name="maxOutlinks" value="6000" /> <!-- this is ignored by the sitemap extractor -->
-		<property name="dumpPendingAtClose" value="false" />
-		<property name="scope">
-			<ref bean="scope" />
-		</property>
-	</bean>
+    <import resource="${FRONTIER_BEANS_XML:frontier-bdb.xml}"/>
+    <!-- n.b. uses a separate file so it can be overridden -->
 	
 	<!-- URI UNIQ FILTER: Used by frontier to remember URIs currently in the BDBFrontier -->
-    <import resource="uriuniqfilter.xml"/>
+    <import resource="${URIUNIQFILTER_BEANS_XML:uriuniqfilter-bdb.xml}"/>
     <!-- n.b. uses a separate file so it can be overridden for the domain crawl -->
      
     <!-- Shared OutbackCDX client and configuration -->
@@ -883,11 +882,6 @@
 	<!-- BDBMODULE: BDB-JE disk persistence manager -->
     <!-- By default, the cache is shared across all databases, and the cachePercent specifies the global percentage of heap to use.
          Therefore, the same value should be used for all modules to that it definately gets set to the right value. -->
-  <bean id="bdbFrontierBdb" class="org.archive.bdb.BdbModule">
-    <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/frontier"/>
-    <property name="cachePercent" value="10"/>
-    <property name="expectedConcurrency" value="100"/>
-  </bean>
   <bean id="bdbStatisticsBdb" class="org.archive.bdb.BdbModule">
     <property name="dir" value="/heritrix/state/crawl-#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}.host-#{systemEnvironment['HOSTNAME'] ?: 'host'}/statistics"/>
     <property name="cachePercent" value="10"/>
