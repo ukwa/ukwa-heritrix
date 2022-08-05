@@ -6,7 +6,7 @@
    <properties>
       <jdk.version>1.8</jdk.version>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-      <heritrix.version>3.4.0-20210923</heritrix.version>
+      <heritrix.version>3.4.0-20220727</heritrix.version>
       <!-- heritrix.version>3.4.0-SNAPSHOT</heritrix.version -->
    </properties>
    <licenses>
