@@ -22,7 +22,7 @@ public class ExtractorHTTPWellKnownURIs extends ExtractorHTTP {
         addOutlink(curi, "/humans.txt", LinkContext.INFERRED_MISC, Hop.INFERRED);
         addOutlink(curi, "/ads.txt", LinkContext.INFERRED_MISC, Hop.INFERRED);
         addOutlink(curi, "/sellers.json", LinkContext.INFERRED_MISC, Hop.INFERRED);
-        addOutlink(curi, "/security.txt", LinkContext.INFERRED_MISC, Hop.INFERRED);
+        addOutlink(curi, "/.well-known/security.txt", LinkContext.INFERRED_MISC, Hop.INFERRED);
         addOutlink(curi, "/.well-known/host-meta.json", LinkContext.INFERRED_MISC, Hop.INFERRED);
         addOutlink(curi, "/.well-known/dat", LinkContext.INFERRED_MISC, Hop.INFERRED);
 	}
