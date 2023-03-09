@@ -48,8 +48,8 @@ services:
        # Needs to be false when using a Bloom filter.
        - "URI_FORGETTING_ENABLED=true" 
        # Override the frontier implementation:
-       - "FRONTIER_BEANS_XML=frontier-redis.xml"
-       - "REDIS_ENDPOINT=redis://redis:6666"
+       #- "FRONTIER_BEANS_XML=frontier-redis.xml"
+       #- "REDIS_ENDPOINT=redis://redis:6666"
        # Override the uriUniqFilter implementation:
        - "URIUNIQFILTER_BEANS_XML=uriuniqfilter-rocksdb.xml"
     depends_on:
