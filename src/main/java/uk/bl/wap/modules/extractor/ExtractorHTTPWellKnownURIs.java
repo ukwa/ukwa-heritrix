@@ -41,6 +41,10 @@ public class ExtractorHTTPWellKnownURIs extends ExtractorHTTP {
         LOGGER.fine("wellKnownPaths set to " + this.wellKnownPaths);
     }
 
+    public List<String> getWellKnownPaths() {
+        return this.wellKnownPaths;
+    }
+
 
 	@Override
 	protected void extract(CrawlURI curi) {
