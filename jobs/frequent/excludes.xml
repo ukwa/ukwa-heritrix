@@ -35,6 +35,10 @@
 			<value>^.+action=buy_now.*$</value>
 			<value>^.+?mobile_switch=mobile</value>
 			<value>^https?://twitter\.com/.+\?lang=.+$</value>
+			<!-- Wordpress comment reply forms (from PANDAS/NLA) -->
+			<value>.*\?(?:.*&amp;)?replytocom=\d+</value>
+			<!-- Avoid Wordpress admin pages (from PANDAS/NLA) -->
+			<value>https?://[^/]+/wp-admin/.*</value>
            </list>
          </constructor-arg>
     </bean>
