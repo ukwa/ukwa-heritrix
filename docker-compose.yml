@@ -48,7 +48,8 @@ services:
        # Needs to be false when using a Bloom filter.
        - "URI_FORGETTING_ENABLED=true" 
        # Override the frontier implementation:
-       #- "FRONTIER_BEANS_XML=frontier-redis.xml"
+       - "FRONTIER_BEANS_XML=frontier-redis.xml"
+       - "REDIS_ENDPOINT=redis://redis:6666"
        # Override the uriUniqFilter implementation:
        - "URIUNIQFILTER_BEANS_XML=uriuniqfilter-rocksdb.xml"
     depends_on:
@@ -173,19 +174,27 @@ services:
 
   # Redis for the external frontier
   redis:
-    image: redis:6
-    command: "redis-server --appendonly yes"
+    # Redis compatible disk-backed store based on RocksBD:
+    image: kvrocks/kvrocks
     ports:
-      - "6379:6379"
+      - "6379:6666"
     volumes:
-      - ./target/integration-test-volumes/redis:/data
+      - ./target/integration-test-volumes/kvrocks:/tmp/kvrocks
+    
+    #image: redis:6
+    #command: "redis-server --appendonly yes"
+    #ports:
+    #  - "6379:6379"
+    #volumes:
+    #  - ./target/integration-test-volumes/redis:/data
 
   # Redis Browser      
   redis-commander:
     image: rediscommander/redis-commander:latest
     restart: always
     environment:
-    - REDIS_HOSTS=redis:redis:6379
+    #- REDIS_HOSTS=redis:redis:6379
+    - REDIS_HOSTS=redis:redis:6666
     ports:
     - "8081:8081"
     depends_on:

@@ -155,6 +155,12 @@ We only need tagged builds, so
 
 is sufficient to tag a version and initiate a Docker container build.  Note that the SCM/git tag should be of the form X.Y.Z.
 
+Redis Notes
+-----------
+
+Some experimental code uses a Redis back end. This should support multiple implementations, but subtleties around transactions, distribution, and syntax remain.
+
+e.g. [KvRocks](https://github.com/KvrocksLabs/kvrocks) is great but does not support things like [ZADD with LT](https://redis.io/commands/ZADD#zadd-options). The `LT` option was added recently (Redis 6.2), so does not have wide support elsewhere. Consider using two ops instead.
 
 Changes
 -------

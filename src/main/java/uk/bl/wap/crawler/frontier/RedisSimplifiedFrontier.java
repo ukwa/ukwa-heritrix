@@ -52,7 +52,9 @@ public class RedisSimplifiedFrontier implements SimplifiedFrontier {
     
     private StatefulRedisConnection<String, String> connection;
 
-    private RedisCommands<String, String> commands; 
+    private RedisCommands<String, String> commands;
+
+    private boolean zAddLtSupported = true; 
 
     static private AutoKryo kryo = new AutoKryo();
     static private final ThreadLocal<ObjectBuffer> obs = new ThreadLocal<ObjectBuffer>() {
@@ -237,7 +239,7 @@ public class RedisSimplifiedFrontier implements SimplifiedFrontier {
     }
 
     /**
-     * TODO Wrap all this in a transaction?
+     * TODO Wrap all this in a transaction? Given everything is synchronized, probably that's unnecessary.
      * 
      * @param curi
      * @return
@@ -247,8 +249,18 @@ public class RedisSimplifiedFrontier implements SimplifiedFrontier {
         // Enqueue it, if the URL is already there, only update it if 
         // the new score is less than the current score:
         // (see https://redis.io/commands/ZADD)
-        long added = this.commands.zadd(getKeyForQueue(queue), ZAddArgs.Builder.lt(),
-                calculateScore(curi),  curi.getURI());
+        String queueKey = getKeyForQueue(queue);
+        Double score = calculateScore(curi);
+        long added = 0;
+        if (this.zAddLtSupported ) {
+            added = this.commands.zadd(queueKey, ZAddArgs.Builder.lt(), score,  curi.getURI());
+        } else {
+            Double currentScore = this.commands.zscore(queueKey, curi.getURI());
+            if (currentScore == null || score < currentScore) {
+                this.commands.zadd(queueKey, score, curi.getURI());
+                added = 1;
+            }
+        }
         logger.finer("Queued " + added + " of " + curi);
 
         // Store the CrawlURI data, but only if the update worked:
