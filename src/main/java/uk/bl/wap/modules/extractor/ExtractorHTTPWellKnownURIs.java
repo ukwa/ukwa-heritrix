@@ -4,6 +4,10 @@
 package uk.bl.wap.modules.extractor;
 
 import java.util.Arrays;
+import java.util.List;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.archive.modules.CrawlURI;
 import org.archive.modules.extractor.ExtractorHTTP;
