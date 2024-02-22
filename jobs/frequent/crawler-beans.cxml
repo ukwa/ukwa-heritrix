@@ -23,7 +23,7 @@
    
 	<!-- CRAWL METADATA: including identification of crawler/operator -->
 	<bean id="metadata" class="org.archive.modules.CrawlMetadata" autowire="byName">
-		<property name="operatorContactUrl" value="https://www.bl.uk/legal-deposit/web-archiving"/>
+		<property name="operatorContactUrl" value="https://www.bl.uk/legal-deposit-web-archiving"/>
 		<property name="jobName" value="#{systemEnvironment['CRAWL_NAME'] ?: 'frequent'}"/>
 		<property name="description" value="[see override above]"/>
 		<!-- <property name="operator" value=""/> -->
