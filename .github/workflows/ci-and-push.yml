@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@main
       - name: Setup the UID env var
         run: echo "CRAWL_UID=$(id -u)" >> $GITHUB_ENV
       - name: Check the Docker Compose config
@@ -47,7 +47,7 @@ jobs:
         if: ${{ always() }}
         run: docker-compose logs warcprox
       # Make integration test results available, even if the tests failed
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@man
         if: ${{ always() }}
         with:
           name: robot-ci-results
@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@main
       - name: Set up Docker metadata
         id: meta
         uses: docker/metadata-action@v3
