@@ -47,7 +47,7 @@ jobs:
         if: ${{ always() }}
         run: docker-compose logs warcprox
       # Make integration test results available, even if the tests failed
-      - uses: actions/upload-artifact@man
+      - uses: actions/upload-artifact@main
         if: ${{ always() }}
         with:
           name: robot-ci-results
