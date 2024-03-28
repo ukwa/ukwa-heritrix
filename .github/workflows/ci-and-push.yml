@@ -60,12 +60,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
-        uses: actions/checkout@main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: '0'
+      - name: 'Get Previous tag'
+        id: previoustag
+        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+        with:
+          fallback: 1.0.0 # Optional fallback tag to use when no tag can be found 
       - name: Set up Docker metadata
         id: meta
         uses: docker/metadata-action@v3
         with:
-          images: ukwa/heritrix    
+          images: ukwa/heritrix
+          # generate Docker tags based on the following events/attributes
+          tags: |
+            type=raw,value=${{ steps.previoustag.outputs.tag }}
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha
       - name: Log in to Docker Hub
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v1
@@ -78,7 +95,3 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            GIT_VERSION_TAG=${{ env.RELEASE_VERSION }}
-            GIT_COMMIT_MESSAGE=${{ github.event.head_commit.message }}
-            GIT_VERSION_HASH=${{ github.sha }}
