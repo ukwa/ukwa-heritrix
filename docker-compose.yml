@@ -70,7 +70,7 @@ services:
  
   # Clamd virus scanning Service
   clamd:
-    image: ukwa/clamd
+    image: ukwa/clamd:1.0.1
     ports:
       - "3310:3310"
 
