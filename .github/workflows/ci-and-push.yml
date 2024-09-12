@@ -20,9 +20,9 @@ jobs:
       - name: Setup the UID env var
         run: echo "CRAWL_UID=$(id -u)" >> $GITHUB_ENV
       - name: Check the Docker Compose config
-        run: docker-compose config
+        run: docker compose config
       - name: Build the containers
-        run: docker-compose build
+        run: docker compose build
       - name: Set up output folders so that permissions are correct
         run: |
             mkdir -p ./target/integration-test-volumes/output
@@ -32,20 +32,20 @@ jobs:
             mkdir -p /tmp/webrender
             chmod -R a+w ./target/integration-test-volumes
       - name: Spin up the crawler
-        run: docker-compose up -d heritrix
+        run: docker compose up -d heritrix
       - name: Show what is running
         run: docker ps
 #      - name: Run integration tests
-#        run: docker-compose run robot
+#        run: docker compose run robot
       - name: Show what Heritrix logged, even if the tests failed
         if: ${{ always() }}
-        run: docker-compose logs heritrix
+        run: docker compose logs heritrix
       - name: Show what WebRender logged, even if the tests failed
         if: ${{ always() }}
-        run: docker-compose logs webrender
+        run: docker compose logs webrender
       - name: Show what Warcprox logged, even if the tests failed
         if: ${{ always() }}
-        run: docker-compose logs warcprox
+        run: docker compose logs warcprox
       # Make integration test results available, even if the tests failed
       - uses: actions/upload-artifact@main
         if: ${{ always() }}
